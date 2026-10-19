@@ -29,9 +29,10 @@ que-comemos-hoy/
 │   │   ├── Navbar.tsx      # Barra de navegación e identidad local de usuario
 │   │   ├── FoodCard.tsx    # Tarjeta visual con votos y categoría
 │   │   ├── RouletteModal.tsx # Ruleta Canvas animada con sincronización precisa
-│   │   └── AddFoodModal.tsx  # Formulario modal para añadir platos
+│   │   ├── AddFoodModal.tsx  # Formulario modal para añadir platos
+│   │   └── AuthModal.tsx     # Modal de inicio de sesión con Enlace Mágico (Magic Link)
 │   ├── context/
-│   │   └── UserContext.tsx # Estado global de usuario, votos locales y optimistas
+│   │   └── UserContext.tsx # Estado global de usuario, sesión Supabase Auth y votos
 │   ├── lib/
 │   │   └── supabase.ts     # Inicialización del cliente Supabase y fallbacks
 │   ├── types.ts            # Definiciones de TypeScript (Food, Vote, Category)
@@ -75,6 +76,13 @@ que-comemos-hoy/
 - **`public.votes`**: `id`, `food_id` (FK cascade), `user_name`, `created_at`.
   - Restricción única: `CONSTRAINT unique_user_food_vote UNIQUE (food_id, user_name)`.
 
+### Políticas RLS (Row Level Security)
+- **`public.foods`**:
+  - Lectura pública: `SELECT true`.
+  - Inserción y Eliminación protegidas: Requiere usuario autenticado (`auth.uid() IS NOT NULL`).
+- **`public.votes`**:
+  - Lectura, inserción y eliminación libres (`true`) para permitir votaciones fluidas por nombre local.
+
 ### Trigger en PostgreSQL
 - La función `update_food_votes_count()` recalcula automáticamente `foods.votes_count` ante operaciones `INSERT` o `DELETE` en la tabla `votes`. El frontend nunca calcula votos manualmente.
 
@@ -88,8 +96,10 @@ que-comemos-hoy/
   - `VITE_SUPABASE_URL`: URL del proyecto Supabase.
   - `VITE_SUPABASE_ANON_KEY`: Clave pública `anon`.
   - En `src/lib/supabase.ts` existen valores por defecto preconfigurados para permitir ejecución inmediata sin bloqueos.
-- **Identidad Ligera**:
-  - No hay sistema complejo de contraseñas. Cada usuario tiene un perfil local (`localStorage`) gestionado desde `Navbar.tsx` y `UserContext.tsx`. El campo `user_name` de los votos se asocia a esta identidad.
+- **Autenticación con Enlace Mágico (Magic Link)**:
+  - Implementada mediante `supabase.auth.signInWithOtp({ email, options: { emailRedirectTo: window.location.origin } })`.
+  - `UserContext.tsx` escucha el ciclo de vida de la sesión con `onAuthStateChange`.
+  - La interfaz protege visualmente y a nivel de base de datos las acciones de **añadir platos** y **eliminar platos** requiriendo sesión iniciada. Los votos y la ruleta permanecen abiertos a todos los visitantes.
 
 ---
 

@@ -1,5 +1,13 @@
 import React, { useState } from 'react';
-import { UtensilsCrossed, User, Check, Edit2 } from 'lucide-react';
+import {
+  UtensilsCrossed,
+  User as UserIcon,
+  Check,
+  Edit2,
+  LogIn,
+  LogOut,
+  ShieldCheck,
+} from 'lucide-react';
 import { useUser } from '../context/UserContext';
 
 interface NavbarProps {
@@ -7,7 +15,15 @@ interface NavbarProps {
 }
 
 export const Navbar: React.FC<NavbarProps> = ({ totalFoods }) => {
-  const { userName, setUserName } = useUser();
+  const {
+    userName,
+    setUserName,
+    user,
+    isAuthenticated,
+    signOut,
+    openAuthModal,
+  } = useUser();
+
   const [isEditing, setIsEditing] = useState(false);
   const [inputName, setInputName] = useState(userName);
 
@@ -21,33 +37,34 @@ export const Navbar: React.FC<NavbarProps> = ({ totalFoods }) => {
 
   return (
     <header className="sticky top-0 z-30 bg-white/80 backdrop-blur-md border-b border-orange-100/80 shadow-sm transition-all">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-2">
         {/* Logo */}
-        <div className="flex items-center space-x-3">
+        <div className="flex items-center space-x-3 flex-shrink-0">
           <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-orange-500 to-amber-400 flex items-center justify-center text-white shadow-md shadow-orange-500/20">
             <UtensilsCrossed className="w-5 h-5" />
           </div>
           <div>
-            <h1 className="text-lg sm:text-xl font-extrabold tracking-tight bg-gradient-to-r from-orange-600 via-amber-600 to-red-600 bg-clip-text text-transparent">
+            <h1 className="text-base sm:text-xl font-extrabold tracking-tight bg-gradient-to-r from-orange-600 via-amber-600 to-red-600 bg-clip-text text-transparent">
               ¿Qué comemos hoy?
             </h1>
-            <p className="text-xs text-slate-500 hidden sm:block">
-              {totalFoods} deliciosos platos para elegir
+            <p className="text-[11px] text-slate-500 hidden sm:block">
+              {totalFoods} platos listos en la ruleta
             </p>
           </div>
         </div>
 
-        {/* User identification badge */}
+        {/* Zona derecha: Perfil y Autenticación */}
         <div className="flex items-center space-x-2">
+          {/* Nombre / Perfil de Voto */}
           {isEditing ? (
-            <form onSubmit={handleSave} className="flex items-center space-x-1.5">
+            <form onSubmit={handleSave} className="flex items-center space-x-1">
               <input
                 type="text"
                 value={inputName}
                 onChange={(e) => setInputName(e.target.value)}
                 autoFocus
                 placeholder="Tu nombre..."
-                className="px-3 py-1 text-sm rounded-lg border border-orange-300 focus:outline-none focus:ring-2 focus:ring-orange-500/40 bg-white"
+                className="px-2.5 py-1 text-xs sm:text-sm rounded-lg border border-orange-300 focus:outline-none focus:ring-2 focus:ring-orange-500/40 bg-white max-w-[110px] sm:max-w-[140px]"
                 maxLength={25}
               />
               <button
@@ -55,7 +72,7 @@ export const Navbar: React.FC<NavbarProps> = ({ totalFoods }) => {
                 className="p-1.5 bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition-colors shadow-sm"
                 title="Guardar nombre"
               >
-                <Check className="w-4 h-4" />
+                <Check className="w-3.5 h-3.5" />
               </button>
             </form>
           ) : (
@@ -64,14 +81,45 @@ export const Navbar: React.FC<NavbarProps> = ({ totalFoods }) => {
                 setInputName(userName);
                 setIsEditing(true);
               }}
-              className="group flex items-center space-x-2 px-3 py-1.5 rounded-full bg-orange-50 hover:bg-orange-100/80 border border-orange-200/60 transition-all text-xs sm:text-sm font-medium text-orange-900 shadow-sm"
+              className="group flex items-center space-x-1.5 px-2.5 py-1.5 rounded-full bg-orange-50 hover:bg-orange-100/80 border border-orange-200/60 transition-all text-xs font-semibold text-orange-950 shadow-sm"
               title="Haz clic para cambiar tu nombre de votante"
             >
-              <div className="w-6 h-6 rounded-full bg-orange-200 flex items-center justify-center text-orange-700">
-                <User className="w-3.5 h-3.5" />
+              <div className="w-5 h-5 rounded-full bg-orange-200 flex items-center justify-center text-orange-700">
+                <UserIcon className="w-3 h-3" />
               </div>
-              <span className="max-w-[120px] sm:max-w-[180px] truncate">{userName}</span>
-              <Edit2 className="w-3 h-3 text-orange-400 group-hover:text-orange-600 transition-colors" />
+              <span className="max-w-[80px] sm:max-w-[120px] truncate">{userName}</span>
+              <Edit2 className="w-2.5 h-2.5 text-orange-400 group-hover:text-orange-600 transition-colors" />
+            </button>
+          )}
+
+          {/* Estado de Supabase Auth */}
+          {isAuthenticated ? (
+            <div className="flex items-center space-x-1.5 pl-1 border-l border-slate-200">
+              <div
+                className="hidden sm:flex items-center space-x-1 px-2.5 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-medium"
+                title={`Sesión iniciada como ${user?.email}`}
+              >
+                <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+                <span className="max-w-[120px] truncate">{user?.email}</span>
+              </div>
+
+              <button
+                onClick={signOut}
+                className="flex items-center space-x-1 px-2.5 py-1.5 rounded-xl text-slate-500 hover:text-red-600 hover:bg-red-50 text-xs font-bold transition-all border border-slate-200"
+                title="Cerrar sesión"
+              >
+                <LogOut className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Salir</span>
+              </button>
+            </div>
+          ) : (
+            <button
+              onClick={() => openAuthModal('Inicia sesión para poder añadir o eliminar platos de la carta.')}
+              className="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold transition-all shadow-sm active:scale-95"
+              title="Iniciar sesión con Enlace Mágico"
+            >
+              <LogIn className="w-3.5 h-3.5 text-orange-400" />
+              <span>Entrar</span>
             </button>
           )}
         </div>

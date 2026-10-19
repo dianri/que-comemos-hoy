@@ -6,6 +6,7 @@ import {
   Search,
   RefreshCw,
   Trophy,
+  Lock,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { supabase } from './lib/supabase';
@@ -14,7 +15,8 @@ import { Navbar } from './components/Navbar';
 import { FoodCard } from './components/FoodCard';
 import { RouletteModal } from './components/RouletteModal';
 import { AddFoodModal } from './components/AddFoodModal';
-import { UserProvider } from './context/UserContext';
+import { AuthModal } from './components/AuthModal';
+import { UserProvider, useUser } from './context/UserContext';
 
 const CATEGORIES: Category[] = [
   'Todas',
@@ -34,10 +36,28 @@ function MainApp() {
   const [selectedCategory, setSelectedCategory] = useState<Category>('Todas');
   const [sortBy, setSortBy] = useState<'votes' | 'recent' | 'name'>('votes');
 
+  // Autenticación
+  const {
+    isAuthenticated,
+    isAuthModalOpen,
+    closeAuthModal,
+    openAuthModal,
+    authModalReason,
+  } = useUser();
+
   // Modales
   const [isRouletteOpen, setIsRouletteOpen] = useState(false);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [highlightedFoodId, setHighlightedFoodId] = useState<string | null>(null);
+
+  // Apertura protegida del modal de añadir plato
+  const handleOpenAddFood = () => {
+    if (isAuthenticated) {
+      setIsAddModalOpen(true);
+    } else {
+      openAuthModal('Inicia sesión con tu correo electrónico para añadir platos a la carta.');
+    }
+  };
 
   // Cargar lista de comidas desde Supabase
   const fetchFoods = async () => {
@@ -85,8 +105,13 @@ function MainApp() {
     };
   }, []);
 
-  // Eliminar comida
+  // Eliminar comida (Protegido por Supabase Auth)
   const handleDeleteFood = async (id: string) => {
+    if (!isAuthenticated) {
+      openAuthModal('Debes iniciar sesión con tu correo para eliminar platos de la carta.');
+      return;
+    }
+
     try {
       const { error } = await supabase.from('foods').delete().eq('id', id);
       if (error) throw error;
@@ -325,11 +350,12 @@ function MainApp() {
                 No hay ningún plato que coincida con tu búsqueda. ¿Por qué no añades uno nuevo para que entre en la ruleta?
               </p>
               <button
-                onClick={() => setIsAddModalOpen(true)}
+                onClick={handleOpenAddFood}
                 className="mt-2 inline-flex items-center space-x-1.5 px-4 py-2 rounded-xl bg-orange-500 text-white text-xs font-bold hover:bg-orange-600 shadow-md transition-all"
               >
                 <Plus className="w-4 h-4" />
                 <span>Añadir primer plato</span>
+                {!isAuthenticated && <Lock className="w-3 h-3 text-white/80" />}
               </button>
             </div>
           ) : (
@@ -350,11 +376,13 @@ function MainApp() {
       {/* Botón Flotante para Añadir Comida (FAB) */}
       <div className="fixed bottom-6 right-6 z-40">
         <button
-          onClick={() => setIsAddModalOpen(true)}
+          onClick={handleOpenAddFood}
           className="group flex items-center space-x-2 px-5 py-3.5 rounded-full bg-gradient-to-r from-orange-500 to-amber-500 text-white font-extrabold text-sm shadow-xl shadow-orange-500/35 hover:scale-108 active:scale-95 transition-all duration-200 border-2 border-white"
+          title={isAuthenticated ? 'Añadir nuevo plato a la carta' : 'Inicia sesión para añadir platos'}
         >
           <Plus className="w-5 h-5 transition-transform group-hover:rotate-90" />
           <span className="hidden sm:inline">Añadir Comida</span>
+          {!isAuthenticated && <Lock className="w-3.5 h-3.5 text-white/80" />}
         </button>
       </div>
 
@@ -379,6 +407,12 @@ function MainApp() {
         isOpen={isAddModalOpen}
         onClose={() => setIsAddModalOpen(false)}
         onFoodAdded={handleFoodAdded}
+      />
+
+      <AuthModal
+        isOpen={isAuthModalOpen}
+        onClose={closeAuthModal}
+        description={authModalReason}
       />
     </div>
   );

@@ -23,7 +23,7 @@ const CATEGORY_COLORS: Record<string, string> = {
 const FALLBACK_IMAGE = 'https://images.unsplash.com/photo-1498837167922-ddd27525d352?auto=format&fit=crop&w=800&q=80';
 
 export const FoodCard: React.FC<FoodCardProps> = ({ food, onDelete, isHighlighted = false }) => {
-  const { userVotes, toggleVote } = useUser();
+  const { userVotes, toggleVote, isAuthenticated } = useUser();
   const [imgSrc, setImgSrc] = useState(food.image_url || FALLBACK_IMAGE);
   const [isLiking, setIsLiking] = useState(false);
 
@@ -117,7 +117,7 @@ export const FoodCard: React.FC<FoodCardProps> = ({ food, onDelete, isHighlighte
             <span>{food.created_by ? `Por ${food.created_by}` : 'Comunidad'}</span>
           </span>
 
-          {onDelete && (
+          {isAuthenticated && onDelete && (
             <button
               onClick={(e) => {
                 e.stopPropagation();
@@ -126,7 +126,7 @@ export const FoodCard: React.FC<FoodCardProps> = ({ food, onDelete, isHighlighte
                 }
               }}
               className="text-slate-300 hover:text-red-500 p-1 rounded-lg transition-colors"
-              title="Eliminar plato"
+              title="Eliminar plato (solo usuarios autenticados)"
             >
               <Trash2 className="w-3.5 h-3.5" />
             </button>

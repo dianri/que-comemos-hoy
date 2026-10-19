@@ -34,7 +34,7 @@ export const AddFoodModal: React.FC<AddFoodModalProps> = ({
   onClose,
   onFoodAdded,
 }) => {
-  const { userName } = useUser();
+  const { userName, user, isAuthenticated, openAuthModal } = useUser();
   const [name, setName] = useState('');
   const [imageUrl, setImageUrl] = useState('');
   const [category, setCategory] = useState<Category>('General');
@@ -46,6 +46,13 @@ export const AddFoodModal: React.FC<AddFoodModalProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!isAuthenticated) {
+      setErrorMsg('Debes iniciar sesión con tu correo para añadir platos a la carta.');
+      openAuthModal('Inicia sesión con tu correo para añadir platos.');
+      return;
+    }
+
     if (!name.trim()) {
       setErrorMsg('Por favor introduce el nombre del plato.');
       return;
@@ -59,13 +66,15 @@ export const AddFoodModal: React.FC<AddFoodModalProps> = ({
       setIsSubmitting(true);
       setErrorMsg(null);
 
+      const creatorIdentifier = user?.email ? user.email.split('@')[0] : userName;
+
       const newRecord = {
         name: name.trim(),
         image_url: finalImage,
         category,
         description: description.trim(),
         votes_count: 0,
-        created_by: userName,
+        created_by: creatorIdentifier,
       };
 
       const { data, error } = await supabase

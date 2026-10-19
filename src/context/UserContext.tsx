@@ -1,12 +1,21 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { User } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
 
 interface UserContextType {
   userName: string;
   setUserName: (name: string) => void;
+  user: User | null;
+  isAuthenticated: boolean;
+  isAuthLoading: boolean;
+  signOut: () => Promise<void>;
   userVotes: Set<string>;
   toggleVote: (foodId: string) => Promise<boolean>;
   isLoadingVotes: boolean;
+  isAuthModalOpen: boolean;
+  authModalReason: string | undefined;
+  openAuthModal: (reason?: string) => void;
+  closeAuthModal: () => void;
 }
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
@@ -14,6 +23,11 @@ const UserContext = createContext<UserContextType | undefined>(undefined);
 const DEFAULT_AVATARS = ['👨‍🍳', '👩‍🍳', '🍕', '🌮', '🍣', '🥑', '🍔', '🥗'];
 
 export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [user, setUser] = useState<User | null>(null);
+  const [isAuthLoading, setIsAuthLoading] = useState<boolean>(true);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState<boolean>(false);
+  const [authModalReason, setAuthModalReason] = useState<string | undefined>(undefined);
+
   const [userName, setUserNameState] = useState<string>(() => {
     const saved = localStorage.getItem('que_comemos_user');
     if (saved) return saved;
@@ -24,6 +38,63 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const [userVotes, setUserVotes] = useState<Set<string>>(new Set());
   const [isLoadingVotes, setIsLoadingVotes] = useState<boolean>(true);
+
+  // 1. Escuchar sesión de Supabase Auth
+  useEffect(() => {
+    // Obtener sesión inicial
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
+      if (session?.user?.email) {
+        // Si el usuario actual tiene el nombre temporal de gourmet, usar su email
+        const currentSaved = localStorage.getItem('que_comemos_user');
+        if (!currentSaved || currentSaved.startsWith('Gourmet-')) {
+          const emailName = session.user.email.split('@')[0];
+          setUserNameState(emailName);
+          localStorage.setItem('que_comemos_user', emailName);
+        }
+      }
+      setIsAuthLoading(false);
+    });
+
+    // Suscribirse a cambios de estado de autenticación (login, logout, magic link callback)
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+      if (session?.user?.email) {
+        const currentSaved = localStorage.getItem('que_comemos_user');
+        if (!currentSaved || currentSaved.startsWith('Gourmet-')) {
+          const emailName = session.user.email.split('@')[0];
+          setUserNameState(emailName);
+          localStorage.setItem('que_comemos_user', emailName);
+        }
+      }
+      setIsAuthLoading(false);
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, []);
+
+  const openAuthModal = (reason?: string) => {
+    setAuthModalReason(reason);
+    setIsAuthModalOpen(true);
+  };
+
+  const closeAuthModal = () => {
+    setIsAuthModalOpen(false);
+    setAuthModalReason(undefined);
+  };
+
+  const signOut = async () => {
+    try {
+      await supabase.auth.signOut();
+      setUser(null);
+    } catch (err) {
+      console.error('Error al cerrar sesión:', err);
+    }
+  };
 
   const setUserName = (name: string) => {
     const trimmed = name.trim();
@@ -107,9 +178,17 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
       value={{
         userName,
         setUserName,
+        user,
+        isAuthenticated: !!user,
+        isAuthLoading,
+        signOut,
         userVotes,
         toggleVote,
         isLoadingVotes,
+        isAuthModalOpen,
+        authModalReason,
+        openAuthModal,
+        closeAuthModal,
       }}
     >
       {children}
