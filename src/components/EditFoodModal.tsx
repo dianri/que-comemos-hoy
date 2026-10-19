@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { X, Sparkles, AlertCircle, Save } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { Category, Food } from '../types';
+import { ImagePicker } from './ImagePicker';
 
 interface EditFoodModalProps {
   isOpen: boolean;
@@ -21,13 +22,6 @@ const CATEGORIES: Category[] = [
   'General',
 ];
 
-const PRESET_IMAGES = [
-  { label: '🍕 Pizza', url: 'https://images.unsplash.com/photo-1513104890138-7c749659a591?auto=format&fit=crop&w=800&q=80' },
-  { label: '🥗 Ensalada', url: 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=800&q=80' },
-  { label: '🍔 Burguer', url: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&w=800&q=80' },
-  { label: '🍜 Ramen', url: 'https://images.unsplash.com/photo-1569718212165-3a8278d5f624?auto=format&fit=crop&w=800&q=80' },
-  { label: '🥘 Guiso', url: 'https://images.unsplash.com/photo-1547592180-85f173990554?auto=format&fit=crop&w=800&q=80' },
-];
 
 export const EditFoodModal: React.FC<EditFoodModalProps> = ({
   isOpen,
@@ -168,46 +162,11 @@ export const EditFoodModal: React.FC<EditFoodModalProps> = ({
             </select>
           </div>
 
-          {/* URL de Imagen */}
+          {/* Selector de Imagen con Buscador y Pestañas */}
           <div>
-            <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-              URL de la Foto
-            </label>
-            <input
-              type="url"
-              value={imageUrl}
-              onChange={(e) => setImageUrl(e.target.value)}
-              placeholder="https://ejemplo.com/foto.jpg"
-              className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-orange-500/40 text-sm"
-            />
-
-            {/* Presets de fotos rápidas */}
-            <div className="mt-2 flex items-center space-x-1.5 overflow-x-auto pb-1 text-xs text-slate-500">
-              <span className="flex-shrink-0 text-[11px] font-semibold">Fotos rápidas:</span>
-              {PRESET_IMAGES.map((preset) => (
-                <button
-                  type="button"
-                  key={preset.label}
-                  onClick={() => setImageUrl(preset.url)}
-                  className="px-2 py-0.5 rounded-lg bg-slate-100 hover:bg-orange-100 hover:text-orange-700 text-[11px] font-medium transition-colors flex-shrink-0"
-                >
-                  {preset.label}
-                </button>
-              ))}
-            </div>
-
-            {/* Preview de la imagen */}
-            {imageUrl && (
-              <div className="mt-3 relative h-32 rounded-xl overflow-hidden border border-slate-200 bg-slate-50">
-                <img
-                  src={imageUrl}
-                  alt="Vista previa"
-                  className="w-full h-full object-cover"
-                  onError={() => setErrorMsg('La URL de imagen no parece válida.')}
-                />
-              </div>
-            )}
+            <ImagePicker selectedUrl={imageUrl} onSelectUrl={setImageUrl} />
           </div>
+
 
           {/* Descripción opcional */}
           <div>
