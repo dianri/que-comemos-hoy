@@ -115,13 +115,24 @@ function MainApp() {
         { event: '*', schema: 'public', table: 'foods' },
         (payload) => {
           if (payload.eventType === 'INSERT') {
-            setFoods((prev) => [payload.new as Food, ...prev]);
+            const inserted = payload.new as Food;
+            setFoods((prev) => {
+              if (prev.some((f) => f.id === inserted.id)) return prev;
+              return [inserted, ...prev];
+            });
           } else if (payload.eventType === 'UPDATE') {
+            const updated = payload.new as Food;
             setFoods((prev) =>
-              prev.map((f) => (f.id === payload.new.id ? (payload.new as Food) : f))
+              prev.map((f) => (f.id === updated.id ? updated : f))
             );
+            // Si el plato actualizado es el que está abierto en el modal de detalle, actualizarlo también
+            setSelectedRecipe((prev) => (prev && prev.id === updated.id ? updated : prev));
           } else if (payload.eventType === 'DELETE') {
-            setFoods((prev) => prev.filter((f) => f.id !== payload.old.id));
+            const deletedId = (payload.old as { id: string })?.id;
+            if (deletedId) {
+              setFoods((prev) => prev.filter((f) => f.id !== deletedId));
+              setSelectedRecipe((prev) => (prev && prev.id === deletedId ? null : prev));
+            }
           }
         }
       )
@@ -153,11 +164,12 @@ function MainApp() {
     setFoods((prev) => [newFood, ...prev]);
   };
 
-  // Actualizar comida tras edición
+  // Actualizar comida tras edición (actualización local inmediata + refresco)
   const handleFoodUpdated = (updatedFood: Food) => {
     setFoods((prev) =>
       prev.map((f) => (f.id === updatedFood.id ? updatedFood : f))
     );
+    setSelectedRecipe((prev) => (prev && prev.id === updatedFood.id ? updatedFood : prev));
     setEditingFood(null);
   };
 
