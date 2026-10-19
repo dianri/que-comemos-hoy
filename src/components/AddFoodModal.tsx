@@ -75,6 +75,8 @@ export const AddFoodModal: React.FC<AddFoodModalProps> = ({
         description: description.trim(),
         votes_count: 0,
         created_by: creatorIdentifier,
+        user_id: user?.id,
+        user_email: user?.email,
       };
 
       const { data, error } = await supabase

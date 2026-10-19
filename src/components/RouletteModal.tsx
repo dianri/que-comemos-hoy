@@ -8,6 +8,7 @@ interface RouletteModalProps {
   onClose: () => void;
   foods: Food[];
   onSelectWinner?: (food: Food) => void;
+  subtitle?: string;
 }
 
 // Paleta viva con contraste óptimo para tipografía oscura
@@ -31,6 +32,7 @@ export const RouletteModal: React.FC<RouletteModalProps> = ({
   onClose,
   foods,
   onSelectWinner,
+  subtitle,
 }) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [isSpinning, setIsSpinning] = useState(false);
@@ -378,7 +380,7 @@ export const RouletteModal: React.FC<RouletteModalProps> = ({
             ¿Qué comeremos hoy?
           </h2>
           <p className="text-xs text-slate-500">
-            {foods.length} platos en la ruleta. ¡Deja que el destino decida!
+            {subtitle || `${foods.length} platos en la ruleta. ¡Deja que el destino decida!`}
           </p>
         </div>
 

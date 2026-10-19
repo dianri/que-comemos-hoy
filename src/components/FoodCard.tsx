@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Heart, Sparkles, Trash2 } from 'lucide-react';
+import { Heart, Sparkles, Trash2, Star } from 'lucide-react';
 import { Food } from '../types';
 import { useUser } from '../context/UserContext';
 
@@ -23,11 +23,12 @@ const CATEGORY_COLORS: Record<string, string> = {
 const FALLBACK_IMAGE = 'https://images.unsplash.com/photo-1498837167922-ddd27525d352?auto=format&fit=crop&w=800&q=80';
 
 export const FoodCard: React.FC<FoodCardProps> = ({ food, onDelete, isHighlighted = false }) => {
-  const { userVotes, toggleVote, isAuthenticated } = useUser();
+  const { userVotes, toggleVote, isAuthenticated, isFavorite, toggleFavorite } = useUser();
   const [imgSrc, setImgSrc] = useState(food.image_url || FALLBACK_IMAGE);
   const [isLiking, setIsLiking] = useState(false);
 
   const hasVoted = userVotes.has(food.id);
+  const isFav = isFavorite(food.id);
   const categoryColor = CATEGORY_COLORS[food.category] || CATEGORY_COLORS.General;
 
   const handleVote = async (e: React.MouseEvent) => {
@@ -68,8 +69,29 @@ export const FoodCard: React.FC<FoodCardProps> = ({ food, onDelete, isHighlighte
           </span>
         </div>
 
-        {/* Botón de Votar (Like) */}
-        <div className="absolute top-3 right-3 z-10">
+        {/* Botones de Favorito y Votar (Like) */}
+        <div className="absolute top-3 right-3 z-10 flex items-center space-x-1.5">
+          {/* Botón Favorito */}
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              toggleFavorite(food.id);
+            }}
+            className={`p-1.5 rounded-full backdrop-blur-md transition-all shadow-md active:scale-90 ${
+              isFav
+                ? 'bg-amber-400 text-amber-950 shadow-amber-400/40 ring-2 ring-amber-300'
+                : 'bg-white/80 hover:bg-white text-slate-500 hover:text-amber-500'
+            }`}
+            title={isFav ? 'Quitar de favoritos' : 'Marcar como favorito'}
+          >
+            <Star
+              className={`w-4 h-4 transition-transform ${
+                isFav ? 'fill-amber-400 text-amber-950 scale-110' : ''
+              }`}
+            />
+          </button>
+
+          {/* Botón Votar */}
           <button
             onClick={handleVote}
             className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-full backdrop-blur-md transition-all shadow-md active:scale-90 ${

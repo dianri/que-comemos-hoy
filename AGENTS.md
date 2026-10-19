@@ -72,9 +72,14 @@ que-comemos-hoy/
 ## 5. Base de Datos, Triggers y Realtime
 
 ### Tablas Principales
-- **`public.foods`**: `id`, `name`, `image_url`, `category`, `description`, `votes_count`, `created_by`, `created_at`.
+- **`public.foods`**: `id`, `name`, `image_url`, `category`, `description`, `votes_count`, `created_by`, `user_id` (UUID), `user_email` (TEXT), `created_at`.
 - **`public.votes`**: `id`, `food_id` (FK cascade), `user_name`, `created_at`.
   - Restricción única: `CONSTRAINT unique_user_food_vote UNIQUE (food_id, user_name)`.
+
+### Sistema de Favoritos y Filtros Personales
+- Los favoritos del usuario se gestionan en `UserContext.tsx` y persisten en `localStorage` asociados al email del usuario autenticado (`que_comemos_favs_<email>`).
+- En la interfaz principal existen tres pestañas: **Todos los platos**, **Mis Platos** (solo los creados por el usuario activo) y **⭐ Favoritos**.
+- La Ruleta y la Elección Rápida respetan el filtro activo, girando únicamente entre los platos de la pestaña o categoría seleccionada.
 
 ### Políticas RLS (Row Level Security)
 - **`public.foods`**:

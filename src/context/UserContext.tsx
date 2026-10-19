@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { User } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
 
@@ -12,6 +12,9 @@ interface UserContextType {
   userVotes: Set<string>;
   toggleVote: (foodId: string) => Promise<boolean>;
   isLoadingVotes: boolean;
+  favorites: Set<string>;
+  toggleFavorite: (foodId: string) => void;
+  isFavorite: (foodId: string) => boolean;
   isAuthModalOpen: boolean;
   authModalReason: string | undefined;
   openAuthModal: (reason?: string) => void;
@@ -38,17 +41,69 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const [userVotes, setUserVotes] = useState<Set<string>>(new Set());
   const [isLoadingVotes, setIsLoadingVotes] = useState<boolean>(true);
+  const [favorites, setFavorites] = useState<Set<string>>(new Set());
+
+  // Clave dinámica de favoritos según usuario autenticado o invitado
+  const getFavStorageKey = useCallback((currentUser: User | null) => {
+    return currentUser?.email
+      ? `que_comemos_favs_${currentUser.email}`
+      : 'que_comemos_favs_guest';
+  }, []);
+
+  // Cargar favoritos del almacenamiento local
+  const loadFavorites = useCallback((currentUser: User | null) => {
+    try {
+      const key = getFavStorageKey(currentUser);
+      const raw = localStorage.getItem(key);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed)) {
+          setFavorites(new Set(parsed));
+          return;
+        }
+      }
+      setFavorites(new Set());
+    } catch {
+      setFavorites(new Set());
+    }
+  }, [getFavStorageKey]);
+
+  // Alternar plato favorito
+  const toggleFavorite = (foodId: string) => {
+    setFavorites((prev) => {
+      const next = new Set(prev);
+      if (next.has(foodId)) {
+        next.delete(foodId);
+      } else {
+        next.add(foodId);
+      }
+      // Guardar en localStorage
+      try {
+        const key = getFavStorageKey(user);
+        localStorage.setItem(key, JSON.stringify(Array.from(next)));
+      } catch (err) {
+        console.error('Error al guardar favoritos:', err);
+      }
+      return next;
+    });
+  };
+
+  const isFavorite = (foodId: string) => {
+    return favorites.has(foodId);
+  };
 
   // 1. Escuchar sesión de Supabase Auth
   useEffect(() => {
     // Obtener sesión inicial
     supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
-      if (session?.user?.email) {
-        // Si el usuario actual tiene el nombre temporal de gourmet, usar su email
+      const initialUser = session?.user ?? null;
+      setUser(initialUser);
+      loadFavorites(initialUser);
+
+      if (initialUser?.email) {
         const currentSaved = localStorage.getItem('que_comemos_user');
         if (!currentSaved || currentSaved.startsWith('Gourmet-')) {
-          const emailName = session.user.email.split('@')[0];
+          const emailName = initialUser.email.split('@')[0];
           setUserNameState(emailName);
           localStorage.setItem('que_comemos_user', emailName);
         }
@@ -60,11 +115,14 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
-      if (session?.user?.email) {
+      const changedUser = session?.user ?? null;
+      setUser(changedUser);
+      loadFavorites(changedUser);
+
+      if (changedUser?.email) {
         const currentSaved = localStorage.getItem('que_comemos_user');
         if (!currentSaved || currentSaved.startsWith('Gourmet-')) {
-          const emailName = session.user.email.split('@')[0];
+          const emailName = changedUser.email.split('@')[0];
           setUserNameState(emailName);
           localStorage.setItem('que_comemos_user', emailName);
         }
@@ -75,7 +133,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return () => {
       subscription.unsubscribe();
     };
-  }, []);
+  }, [loadFavorites]);
 
   const openAuthModal = (reason?: string) => {
     setAuthModalReason(reason);
@@ -91,6 +149,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       await supabase.auth.signOut();
       setUser(null);
+      loadFavorites(null);
     } catch (err) {
       console.error('Error al cerrar sesión:', err);
     }
@@ -140,7 +199,6 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     try {
       if (hasVoted) {
-        // Eliminar voto
         const { error } = await supabase
           .from('votes')
           .delete()
@@ -149,7 +207,6 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
         if (error) throw error;
       } else {
-        // Añadir voto
         const { error } = await supabase.from('votes').insert([
           {
             food_id: foodId,
@@ -185,6 +242,9 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
         userVotes,
         toggleVote,
         isLoadingVotes,
+        favorites,
+        toggleFavorite,
+        isFavorite,
         isAuthModalOpen,
         authModalReason,
         openAuthModal,
