@@ -18,6 +18,7 @@ import { Navbar } from './components/Navbar';
 import { FoodCard } from './components/FoodCard';
 import { RouletteModal } from './components/RouletteModal';
 import { AddFoodModal } from './components/AddFoodModal';
+import { EditFoodModal } from './components/EditFoodModal';
 import { AuthModal } from './components/AuthModal';
 import { UserProvider, useUser } from './context/UserContext';
 
@@ -54,6 +55,7 @@ function MainApp() {
   // Modales
   const [isRouletteOpen, setIsRouletteOpen] = useState(false);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [editingFood, setEditingFood] = useState<Food | null>(null);
   const [highlightedFoodId, setHighlightedFoodId] = useState<string | null>(null);
 
   // Apertura protegida del modal de añadir plato
@@ -139,6 +141,14 @@ function MainApp() {
   // Añadir nueva comida a la lista
   const handleFoodAdded = (newFood: Food) => {
     setFoods((prev) => [newFood, ...prev]);
+  };
+
+  // Actualizar comida tras edición
+  const handleFoodUpdated = (updatedFood: Food) => {
+    setFoods((prev) =>
+      prev.map((f) => (f.id === updatedFood.id ? updatedFood : f))
+    );
+    setEditingFood(null);
   };
 
   // Conteo de platos por pestaña
@@ -537,6 +547,7 @@ function MainApp() {
                   key={food.id}
                   food={food}
                   onDelete={handleDeleteFood}
+                  onEdit={setEditingFood}
                   isHighlighted={highlightedFoodId === food.id}
                 />
               ))}
@@ -580,6 +591,13 @@ function MainApp() {
         isOpen={isAddModalOpen}
         onClose={() => setIsAddModalOpen(false)}
         onFoodAdded={handleFoodAdded}
+      />
+
+      <EditFoodModal
+        isOpen={!!editingFood}
+        food={editingFood}
+        onClose={() => setEditingFood(null)}
+        onFoodUpdated={handleFoodUpdated}
       />
 
       <AuthModal

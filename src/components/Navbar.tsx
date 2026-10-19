@@ -7,6 +7,7 @@ import {
   LogIn,
   LogOut,
   ShieldCheck,
+  Crown,
 } from 'lucide-react';
 import { useUser } from '../context/UserContext';
 
@@ -20,6 +21,7 @@ export const Navbar: React.FC<NavbarProps> = ({ totalFoods }) => {
     setUserName,
     user,
     isAuthenticated,
+    isSuperUser,
     signOut,
     openAuthModal,
   } = useUser();
@@ -96,11 +98,24 @@ export const Navbar: React.FC<NavbarProps> = ({ totalFoods }) => {
           {isAuthenticated ? (
             <div className="flex items-center space-x-1.5 pl-1 border-l border-slate-200">
               <div
-                className="hidden sm:flex items-center space-x-1 px-2.5 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-medium"
-                title={`Sesión iniciada como ${user?.email}`}
+                className={`hidden sm:flex items-center space-x-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border ${
+                  isSuperUser
+                    ? 'bg-purple-50 border-purple-200 text-purple-700'
+                    : 'bg-emerald-50 border-emerald-200 text-emerald-700'
+                }`}
+                title={`Sesión iniciada como ${user?.email} ${isSuperUser ? '(Superusuario)' : ''}`}
               >
-                <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+                {isSuperUser ? (
+                  <Crown className="w-3.5 h-3.5 text-purple-600" />
+                ) : (
+                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+                )}
                 <span className="max-w-[120px] truncate">{user?.email}</span>
+                {isSuperUser && (
+                  <span className="text-[10px] bg-purple-200 text-purple-800 px-1.5 py-0.2 rounded-full font-bold">
+                    Admin
+                  </span>
+                )}
               </div>
 
               <button

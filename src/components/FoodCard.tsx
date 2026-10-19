@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
-import { Heart, Sparkles, Trash2, Star } from 'lucide-react';
+import { Heart, Sparkles, Trash2, Star, Pencil } from 'lucide-react';
 import { Food } from '../types';
 import { useUser } from '../context/UserContext';
 
 interface FoodCardProps {
   food: Food;
   onDelete?: (id: string) => void;
+  onEdit?: (food: Food) => void;
   isHighlighted?: boolean;
 }
 
@@ -22,13 +23,27 @@ const CATEGORY_COLORS: Record<string, string> = {
 
 const FALLBACK_IMAGE = 'https://images.unsplash.com/photo-1498837167922-ddd27525d352?auto=format&fit=crop&w=800&q=80';
 
-export const FoodCard: React.FC<FoodCardProps> = ({ food, onDelete, isHighlighted = false }) => {
-  const { userVotes, toggleVote, isAuthenticated, isFavorite, toggleFavorite } = useUser();
+export const FoodCard: React.FC<FoodCardProps> = ({
+  food,
+  onDelete,
+  onEdit,
+  isHighlighted = false,
+}) => {
+  const {
+    userVotes,
+    toggleVote,
+    isFavorite,
+    toggleFavorite,
+    canManageFood,
+    isSuperUser,
+  } = useUser();
+
   const [imgSrc, setImgSrc] = useState(food.image_url || FALLBACK_IMAGE);
   const [isLiking, setIsLiking] = useState(false);
 
   const hasVoted = userVotes.has(food.id);
   const isFav = isFavorite(food.id);
+  const canManage = canManageFood(food);
   const categoryColor = CATEGORY_COLORS[food.category] || CATEGORY_COLORS.General;
 
   const handleVote = async (e: React.MouseEvent) => {
@@ -61,12 +76,21 @@ export const FoodCard: React.FC<FoodCardProps> = ({ food, onDelete, isHighlighte
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/20 pointer-events-none" />
 
         {/* Badge de Categoría */}
-        <div className="absolute top-3 left-3 z-10">
+        <div className="absolute top-3 left-3 z-10 flex items-center space-x-1">
           <span
             className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold backdrop-blur-md shadow-sm border ${categoryColor}`}
           >
             {food.category || 'General'}
           </span>
+          {canManage && (
+            <span
+              className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold backdrop-blur-md shadow-sm text-white ${
+                isSuperUser ? 'bg-purple-600/90' : 'bg-slate-900/80'
+              }`}
+            >
+              {isSuperUser ? '👑 Admin' : 'Tu receta'}
+            </span>
+          )}
         </div>
 
         {/* Botones de Favorito y Votar (Like) */}
@@ -139,19 +163,37 @@ export const FoodCard: React.FC<FoodCardProps> = ({ food, onDelete, isHighlighte
             <span>{food.created_by ? `Por ${food.created_by}` : 'Comunidad'}</span>
           </span>
 
-          {isAuthenticated && onDelete && (
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                if (confirm(`¿Eliminar "${food.name}" de las opciones?`)) {
-                  onDelete(food.id);
-                }
-              }}
-              className="text-slate-300 hover:text-red-500 p-1 rounded-lg transition-colors"
-              title="Eliminar plato (solo usuarios autenticados)"
-            >
-              <Trash2 className="w-3.5 h-3.5" />
-            </button>
+          {/* Acciones de gestión protegidas: solo propietario o superusuario */}
+          {canManage && (
+            <div className="flex items-center space-x-1">
+              {onEdit && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onEdit(food);
+                  }}
+                  className="text-slate-400 hover:text-orange-600 hover:bg-orange-50 p-1.5 rounded-lg transition-colors"
+                  title="Modificar receta"
+                >
+                  <Pencil className="w-3.5 h-3.5" />
+                </button>
+              )}
+
+              {onDelete && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (confirm(`¿Eliminar "${food.name}" de las opciones?`)) {
+                      onDelete(food.id);
+                    }
+                  }}
+                  className="text-slate-400 hover:text-red-500 hover:bg-red-50 p-1.5 rounded-lg transition-colors"
+                  title="Eliminar plato"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
           )}
         </div>
       </div>

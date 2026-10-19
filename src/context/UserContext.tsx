@@ -1,12 +1,15 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { User } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
+import { Food } from '../types';
 
 interface UserContextType {
   userName: string;
   setUserName: (name: string) => void;
   user: User | null;
   isAuthenticated: boolean;
+  isSuperUser: boolean;
+  canManageFood: (food: Food) => boolean;
   isAuthLoading: boolean;
   signOut: () => Promise<void>;
   userVotes: Set<string>;
@@ -230,6 +233,30 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const isSuperUser = user?.email === 'dianrie@hotmail.com';
+
+  const canManageFood = useCallback(
+    (food: Food) => {
+      if (!user) return false;
+      // 1. Superusuario global con permisos absolutos
+      if (user.email === 'dianrie@hotmail.com') return true;
+      // 2. Coincidencia por user_id
+      if (food.user_id && food.user_id === user.id) return true;
+      // 3. Coincidencia por user_email
+      if (food.user_email && food.user_email === user.email) return true;
+      // 4. Coincidencia por created_by (email completo o prefijo de usuario)
+      const emailPrefix = user.email ? user.email.split('@')[0] : '';
+      if (
+        food.created_by &&
+        (food.created_by === user.email || food.created_by === emailPrefix)
+      ) {
+        return true;
+      }
+      return false;
+    },
+    [user]
+  );
+
   return (
     <UserContext.Provider
       value={{
@@ -237,6 +264,8 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setUserName,
         user,
         isAuthenticated: !!user,
+        isSuperUser,
+        canManageFood,
         isAuthLoading,
         signOut,
         userVotes,

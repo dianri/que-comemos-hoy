@@ -1,0 +1,249 @@
+import React, { useState, useEffect } from 'react';
+import { X, Sparkles, AlertCircle, Save } from 'lucide-react';
+import { supabase } from '../lib/supabase';
+import { Category, Food } from '../types';
+
+interface EditFoodModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  food: Food | null;
+  onFoodUpdated: (updatedFood: Food) => void;
+}
+
+const CATEGORIES: Category[] = [
+  'Tradicional',
+  'Italiana',
+  'Arroces',
+  'Americana',
+  'Mexicana',
+  'Japonesa',
+  'Saludable',
+  'General',
+];
+
+const PRESET_IMAGES = [
+  { label: '🍕 Pizza', url: 'https://images.unsplash.com/photo-1513104890138-7c749659a591?auto=format&fit=crop&w=800&q=80' },
+  { label: '🥗 Ensalada', url: 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=800&q=80' },
+  { label: '🍔 Burguer', url: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&w=800&q=80' },
+  { label: '🍜 Ramen', url: 'https://images.unsplash.com/photo-1569718212165-3a8278d5f624?auto=format&fit=crop&w=800&q=80' },
+  { label: '🥘 Guiso', url: 'https://images.unsplash.com/photo-1547592180-85f173990554?auto=format&fit=crop&w=800&q=80' },
+];
+
+export const EditFoodModal: React.FC<EditFoodModalProps> = ({
+  isOpen,
+  onClose,
+  food,
+  onFoodUpdated,
+}) => {
+  const [name, setName] = useState('');
+  const [imageUrl, setImageUrl] = useState('');
+  const [category, setCategory] = useState<Category>('General');
+  const [description, setDescription] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  // Prellenar campos al cambiar el plato a editar
+  useEffect(() => {
+    if (food) {
+      setName(food.name || '');
+      setImageUrl(food.image_url || '');
+      setCategory((food.category as Category) || 'General');
+      setDescription(food.description || '');
+      setErrorMsg(null);
+    }
+  }, [food]);
+
+  if (!isOpen || !food) return null;
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!name.trim()) {
+      setErrorMsg('Por favor introduce el nombre del plato.');
+      return;
+    }
+
+    const finalImage =
+      imageUrl.trim() ||
+      'https://images.unsplash.com/photo-1498837167922-ddd27525d352?auto=format&fit=crop&w=800&q=80';
+
+    try {
+      setIsSubmitting(true);
+      setErrorMsg(null);
+
+      const { data, error } = await supabase
+        .from('foods')
+        .update({
+          name: name.trim(),
+          image_url: finalImage,
+          category,
+          description: description.trim(),
+        })
+        .eq('id', food.id)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      if (data) {
+        onFoodUpdated(data as Food);
+        onClose();
+      }
+    } catch (err: unknown) {
+      console.error('Error al actualizar plato:', err);
+      setErrorMsg(
+        err instanceof Error ? err.message : 'Error al guardar los cambios en Supabase.'
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
+      <div className="relative w-full max-w-lg bg-white rounded-3xl shadow-2xl border border-slate-100 overflow-hidden p-6 max-h-[90vh] overflow-y-auto">
+        {/* Botón cerrar */}
+        <button
+          onClick={onClose}
+          disabled={isSubmitting}
+          className="absolute top-4 right-4 p-2 rounded-full text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors disabled:opacity-40"
+          title="Cerrar"
+        >
+          <X className="w-5 h-5" />
+        </button>
+
+        {/* Encabezado */}
+        <div className="mb-5">
+          <div className="flex items-center space-x-2 text-orange-600 mb-1">
+            <Sparkles className="w-4 h-4" />
+            <span className="text-xs font-bold uppercase tracking-wider">Modificar Receta</span>
+          </div>
+          <h2 className="text-xl sm:text-2xl font-extrabold text-slate-800">
+            Editar Plato
+          </h2>
+          <p className="text-xs sm:text-sm text-slate-500">
+            Modifica los detalles, categoría o foto de este plato.
+          </p>
+        </div>
+
+        {errorMsg && (
+          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl text-red-700 text-xs flex items-center space-x-2">
+            <AlertCircle className="w-4 h-4 flex-shrink-0" />
+            <span>{errorMsg}</span>
+          </div>
+        )}
+
+        {/* Formulario */}
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Nombre del plato */}
+          <div>
+            <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+              Nombre del Plato *
+            </label>
+            <input
+              type="text"
+              required
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Ej. Paella, Pizza..."
+              className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-orange-500/40 text-sm font-medium"
+            />
+          </div>
+
+          {/* Categoría */}
+          <div>
+            <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+              Categoría
+            </label>
+            <select
+              value={category}
+              onChange={(e) => setCategory(e.target.value as Category)}
+              className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-orange-500/40 text-sm font-medium bg-white"
+            >
+              {CATEGORIES.map((cat) => (
+                <option key={cat} value={cat}>
+                  {cat}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* URL de Imagen */}
+          <div>
+            <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+              URL de la Foto
+            </label>
+            <input
+              type="url"
+              value={imageUrl}
+              onChange={(e) => setImageUrl(e.target.value)}
+              placeholder="https://ejemplo.com/foto.jpg"
+              className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-orange-500/40 text-sm"
+            />
+
+            {/* Presets de fotos rápidas */}
+            <div className="mt-2 flex items-center space-x-1.5 overflow-x-auto pb-1 text-xs text-slate-500">
+              <span className="flex-shrink-0 text-[11px] font-semibold">Fotos rápidas:</span>
+              {PRESET_IMAGES.map((preset) => (
+                <button
+                  type="button"
+                  key={preset.label}
+                  onClick={() => setImageUrl(preset.url)}
+                  className="px-2 py-0.5 rounded-lg bg-slate-100 hover:bg-orange-100 hover:text-orange-700 text-[11px] font-medium transition-colors flex-shrink-0"
+                >
+                  {preset.label}
+                </button>
+              ))}
+            </div>
+
+            {/* Preview de la imagen */}
+            {imageUrl && (
+              <div className="mt-3 relative h-32 rounded-xl overflow-hidden border border-slate-200 bg-slate-50">
+                <img
+                  src={imageUrl}
+                  alt="Vista previa"
+                  className="w-full h-full object-cover"
+                  onError={() => setErrorMsg('La URL de imagen no parece válida.')}
+                />
+              </div>
+            )}
+          </div>
+
+          {/* Descripción opcional */}
+          <div>
+            <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+              Descripción corta (Opcional)
+            </label>
+            <textarea
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="Ingredientes, detalles de preparación..."
+              rows={2}
+              className="w-full px-4 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-orange-500/40 text-sm resize-none"
+            />
+          </div>
+
+          {/* Botones de acción */}
+          <div className="pt-2 flex items-center justify-end space-x-2">
+            <button
+              type="button"
+              onClick={onClose}
+              disabled={isSubmitting}
+              className="px-4 py-2.5 rounded-xl text-slate-600 font-bold text-sm hover:bg-slate-100 transition-colors"
+            >
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="px-6 py-2.5 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-bold text-sm shadow-lg shadow-orange-500/25 transition-all flex items-center space-x-1.5 disabled:opacity-50"
+            >
+              <Save className="w-4 h-4" />
+              <span>{isSubmitting ? 'Guardando...' : 'Guardar Cambios'}</span>
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};

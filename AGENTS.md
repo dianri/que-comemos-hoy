@@ -30,6 +30,7 @@ que-comemos-hoy/
 │   │   ├── FoodCard.tsx    # Tarjeta visual con votos y categoría
 │   │   ├── RouletteModal.tsx # Ruleta Canvas animada con sincronización precisa
 │   │   ├── AddFoodModal.tsx  # Formulario modal para añadir platos
+│   │   ├── EditFoodModal.tsx # Formulario modal para editar platos existentes
 │   │   └── AuthModal.tsx     # Modal de inicio de sesión con Enlace Mágico (Magic Link)
 │   ├── context/
 │   │   └── UserContext.tsx # Estado global de usuario, sesión Supabase Auth y votos
@@ -64,8 +65,9 @@ que-comemos-hoy/
 - El contador de votos se actualiza reactivamente gracias a Supabase Realtime y el trigger de base de datos.
 - Indicador visual del estado del voto del usuario actual (corazón relleno/activo).
 
-### `AddFoodModal.tsx` (Añadir Plato)
-- Formulario rápido con validación, selector de categoría, previsualización de imagen en vivo y botones de "fotos rápidas" (presets de Unsplash) para añadir platos con 1 clic.
+### `EditFoodModal.tsx` (Editar Plato)
+- Formulario de modificación prellenado con los datos actuales del plato (nombre, categoría, descripción y foto).
+- Solo accesible para el superusuario (`dianrie@hotmail.com`) o el propietario del plato.
 
 ---
 
@@ -81,10 +83,13 @@ que-comemos-hoy/
 - En la interfaz principal existen tres pestañas: **Todos los platos**, **Mis Platos** (solo los creados por el usuario activo) y **⭐ Favoritos**.
 - La Ruleta y la Elección Rápida respetan el filtro activo, girando únicamente entre los platos de la pestaña o categoría seleccionada.
 
-### Políticas RLS (Row Level Security)
+### Políticas RLS y Control de Acceso
 - **`public.foods`**:
-  - Lectura pública: `SELECT true`.
-  - Inserción y Eliminación protegidas: Requiere usuario autenticado (`auth.uid() IS NOT NULL`).
+  - **Lectura pública:** `SELECT true` (abierta para todos los visitantes).
+  - **Inserción protegida:** Requiere usuario autenticado (`auth.uid() IS NOT NULL`).
+  - **Modificación (`UPDATE`) y Eliminación (`DELETE`):**
+    - **Superusuario:** `dianrie@hotmail.com` tiene permisos absolutos para editar y borrar cualquier plato.
+    - **Propietarios:** Usuarios autenticados solo pueden editar o borrar los platos que ellos mismos hayan creado (`user_id = auth.uid()` o `user_email = email`).
 - **`public.votes`**:
   - Lectura, inserción y eliminación libres (`true`) para permitir votaciones fluidas por nombre local.
 
