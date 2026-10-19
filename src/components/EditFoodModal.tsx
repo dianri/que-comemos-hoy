@@ -13,8 +13,11 @@ interface EditFoodModalProps {
 
 const CATEGORIES: Category[] = [
   'Tradicional',
-  'Italiana',
+  'Carnes',
+  'Pescados',
+  'Sopas',
   'Arroces',
+  'Italiana',
   'Americana',
   'Mexicana',
   'Japonesa',

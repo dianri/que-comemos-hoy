@@ -21,8 +21,11 @@ export interface Vote {
 export type Category =
   | 'Todas'
   | 'Tradicional'
-  | 'Italiana'
+  | 'Carnes'
+  | 'Pescados'
+  | 'Sopas'
   | 'Arroces'
+  | 'Italiana'
   | 'Americana'
   | 'Mexicana'
   | 'Japonesa'

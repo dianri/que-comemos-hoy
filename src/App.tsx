@@ -25,8 +25,11 @@ import { UserProvider, useUser } from './context/UserContext';
 const CATEGORIES: Category[] = [
   'Todas',
   'Tradicional',
-  'Italiana',
+  'Carnes',
+  'Pescados',
+  'Sopas',
   'Arroces',
+  'Italiana',
   'Americana',
   'Mexicana',
   'Japonesa',
