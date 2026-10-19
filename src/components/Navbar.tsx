@@ -8,6 +8,7 @@ import {
   LogOut,
   ShieldCheck,
   Crown,
+  Users,
 } from 'lucide-react';
 import { useUser } from '../context/UserContext';
 
@@ -22,8 +23,10 @@ export const Navbar: React.FC<NavbarProps> = ({ totalFoods }) => {
     user,
     isAuthenticated,
     isSuperUser,
+    isRootSuperAdmin,
     signOut,
     openAuthModal,
+    openAdminModal,
   } = useUser();
 
   const [isEditing, setIsEditing] = useState(false);
@@ -97,23 +100,48 @@ export const Navbar: React.FC<NavbarProps> = ({ totalFoods }) => {
           {/* Estado de Supabase Auth */}
           {isAuthenticated ? (
             <div className="flex items-center space-x-1.5 pl-1 border-l border-slate-200">
+              {/* Botón de Panel de Administración para Superusuarios */}
+              {isSuperUser && (
+                <button
+                  onClick={openAdminModal}
+                  className="flex items-center space-x-1.5 px-2.5 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold transition-all shadow-md shadow-purple-600/20 active:scale-95"
+                  title="Abrir Panel de Administración de Usuarios"
+                >
+                  <Users className="w-3.5 h-3.5" />
+                  <span className="hidden sm:inline">Usuarios</span>
+                </button>
+              )}
+
+              {/* Indicador de Usuario y Rol */}
               <div
                 className={`hidden sm:flex items-center space-x-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border ${
-                  isSuperUser
+                  isRootSuperAdmin
+                    ? 'bg-purple-100 border-purple-300 text-purple-900 shadow-xs'
+                    : isSuperUser
                     ? 'bg-purple-50 border-purple-200 text-purple-700'
                     : 'bg-emerald-50 border-emerald-200 text-emerald-700'
                 }`}
-                title={`Sesión iniciada como ${user?.email} ${isSuperUser ? '(Superusuario)' : ''}`}
+                title={`Sesión iniciada como ${user?.email} ${
+                  isRootSuperAdmin ? '(Superusuario Raíz)' : isSuperUser ? '(Superusuario)' : ''
+                }`}
               >
-                {isSuperUser ? (
-                  <Crown className="w-3.5 h-3.5 text-purple-600" />
+                {isRootSuperAdmin ? (
+                  <Crown className="w-3.5 h-3.5 text-amber-500 fill-amber-500" />
+                ) : isSuperUser ? (
+                  <ShieldCheck className="w-3.5 h-3.5 text-purple-600" />
                 ) : (
                   <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
                 )}
-                <span className="max-w-[120px] truncate">{user?.email}</span>
+                <span className="max-w-[110px] truncate">{user?.email}</span>
                 {isSuperUser && (
-                  <span className="text-[10px] bg-purple-200 text-purple-800 px-1.5 py-0.2 rounded-full font-bold">
-                    Admin
+                  <span
+                    className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
+                      isRootSuperAdmin
+                        ? 'bg-amber-100 text-amber-900 border border-amber-300'
+                        : 'bg-purple-200 text-purple-800'
+                    }`}
+                  >
+                    {isRootSuperAdmin ? 'Raíz' : 'Admin'}
                   </span>
                 )}
               </div>

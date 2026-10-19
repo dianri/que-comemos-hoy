@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useCallback } from 'react';
 import {
   Plus,
   Dices,
@@ -20,6 +20,7 @@ import { RouletteModal } from './components/RouletteModal';
 import { AddFoodModal } from './components/AddFoodModal';
 import { EditFoodModal } from './components/EditFoodModal';
 import { AuthModal } from './components/AuthModal';
+import { AdminUsersModal } from './components/AdminUsersModal';
 import { UserProvider, useUser } from './context/UserContext';
 
 const CATEGORIES: Category[] = [
@@ -44,15 +45,19 @@ function MainApp() {
   const [sortBy, setSortBy] = useState<'votes' | 'recent' | 'name'>('votes');
   const [mainTab, setMainTab] = useState<MainTabFilter>('all');
 
-  // Autenticación y Favoritos
+  // Autenticación, Roles y Favoritos
   const {
     user,
     isAuthenticated,
+    isSuperUser,
+    superadminEmails,
     favorites,
     isAuthModalOpen,
     closeAuthModal,
     openAuthModal,
     authModalReason,
+    isAdminModalOpen,
+    closeAdminModal,
   } = useUser();
 
   // Modales
@@ -154,34 +159,81 @@ function MainApp() {
     setEditingFood(null);
   };
 
+  // Regla de Visibilidad y Moderación:
+  // - Feed Principal: Solo recetas oficiales o creadas por superusuarios.
+  // - Superusuarios: Pueden ver todo para moderar.
+  // - Usuario autenticado: Ve las oficiales/superadmin + sus propias recetas creadas.
+  const isFoodVisible = useCallback(
+    (f: Food) => {
+      // 1. Receta oficial o de superusuario
+      const isSuperadminRecipe =
+        !f.user_email ||
+        f.created_by === 'Anónimo' ||
+        superadminEmails.has(f.user_email.toLowerCase()) ||
+        f.user_email.toLowerCase() === 'dianrie@hotmail.com';
+
+      if (isSuperadminRecipe) return true;
+
+      // 2. Si el usuario actual es superadmin, ve todas para moderar
+      if (isSuperUser) return true;
+
+      // 3. Si el usuario está autenticado, ve sus propias recetas creadas
+      if (user) {
+        if (f.user_id && f.user_id === user.id) return true;
+        if (f.user_email && f.user_email.toLowerCase() === user.email?.toLowerCase()) return true;
+        const emailPrefix = user.email ? user.email.split('@')[0].toLowerCase() : '';
+        if (
+          f.created_by &&
+          (f.created_by.toLowerCase() === user.email?.toLowerCase() ||
+            f.created_by.toLowerCase() === emailPrefix)
+        ) {
+          return true;
+        }
+      }
+
+      // Ocultar recetas no oficiales de terceros a visitantes o usuarios no propietarios
+      return false;
+    },
+    [user, isSuperUser, superadminEmails]
+  );
+
+  // Platos visibles según moderación y permisos
+  const visibleFoods = useMemo(() => {
+    return foods.filter(isFoodVisible);
+  }, [foods, isFoodVisible]);
+
   // Conteo de platos por pestaña
   const myFoodsCount = useMemo(() => {
     if (!user) return 0;
-    const userEmailPrefix = user.email ? user.email.split('@')[0] : '';
-    return foods.filter(
+    const userEmailPrefix = user.email ? user.email.split('@')[0].toLowerCase() : '';
+    return visibleFoods.filter(
       (f) =>
         (f.user_id && f.user_id === user.id) ||
-        (f.user_email && f.user_email === user.email) ||
-        (user.email && (f.created_by === user.email || f.created_by === userEmailPrefix))
+        (f.user_email && f.user_email.toLowerCase() === user.email?.toLowerCase()) ||
+        (user.email &&
+          (f.created_by?.toLowerCase() === user.email.toLowerCase() ||
+            f.created_by?.toLowerCase() === userEmailPrefix))
     ).length;
-  }, [foods, user]);
+  }, [visibleFoods, user]);
 
   const favoritesCount = useMemo(() => {
-    return foods.filter((f) => favorites.has(f.id)).length;
-  }, [foods, favorites]);
+    return visibleFoods.filter((f) => favorites.has(f.id)).length;
+  }, [visibleFoods, favorites]);
 
   // Filtrado y ordenación
   const filteredFoods = useMemo(() => {
-    const userEmailPrefix = user?.email ? user.email.split('@')[0] : '';
+    const userEmailPrefix = user?.email ? user.email.split('@')[0].toLowerCase() : '';
 
-    return foods
+    return visibleFoods
       .filter((f) => {
         // 1. Filtro por pestaña principal
         if (mainTab === 'my-foods') {
           const isMine =
             (f.user_id && f.user_id === user?.id) ||
-            (f.user_email && f.user_email === user?.email) ||
-            (user?.email && (f.created_by === user.email || f.created_by === userEmailPrefix));
+            (f.user_email && f.user_email.toLowerCase() === user?.email?.toLowerCase()) ||
+            (user?.email &&
+              (f.created_by?.toLowerCase() === user.email.toLowerCase() ||
+                f.created_by?.toLowerCase() === userEmailPrefix));
           if (!isMine) return false;
         } else if (mainTab === 'favorites') {
           if (!favorites.has(f.id)) return false;
@@ -205,12 +257,12 @@ function MainApp() {
         }
         return a.name.localeCompare(b.name);
       });
-  }, [foods, mainTab, selectedCategory, searchQuery, sortBy, user, favorites]);
+  }, [visibleFoods, mainTab, selectedCategory, searchQuery, sortBy, user, favorites]);
 
-  // Pool de platos para la ruleta (respeta filtros si hay elementos, o usa el total)
+  // Pool de platos para la ruleta (respeta filtros si hay elementos, o usa el total visible)
   const roulettePool = useMemo(() => {
-    return filteredFoods.length > 0 ? filteredFoods : foods;
-  }, [filteredFoods, foods]);
+    return filteredFoods.length > 0 ? filteredFoods : visibleFoods;
+  }, [filteredFoods, visibleFoods]);
 
   // Elección rápida aleatoria directa
   const handleQuickPick = () => {
@@ -235,8 +287,8 @@ function MainApp() {
 
   // Top 3 platos más votados
   const topVoted = useMemo(() => {
-    return [...foods].sort((a, b) => b.votes_count - a.votes_count).slice(0, 3);
-  }, [foods]);
+    return [...visibleFoods].sort((a, b) => b.votes_count - a.votes_count).slice(0, 3);
+  }, [visibleFoods]);
 
   // Subtítulo contextual para la ruleta
   const rouletteSubtitle = useMemo(() => {
@@ -255,7 +307,7 @@ function MainApp() {
   return (
     <div className="min-h-screen flex flex-col bg-slate-50 text-slate-800">
       {/* Barra de Navegación */}
-      <Navbar totalFoods={foods.length} />
+      <Navbar totalFoods={visibleFoods.length} />
 
       <main className="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-8">
         {/* Banner Hero Central */}
@@ -607,6 +659,12 @@ function MainApp() {
         isOpen={isAuthModalOpen}
         onClose={closeAuthModal}
         description={authModalReason}
+      />
+
+      <AdminUsersModal
+        isOpen={isAdminModalOpen}
+        onClose={closeAdminModal}
+        onUserDeleted={fetchFoods}
       />
     </div>
   );

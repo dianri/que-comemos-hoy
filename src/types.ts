@@ -33,3 +33,13 @@ export type Category =
   | 'General';
 
 export type MainTabFilter = 'all' | 'my-foods' | 'favorites';
+
+export type UserRole = 'root_admin' | 'superadmin' | 'user';
+
+export interface AdminUserItem {
+  id: string;
+  email: string;
+  role: UserRole;
+  created_at: string;
+  last_sign_in_at: string | null;
+}

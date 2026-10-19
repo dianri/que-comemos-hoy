@@ -67,7 +67,13 @@ que-comemos-hoy/
 
 ### `EditFoodModal.tsx` (Editar Plato)
 - Formulario de modificación prellenado con los datos actuales del plato (nombre, categoría, descripción y foto).
-- Solo accesible para el superusuario (`dianrie@hotmail.com`) o el propietario del plato.
+- Accesible para los superusuarios o el propietario del plato.
+
+### `AdminUsersModal.tsx` (Panel de Administración de Usuarios)
+- Panel reservado exclusivamente para superusuarios con conteo y métricas en tiempo real.
+- **Superusuario Raíz (`dianrie@hotmail.com`):** Es inmutable y cuenta con privilegios para ascender a otros usuarios a superusuarios o degradarlos a usuarios normales (`set_user_role`).
+- **Superusuarios Delegados:** Tienen acceso al panel y pueden eliminar usuarios del sistema (`delete_user_admin`), pero no pueden alterar roles ni eliminar al superusuario raíz.
+- Lista completa de usuarios con búsqueda dinámica, estados de sesión y acciones protegidas con modal de confirmación.
 
 ---
 
@@ -77,19 +83,23 @@ que-comemos-hoy/
 - **`public.foods`**: `id`, `name`, `image_url`, `category`, `description`, `votes_count`, `created_by`, `user_id` (UUID), `user_email` (TEXT), `created_at`.
 - **`public.votes`**: `id`, `food_id` (FK cascade), `user_name`, `created_at`.
   - Restricción única: `CONSTRAINT unique_user_food_vote UNIQUE (food_id, user_name)`.
+- **`public.user_roles`**: `id`, `user_id` (UUID), `user_email` (TEXT UNIQUE), `role` ('root_admin' | 'superadmin' | 'user'), `created_at`, `updated_at`.
 
-### Sistema de Favoritos y Filtros Personales
-- Los favoritos del usuario se gestionan en `UserContext.tsx` y persisten en `localStorage` asociados al email del usuario autenticado (`que_comemos_favs_<email>`).
+### Sistema de Visibilidad, Moderación y Favoritos
+- **Visibilidad del Feed:** El feed principal muestra exclusivamente recetas oficiales del sistema y recetas creadas por superusuarios. Las recetas añadidas por usuarios normales son visibles para su propio creador y para los superusuarios (para moderación), manteniéndose ocultas ante terceros y visitantes no registrados para prevenir spam.
+- **Favoritos:** Los favoritos persisten en `localStorage` asociados al email (`que_comemos_favs_<email>`).
 - En la interfaz principal existen tres pestañas: **Todos los platos**, **Mis Platos** (solo los creados por el usuario activo) y **⭐ Favoritos**.
-- La Ruleta y la Elección Rápida respetan el filtro activo, girando únicamente entre los platos de la pestaña o categoría seleccionada.
+- La Ruleta y la Elección Rápida respetan el filtro activo y las reglas de visibilidad, girando únicamente entre los platos visibles.
 
 ### Políticas RLS y Control de Acceso
 - **`public.foods`**:
-  - **Lectura pública:** `SELECT true` (abierta para todos los visitantes).
-  - **Inserción protegida:** Requiere usuario autenticado (`auth.uid() IS NOT NULL`).
+  - **Lectura protegida por moderación:** Permite leer si `user_email IS NULL`, si `is_superadmin(user_email)`, si el usuario es el propietario (`user_id = auth.uid()` o `user_email = email`), o si el usuario consultante es superusuario (`is_superadmin()`).
+  - **Inserción:** Requiere usuario autenticado (`auth.uid() IS NOT NULL`).
   - **Modificación (`UPDATE`) y Eliminación (`DELETE`):**
-    - **Superusuario:** `dianrie@hotmail.com` tiene permisos absolutos para editar y borrar cualquier plato.
-    - **Propietarios:** Usuarios autenticados solo pueden editar o borrar los platos que ellos mismos hayan creado (`user_id = auth.uid()` o `user_email = email`).
+    - **Superusuarios:** Permisos para editar y borrar cualquier plato.
+    - **Propietarios:** Usuarios autenticados solo pueden editar o borrar los platos que ellos mismos hayan creado.
+- **`public.user_roles`**:
+  - Lectura pública (`SELECT true`). Inserciones y modificaciones de rol exclusivamente a través de la función RPC con verificación de seguridad `set_user_role` reservada para el superusuario raíz.
 - **`public.votes`**:
   - Lectura, inserción y eliminación libres (`true`) para permitir votaciones fluidas por nombre local.
 

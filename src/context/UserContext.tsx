@@ -1,14 +1,18 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { User } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
-import { Food } from '../types';
+import { Food, UserRole } from '../types';
 
 interface UserContextType {
   userName: string;
   setUserName: (name: string) => void;
   user: User | null;
   isAuthenticated: boolean;
+  userRole: UserRole | null;
   isSuperUser: boolean;
+  isRootSuperAdmin: boolean;
+  superadminEmails: Set<string>;
+  refreshRoles: () => Promise<void>;
   canManageFood: (food: Food) => boolean;
   isAuthLoading: boolean;
   signOut: () => Promise<void>;
@@ -22,17 +26,25 @@ interface UserContextType {
   authModalReason: string | undefined;
   openAuthModal: (reason?: string) => void;
   closeAuthModal: () => void;
+  isAdminModalOpen: boolean;
+  openAdminModal: () => void;
+  closeAdminModal: () => void;
 }
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
 
 const DEFAULT_AVATARS = ['👨‍🍳', '👩‍🍳', '🍕', '🌮', '🍣', '🥑', '🍔', '🥗'];
+const ROOT_ADMIN_EMAIL = 'dianrie@hotmail.com';
 
 export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isAuthLoading, setIsAuthLoading] = useState<boolean>(true);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState<boolean>(false);
   const [authModalReason, setAuthModalReason] = useState<string | undefined>(undefined);
+  const [isAdminModalOpen, setIsAdminModalOpen] = useState<boolean>(false);
+
+  const [userRole, setUserRole] = useState<UserRole | null>(null);
+  const [superadminEmails, setSuperadminEmails] = useState<Set<string>>(new Set([ROOT_ADMIN_EMAIL]));
 
   const [userName, setUserNameState] = useState<string>(() => {
     const saved = localStorage.getItem('que_comemos_user');
@@ -71,6 +83,39 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, [getFavStorageKey]);
 
+  // Consultar roles de superusuarios en la base de datos
+  const refreshRoles = useCallback(async () => {
+    try {
+      const { data, error } = await supabase.from('user_roles').select('user_email, role');
+      if (error) {
+        console.warn('Advertencia al consultar roles:', error.message);
+      }
+      const admins = new Set<string>([ROOT_ADMIN_EMAIL]);
+      if (data) {
+        data.forEach((r) => {
+          if (r.role === 'root_admin' || r.role === 'superadmin') {
+            admins.add(r.user_email.toLowerCase());
+          }
+        });
+      }
+      setSuperadminEmails(admins);
+
+      if (user?.email) {
+        const emailLower = user.email.toLowerCase();
+        if (emailLower === ROOT_ADMIN_EMAIL) {
+          setUserRole('root_admin');
+        } else {
+          const match = data?.find((r) => r.user_email.toLowerCase() === emailLower);
+          setUserRole((match?.role as UserRole) || 'user');
+        }
+      } else {
+        setUserRole(null);
+      }
+    } catch (err) {
+      console.error('Error al sincronizar roles:', err);
+    }
+  }, [user]);
+
   // Alternar plato favorito
   const toggleFavorite = (foodId: string) => {
     setFavorites((prev) => {
@@ -80,7 +125,6 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
       } else {
         next.add(foodId);
       }
-      // Guardar en localStorage
       try {
         const key = getFavStorageKey(user);
         localStorage.setItem(key, JSON.stringify(Array.from(next)));
@@ -138,6 +182,11 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
   }, [loadFavorites]);
 
+  // Actualizar roles cada vez que cambia el usuario
+  useEffect(() => {
+    refreshRoles();
+  }, [user, refreshRoles]);
+
   const openAuthModal = (reason?: string) => {
     setAuthModalReason(reason);
     setIsAuthModalOpen(true);
@@ -148,10 +197,19 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setAuthModalReason(undefined);
   };
 
+  const openAdminModal = () => {
+    setIsAdminModalOpen(true);
+  };
+
+  const closeAdminModal = () => {
+    setIsAdminModalOpen(false);
+  };
+
   const signOut = async () => {
     try {
       await supabase.auth.signOut();
       setUser(null);
+      setUserRole(null);
       loadFavorites(null);
     } catch (err) {
       console.error('Error al cerrar sesión:', err);
@@ -233,28 +291,31 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const isSuperUser = user?.email === 'dianrie@hotmail.com';
+  // Jerarquía de Superusuarios
+  const isRootSuperAdmin = user?.email?.toLowerCase() === ROOT_ADMIN_EMAIL;
+  const isSuperUser = isRootSuperAdmin || userRole === 'superadmin' || userRole === 'root_admin';
 
   const canManageFood = useCallback(
     (food: Food) => {
       if (!user) return false;
-      // 1. Superusuario global con permisos absolutos
-      if (user.email === 'dianrie@hotmail.com') return true;
+      // 1. Superusuarios (raíz y delegados) tienen permisos de gestión total
+      if (isSuperUser) return true;
       // 2. Coincidencia por user_id
       if (food.user_id && food.user_id === user.id) return true;
       // 3. Coincidencia por user_email
-      if (food.user_email && food.user_email === user.email) return true;
+      if (food.user_email && food.user_email.toLowerCase() === user.email?.toLowerCase()) return true;
       // 4. Coincidencia por created_by (email completo o prefijo de usuario)
-      const emailPrefix = user.email ? user.email.split('@')[0] : '';
+      const emailPrefix = user.email ? user.email.split('@')[0].toLowerCase() : '';
       if (
         food.created_by &&
-        (food.created_by === user.email || food.created_by === emailPrefix)
+        (food.created_by.toLowerCase() === user.email?.toLowerCase() ||
+          food.created_by.toLowerCase() === emailPrefix)
       ) {
         return true;
       }
       return false;
     },
-    [user]
+    [user, isSuperUser]
   );
 
   return (
@@ -264,7 +325,11 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setUserName,
         user,
         isAuthenticated: !!user,
+        userRole,
         isSuperUser,
+        isRootSuperAdmin,
+        superadminEmails,
+        refreshRoles,
         canManageFood,
         isAuthLoading,
         signOut,
@@ -278,6 +343,9 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
         authModalReason,
         openAuthModal,
         closeAuthModal,
+        isAdminModalOpen,
+        openAdminModal,
+        closeAdminModal,
       }}
     >
       {children}

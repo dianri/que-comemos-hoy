@@ -11,12 +11,15 @@ interface FoodCardProps {
 }
 
 const CATEGORY_COLORS: Record<string, string> = {
-  Arroces: 'bg-amber-100 text-amber-800 border-amber-200',
   Tradicional: 'bg-orange-100 text-orange-800 border-orange-200',
+  Carnes: 'bg-rose-100 text-rose-800 border-rose-200',
+  Pescados: 'bg-cyan-100 text-cyan-800 border-cyan-200',
+  Sopas: 'bg-indigo-100 text-indigo-800 border-indigo-200',
+  Arroces: 'bg-amber-100 text-amber-800 border-amber-200',
   Italiana: 'bg-emerald-100 text-emerald-800 border-emerald-200',
   Americana: 'bg-red-100 text-red-800 border-red-200',
   Mexicana: 'bg-yellow-100 text-yellow-800 border-yellow-200',
-  Japonesa: 'bg-rose-100 text-rose-800 border-rose-200',
+  Japonesa: 'bg-purple-100 text-purple-800 border-purple-200',
   Saludable: 'bg-teal-100 text-teal-800 border-teal-200',
   General: 'bg-slate-100 text-slate-800 border-slate-200',
 };
