@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Heart, Sparkles, Trash2, Star, Pencil } from 'lucide-react';
+import { Heart, Sparkles, Trash2, Star, Pencil, ChefHat } from 'lucide-react';
 import { Food } from '../types';
 import { useUser } from '../context/UserContext';
 
@@ -7,6 +7,7 @@ interface FoodCardProps {
   food: Food;
   onDelete?: (id: string) => void;
   onEdit?: (food: Food) => void;
+  onSelect?: (food: Food) => void;
   isHighlighted?: boolean;
 }
 
@@ -30,9 +31,12 @@ export const FoodCard: React.FC<FoodCardProps> = ({
   food,
   onDelete,
   onEdit,
+  onSelect,
   isHighlighted = false,
 }) => {
   const {
+    user,
+    userName,
     userVotes,
     toggleVote,
     isFavorite,
@@ -49,6 +53,36 @@ export const FoodCard: React.FC<FoodCardProps> = ({
   const canManage = canManageFood(food);
   const categoryColor = CATEGORY_COLORS[food.category] || CATEGORY_COLORS.General;
 
+  // Privacidad estricta: nunca mostrar emails en las tarjetas
+  const getCreatorDisplayName = (): string => {
+    const isMine =
+      (user && food.user_id && food.user_id === user.id) ||
+      (user && food.user_email && food.user_email.toLowerCase() === user.email?.toLowerCase()) ||
+      (user?.email &&
+        food.created_by &&
+        (food.created_by.toLowerCase() === user.email.toLowerCase() ||
+          food.created_by.toLowerCase() === user.email.split('@')[0].toLowerCase()));
+
+    if (isMine) {
+      return userName;
+    }
+
+    if (!food.created_by || food.created_by.toLowerCase() === 'anónimo') {
+      return 'Receta Oficial';
+    }
+
+    let clean = food.created_by;
+    if (clean.includes('@')) {
+      clean = clean.split('@')[0];
+    }
+
+    if (clean.toLowerCase() === 'dianrie') {
+      return 'Chef Dianrie';
+    }
+
+    return clean.charAt(0).toUpperCase() + clean.slice(1);
+  };
+
   const handleVote = async (e: React.MouseEvent) => {
     e.stopPropagation();
     if (isLiking) return;
@@ -59,10 +93,11 @@ export const FoodCard: React.FC<FoodCardProps> = ({
 
   return (
     <div
-      className={`group relative flex flex-col bg-white rounded-3xl overflow-hidden border transition-all duration-300 hover:shadow-xl hover:-translate-y-1.5 ${
+      onClick={() => onSelect?.(food)}
+      className={`group relative flex flex-col bg-white rounded-3xl overflow-hidden border transition-all duration-300 hover:shadow-xl hover:-translate-y-1.5 cursor-pointer ${
         isHighlighted
           ? 'border-orange-500 shadow-2xl shadow-orange-500/20 ring-4 ring-orange-400/40 scale-[1.02]'
-          : 'border-slate-100 shadow-md'
+          : 'border-slate-100 shadow-md hover:border-orange-200'
       }`}
     >
       {/* Contenedor de la Imagen */}
@@ -161,9 +196,9 @@ export const FoodCard: React.FC<FoodCardProps> = ({
 
         {/* Footer de la Tarjeta */}
         <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-400">
-          <span className="flex items-center space-x-1">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
-            <span>{food.created_by ? `Por ${food.created_by}` : 'Comunidad'}</span>
+          <span className="flex items-center space-x-1.5 text-slate-500 font-medium truncate max-w-[170px] sm:max-w-[210px]">
+            <ChefHat className="w-3.5 h-3.5 text-orange-500 flex-shrink-0" />
+            <span className="truncate">{getCreatorDisplayName()}</span>
           </span>
 
           {/* Acciones de gestión protegidas: solo propietario o superusuario */}

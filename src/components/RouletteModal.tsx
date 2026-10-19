@@ -439,7 +439,12 @@ export const RouletteModal: React.FC<RouletteModalProps> = ({
                 <span>Girar de nuevo</span>
               </button>
               <button
-                onClick={onClose}
+                onClick={() => {
+                  if (winner && onSelectWinner) {
+                    onSelectWinner(winner);
+                  }
+                  onClose();
+                }}
                 className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 text-white font-bold text-xs hover:opacity-95 transition-all shadow-md shadow-orange-500/25"
               >
                 ¡A cocinar! 😋

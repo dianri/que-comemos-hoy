@@ -65,6 +65,11 @@ que-comemos-hoy/
 - El contador de votos se actualiza reactivamente gracias a Supabase Realtime y el trigger de base de datos.
 - Indicador visual del estado del voto del usuario actual (corazón relleno/activo).
 
+### `RecipeDetailModal.tsx` (Detalle de Receta)
+- Modal centralizado de alta resolución abierto al hacer clic en cualquier tarjeta, al pulsar "Elección Rápida" o tras pulsar "¡A cocinar!" en la Ruleta.
+- Muestra fotografía HD, categoría, nombre del plato, descripción completa de la receta, popularidad/votos y botón para favoritos/likes.
+- **Privacidad estricta:** Oculta cualquier dirección de correo electrónico, mostrando nombres de usuario o perfiles locales dinámicos.
+
 ### `EditFoodModal.tsx` (Editar Plato)
 - Formulario de modificación prellenado con los datos actuales del plato (nombre, categoría, descripción y foto).
 - Accesible para los superusuarios o el propietario del plato.

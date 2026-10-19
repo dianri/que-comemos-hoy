@@ -21,6 +21,7 @@ import { AddFoodModal } from './components/AddFoodModal';
 import { EditFoodModal } from './components/EditFoodModal';
 import { AuthModal } from './components/AuthModal';
 import { AdminUsersModal } from './components/AdminUsersModal';
+import { RecipeDetailModal } from './components/RecipeDetailModal';
 import { UserProvider, useUser } from './context/UserContext';
 
 const CATEGORIES: Category[] = [
@@ -64,6 +65,7 @@ function MainApp() {
   const [isRouletteOpen, setIsRouletteOpen] = useState(false);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [editingFood, setEditingFood] = useState<Food | null>(null);
+  const [selectedRecipe, setSelectedRecipe] = useState<Food | null>(null);
   const [highlightedFoodId, setHighlightedFoodId] = useState<string | null>(null);
 
   // Apertura protegida del modal de añadir plato
@@ -264,25 +266,18 @@ function MainApp() {
     return filteredFoods.length > 0 ? filteredFoods : visibleFoods;
   }, [filteredFoods, visibleFoods]);
 
-  // Elección rápida aleatoria directa
+  // Elección rápida aleatoria directa (abre el Modal de Detalle de Receta)
   const handleQuickPick = () => {
     if (roulettePool.length === 0) return;
     const randomPick = roulettePool[Math.floor(Math.random() * roulettePool.length)];
 
     setHighlightedFoodId(randomPick.id);
+    setSelectedRecipe(randomPick);
     confetti({
       particleCount: 100,
       spread: 70,
       origin: { y: 0.5 },
     });
-
-    // Scroll suave hacia la tarjeta ganadora
-    setTimeout(() => {
-      window.scrollTo({
-        top: 480,
-        behavior: 'smooth',
-      });
-    }, 200);
   };
 
   // Top 3 platos más votados
@@ -377,7 +372,10 @@ function MainApp() {
               {topVoted.map((dish, idx) => (
                 <div
                   key={dish.id}
-                  onClick={() => setHighlightedFoodId(dish.id)}
+                  onClick={() => {
+                    setHighlightedFoodId(dish.id);
+                    setSelectedRecipe(dish);
+                  }}
                   className="flex items-center space-x-3 p-2.5 rounded-xl bg-slate-50 hover:bg-orange-50/60 border border-slate-100 transition-all cursor-pointer group"
                 >
                   <div className="relative w-12 h-12 rounded-lg overflow-hidden flex-shrink-0">
@@ -423,7 +421,7 @@ function MainApp() {
                   : 'bg-slate-300/80 text-slate-700'
               }`}
             >
-              {foods.length}
+              {visibleFoods.length}
             </span>
           </button>
 
@@ -603,6 +601,7 @@ function MainApp() {
                   food={food}
                   onDelete={handleDeleteFood}
                   onEdit={setEditingFood}
+                  onSelect={(f) => setSelectedRecipe(f)}
                   isHighlighted={highlightedFoodId === food.id}
                 />
               ))}
@@ -639,6 +638,18 @@ function MainApp() {
         subtitle={rouletteSubtitle}
         onSelectWinner={(winner) => {
           setHighlightedFoodId(winner.id);
+          setIsRouletteOpen(false);
+          setSelectedRecipe(winner);
+        }}
+      />
+
+      <RecipeDetailModal
+        isOpen={!!selectedRecipe}
+        food={selectedRecipe}
+        onClose={() => setSelectedRecipe(null)}
+        onEdit={(food) => {
+          setSelectedRecipe(null);
+          setEditingFood(food);
         }}
       />
 
