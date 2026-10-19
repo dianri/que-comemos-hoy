@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Search, Link as LinkIcon, Check, Image as ImageIcon, Sparkles } from 'lucide-react';
+import { Search, Link as LinkIcon, Check, Image as ImageIcon, Sparkles, ExternalLink, AlertTriangle } from 'lucide-react';
 
 export interface FoodImageItem {
   id: string;
@@ -285,12 +285,22 @@ const normalizeText = (text: string): string => {
 interface ImagePickerProps {
   selectedUrl: string;
   onSelectUrl: (url: string) => void;
+  foodName?: string;
 }
 
-export const ImagePicker: React.FC<ImagePickerProps> = ({ selectedUrl, onSelectUrl }) => {
+export const ImagePicker: React.FC<ImagePickerProps> = ({ selectedUrl, onSelectUrl, foodName = '' }) => {
   const [activeTab, setActiveTab] = useState<'catalog' | 'custom'>('catalog');
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState('Todos');
+  const [previewError, setPreviewError] = useState(false);
+
+  // Función para abrir Google Imágenes con el nombre del plato
+  const handleOpenGoogleImages = () => {
+    const term = (foodName.trim() || searchQuery.trim() || 'comida casera');
+    const query = encodeURIComponent(`${term} receta comida`);
+    const googleImagesUrl = `https://www.google.com/search?tbm=isch&q=${query}`;
+    window.open(googleImagesUrl, '_blank', 'noopener,noreferrer');
+  };
 
   // Filtrado reactivo en tiempo real con normalización de acentos
   const filteredImages = useMemo(() => {
@@ -451,34 +461,80 @@ export const ImagePicker: React.FC<ImagePickerProps> = ({ selectedUrl, onSelectU
           )}
         </div>
       ) : (
-        <div className="space-y-2 animate-fade-in">
+        <div className="space-y-3 animate-fade-in">
+          {/* Botón llamativo para buscar en Google Imágenes */}
+          <div className="flex items-center justify-between gap-2 p-2.5 bg-gradient-to-r from-orange-50 via-amber-50 to-orange-50/40 border border-orange-200/80 rounded-xl">
+            <div className="flex items-center space-x-2 text-xs text-orange-950 font-semibold min-w-0">
+              <span className="text-base flex-shrink-0">🔍</span>
+              <span className="truncate">
+                {foodName.trim()
+                  ? `Buscar "${foodName.trim()}" en Google`
+                  : 'Buscar imágenes en Google'}
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={handleOpenGoogleImages}
+              className="flex-shrink-0 px-3 py-1.5 rounded-lg bg-orange-500 hover:bg-orange-600 active:scale-95 text-white font-bold text-xs flex items-center space-x-1.5 shadow-sm transition-all"
+              title="Abrir Google Imágenes en una pestaña nueva"
+            >
+              <span>Buscar en Google</span>
+              <ExternalLink className="w-3.5 h-3.5" />
+            </button>
+          </div>
+
+          {/* Input para pegar la URL Directa */}
           <div className="relative">
             <LinkIcon className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
             <input
               type="url"
               value={selectedUrl}
-              onChange={(e) => onSelectUrl(e.target.value)}
+              onChange={(e) => {
+                setPreviewError(false);
+                onSelectUrl(e.target.value);
+              }}
               placeholder="https://ejemplo.com/tu-foto.jpg"
-              className="w-full pl-9 pr-3 py-2 rounded-xl border border-slate-200 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/40"
+              className="w-full pl-9 pr-3 py-2 rounded-xl border border-slate-200 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/40 bg-white"
             />
           </div>
-          <p className="text-[11px] text-slate-400">
-            Pega el enlace directo a una imagen de internet (.jpg, .png, .webp).
+
+          {/* Guía visual para el usuario */}
+          <p className="text-[11px] text-slate-500 leading-relaxed bg-slate-50 p-2 rounded-lg border border-slate-100 flex items-start space-x-1.5">
+            <span className="text-orange-500 font-bold">💡</span>
+            <span>
+              ¿No tienes el enlace? Haz clic en <strong>"Buscar en Google"</strong>, haz clic derecho sobre la imagen que te guste, selecciona <em>"Copiar dirección de la imagen"</em> y pégala aquí.
+            </span>
           </p>
         </div>
       )}
 
-      {/* Vista previa de la foto seleccionada */}
+      {/* Vista previa reactiva de la foto seleccionada con validación visual */}
       {selectedUrl && (
-        <div className="relative h-28 sm:h-32 rounded-xl overflow-hidden border border-slate-200 bg-slate-100 shadow-inner group">
-          <img
-            src={selectedUrl}
-            alt="Vista previa seleccionada"
-            className="w-full h-full object-cover"
-          />
-          <div className="absolute top-2 left-2 px-2 py-0.5 rounded-full bg-black/60 backdrop-blur-md text-white text-[10px] font-bold flex items-center space-x-1">
-            <Sparkles className="w-3 h-3 text-amber-300" />
-            <span>Foto Seleccionada</span>
+        <div className="space-y-1.5">
+          <div className="relative h-28 sm:h-32 rounded-xl overflow-hidden border border-slate-200 bg-slate-100 shadow-inner group">
+            {previewError ? (
+              <div className="w-full h-full flex flex-col items-center justify-center p-3 text-center bg-red-50/70 border border-red-200 text-red-600">
+                <AlertTriangle className="w-5 h-5 mb-1 text-red-500" />
+                <p className="text-xs font-bold">No pudimos cargar la vista previa</p>
+                <p className="text-[10px] text-red-500/90 mt-0.5 max-w-xs">
+                  Asegúrate de copiar la dirección directa de la imagen (que termine en .jpg, .png o .webp).
+                </p>
+              </div>
+            ) : (
+              <>
+                <img
+                  src={selectedUrl}
+                  alt="Vista previa seleccionada"
+                  className="w-full h-full object-cover transition-opacity duration-200"
+                  onLoad={() => setPreviewError(false)}
+                  onError={() => setPreviewError(true)}
+                />
+                <div className="absolute top-2 left-2 px-2 py-0.5 rounded-full bg-black/60 backdrop-blur-md text-white text-[10px] font-bold flex items-center space-x-1">
+                  <Sparkles className="w-3 h-3 text-amber-300" />
+                  <span>Foto Seleccionada</span>
+                </div>
+              </>
+            )}
           </div>
         </div>
       )}

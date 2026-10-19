@@ -170,7 +170,7 @@ export const AddFoodModal: React.FC<AddFoodModalProps> = ({
 
           {/* Selector de Imagen con Buscador y Pestañas */}
           <div>
-            <ImagePicker selectedUrl={imageUrl} onSelectUrl={setImageUrl} />
+            <ImagePicker selectedUrl={imageUrl} onSelectUrl={setImageUrl} foodName={name} />
           </div>
 
 
