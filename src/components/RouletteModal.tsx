@@ -38,34 +38,73 @@ export const RouletteModal: React.FC<RouletteModalProps> = ({
   const currentAngleRef = useRef(0);
   const animationFrameRef = useRef<number | null>(null);
 
-  // Sintetizador Web Audio para sonido realista de "tick"
+  const audioCtxRef = useRef<AudioContext | null>(null);
+  const lastTickTimeRef = useRef<number>(0);
+
+  // Inicializar o reanudar AudioContext único
+  const getAudioContext = useCallback(() => {
+    try {
+      if (!audioCtxRef.current) {
+        const AudioContextClass =
+          window.AudioContext ||
+          (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+        if (AudioContextClass) {
+          audioCtxRef.current = new AudioContextClass();
+        }
+      }
+      if (audioCtxRef.current && audioCtxRef.current.state === 'suspended') {
+        audioCtxRef.current.resume();
+      }
+      return audioCtxRef.current;
+    } catch {
+      return null;
+    }
+  }, []);
+
+  // Sintetizador Web Audio optimizado: sonido "clic" mecánico limpio con throttle
   const playTickSound = useCallback(() => {
     try {
-      const AudioContextClass =
-        window.AudioContext ||
-        (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
-      if (!AudioContextClass) return;
+      const now = performance.now();
+      // Throttle de 40ms para evitar saturación y clics solapados a alta velocidad
+      if (now - lastTickTimeRef.current < 40) return;
+      lastTickTimeRef.current = now;
 
-      const audioCtx = new AudioContextClass();
+      const audioCtx = getAudioContext();
+      if (!audioCtx) return;
+
+      const currentTime = audioCtx.currentTime;
       const osc = audioCtx.createOscillator();
       const gain = audioCtx.createGain();
 
+      // Ligera variación de frecuencia (780Hz - 850Hz) para simular imperfección mecánica
+      const baseFreq = 780 + Math.random() * 70;
       osc.type = 'triangle';
-      osc.frequency.setValueAtTime(650, audioCtx.currentTime);
-      osc.frequency.exponentialRampToValueAtTime(120, audioCtx.currentTime + 0.04);
+      osc.frequency.setValueAtTime(baseFreq, currentTime);
+      osc.frequency.exponentialRampToValueAtTime(baseFreq * 0.4, currentTime + 0.022);
 
-      gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.04);
+      // Envolvente de percusión corta (25ms) sin clics digitales
+      gain.gain.setValueAtTime(0.18, currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, currentTime + 0.022);
 
       osc.connect(gain);
       gain.connect(audioCtx.destination);
 
-      osc.start();
-      osc.stop(audioCtx.currentTime + 0.04);
+      // Desconexión limpia garantizada tras finalizar
+      osc.onended = () => {
+        try {
+          osc.disconnect();
+          gain.disconnect();
+        } catch {
+          // Ya desconectado
+        }
+      };
+
+      osc.start(currentTime);
+      osc.stop(currentTime + 0.025);
     } catch {
-      // AudioContext no disponible o bloqueado por el navegador
+      // AudioContext bloqueado o no disponible
     }
-  }, []);
+  }, [getAudioContext]);
 
   // Función de renderizado del Canvas con centrado perfecto del texto
   const drawWheel = useCallback(
@@ -209,9 +248,21 @@ export const RouletteModal: React.FC<RouletteModalProps> = ({
     };
   }, [isOpen, drawWheel]);
 
+  // Limpieza de AudioContext al desmontar el componente
+  useEffect(() => {
+    return () => {
+      if (audioCtxRef.current && audioCtxRef.current.state !== 'closed') {
+        audioCtxRef.current.close().catch(() => {});
+        audioCtxRef.current = null;
+      }
+    };
+  }, []);
+
   // Lógica del Giro con Sincronización Matemática 100% Precisa con la Flecha Superior
   const spin = () => {
     if (isSpinning || foods.length === 0) return;
+    // Desbloquear / activar AudioContext en el evento click del usuario
+    getAudioContext();
     setIsSpinning(true);
     setWinner(null);
 
