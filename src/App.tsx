@@ -122,11 +122,15 @@ function MainApp() {
             });
           } else if (payload.eventType === 'UPDATE') {
             const updated = payload.new as Food;
-            setFoods((prev) =>
-              prev.map((f) => (f.id === updated.id ? updated : f))
-            );
-            // Si el plato actualizado es el que está abierto en el modal de detalle, actualizarlo también
-            setSelectedRecipe((prev) => (prev && prev.id === updated.id ? updated : prev));
+            if (updated && updated.id) {
+              setFoods((prevFoods) =>
+                prevFoods.map((f) => (f.id === updated.id ? { ...f, ...updated } : f))
+              );
+              // Si el plato actualizado es el que está abierto en el modal de detalle, actualizar su estado de inmediato
+              setSelectedRecipe((prevRecipe) =>
+                prevRecipe && prevRecipe.id === updated.id ? { ...prevRecipe, ...updated } : prevRecipe
+              );
+            }
           } else if (payload.eventType === 'DELETE') {
             const deletedId = (payload.old as { id: string })?.id;
             if (deletedId) {
@@ -164,12 +168,19 @@ function MainApp() {
     setFoods((prev) => [newFood, ...prev]);
   };
 
-  // Actualizar comida tras edición (actualización local inmediata + refresco)
+  // Actualizar comida tras edición (actualización local inmediata + refresco de referencias)
   const handleFoodUpdated = (updatedFood: Food) => {
-    setFoods((prev) =>
-      prev.map((f) => (f.id === updatedFood.id ? updatedFood : f))
+    // 1. Actualización inmutable estricta en el array foods
+    setFoods((prevFoods) =>
+      prevFoods.map((f) => (f.id === updatedFood.id ? { ...f, ...updatedFood } : f))
     );
-    setSelectedRecipe((prev) => (prev && prev.id === updatedFood.id ? updatedFood : prev));
+
+    // 2. Si el modal de detalle estaba abierto con este plato, actualizarlo inmediatamente con la nueva referencia
+    setSelectedRecipe((prevRecipe) =>
+      prevRecipe && prevRecipe.id === updatedFood.id ? { ...prevRecipe, ...updatedFood } : prevRecipe
+    );
+
+    // 3. Cerrar el modal de edición
     setEditingFood(null);
   };
 

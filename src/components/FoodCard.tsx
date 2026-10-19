@@ -48,6 +48,11 @@ export const FoodCard: React.FC<FoodCardProps> = ({
   const [imgSrc, setImgSrc] = useState(food.image_url || FALLBACK_IMAGE);
   const [isLiking, setIsLiking] = useState(false);
 
+  // Sincronizar imgSrc si food.image_url cambia externamente por edición o realtime
+  React.useEffect(() => {
+    setImgSrc(food.image_url || FALLBACK_IMAGE);
+  }, [food.image_url]);
+
   const hasVoted = userVotes.has(food.id);
   const isFav = isFavorite(food.id);
   const canManage = canManageFood(food);

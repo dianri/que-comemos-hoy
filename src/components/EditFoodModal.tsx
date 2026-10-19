@@ -82,10 +82,17 @@ export const EditFoodModal: React.FC<EditFoodModalProps> = ({
 
       if (error) throw error;
 
-      if (data) {
-        onFoodUpdated(data as Food);
-        onClose();
-      }
+      // Actualización optimista garantizada: si data no estuviera presente por algún motivo, fusionar con el objeto anterior
+      const updatedFoodRecord: Food = (data as Food) || {
+        ...food,
+        name: name.trim(),
+        image_url: finalImage,
+        category,
+        description: description.trim(),
+      };
+
+      onFoodUpdated(updatedFoodRecord);
+      onClose();
     } catch (err: unknown) {
       console.error('Error al actualizar plato:', err);
       setErrorMsg(
