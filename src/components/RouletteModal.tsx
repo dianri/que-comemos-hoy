@@ -261,9 +261,6 @@ export const RouletteModal: React.FC<RouletteModalProps> = ({
         // Breve pausa para apreciar la posición final de la flecha antes del festejo
         setTimeout(() => {
           setWinner(winningFood);
-          if (onSelectWinner) {
-            onSelectWinner(winningFood);
-          }
 
           // Efecto de sonido alegre "Pop de Confeti" sincronizado con la animación
           playConfettiPop();
@@ -353,17 +350,17 @@ export const RouletteModal: React.FC<RouletteModalProps> = ({
 
         {/* Resultado del Ganador o Botón de Girar */}
         {winner ? (
-          <div className="mt-4 w-full bg-gradient-to-br from-amber-50 to-orange-50 border-2 border-orange-300 rounded-2xl p-4 text-center animate-bounce-subtle shadow-md">
+          <div className="mt-3 w-full bg-gradient-to-br from-amber-50 to-orange-50 border-2 border-orange-300 rounded-2xl p-4 text-center animate-bounce-subtle shadow-md">
             <div className="flex items-center justify-center space-x-2 text-amber-600 mb-1">
               <Trophy className="w-5 h-5 text-amber-500 animate-pulse" />
               <span className="text-xs font-bold uppercase tracking-wider">¡Plato Seleccionado!</span>
             </div>
-            <h3 className="text-xl sm:text-2xl font-black text-slate-900 mb-2">
+            <h3 className="text-lg sm:text-2xl font-black text-slate-900 mb-2">
               🎉 ¡Hoy toca: {winner.name}!
             </h3>
 
             {winner.image_url && (
-              <div className="relative h-40 w-full rounded-xl overflow-hidden shadow-md my-2 border border-orange-200">
+              <div className="relative h-36 sm:h-40 w-full rounded-xl overflow-hidden shadow-md my-2 border border-orange-200">
                 <img
                   src={winner.image_url}
                   alt={winner.name}
@@ -375,25 +372,28 @@ export const RouletteModal: React.FC<RouletteModalProps> = ({
               </div>
             )}
 
-            <div className="flex items-center justify-center space-x-2 mt-3">
+            <div className="flex flex-wrap items-center justify-center gap-2 mt-3">
               <button
+                type="button"
                 onClick={spin}
                 disabled={isSpinning}
-                className="flex items-center space-x-1.5 px-4 py-2.5 rounded-xl bg-white border border-orange-200 text-orange-700 font-bold text-xs hover:bg-orange-100 transition-colors shadow-sm"
+                className="flex-1 min-w-[130px] flex items-center justify-center space-x-1.5 px-4 py-2.5 rounded-xl bg-white border-2 border-orange-300 text-orange-700 font-bold text-xs sm:text-sm hover:bg-orange-100/80 active:scale-95 transition-all shadow-sm"
               >
-                <RotateCcw className="w-3.5 h-3.5" />
-                <span>Girar de nuevo</span>
+                <RotateCcw className="w-4 h-4 text-orange-600" />
+                <span>Volver a girar</span>
               </button>
+
               <button
+                type="button"
                 onClick={() => {
                   if (winner && onSelectWinner) {
                     onSelectWinner(winner);
                   }
                   onClose();
                 }}
-                className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 text-white font-bold text-xs hover:opacity-95 transition-all shadow-md shadow-orange-500/25"
+                className="flex-1 min-w-[130px] flex items-center justify-center space-x-1.5 px-5 py-2.5 rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 text-white font-bold text-xs sm:text-sm hover:opacity-95 active:scale-95 transition-all shadow-md shadow-orange-500/25"
               >
-                ¡A cocinar! 😋
+                <span>¡A cocinar! 😋</span>
               </button>
             </div>
           </div>

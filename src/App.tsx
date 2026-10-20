@@ -669,6 +669,10 @@ function MainApp() {
           setSelectedRecipe(null);
           setEditingFood(food);
         }}
+        onSpinAgain={() => {
+          setSelectedRecipe(null);
+          setIsRouletteOpen(true);
+        }}
       />
 
       <AddFoodModal

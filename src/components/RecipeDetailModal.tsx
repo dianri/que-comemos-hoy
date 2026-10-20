@@ -5,10 +5,10 @@ import {
   Star,
   ChefHat,
   Pencil,
-  Sparkles,
   Utensils,
   Award,
   Tag,
+  RotateCcw,
 } from 'lucide-react';
 import { Food } from '../types';
 import { useUser } from '../context/UserContext';
@@ -18,6 +18,7 @@ interface RecipeDetailModalProps {
   food: Food | null;
   onClose: () => void;
   onEdit?: (food: Food) => void;
+  onSpinAgain?: () => void;
 }
 
 const CATEGORY_COLORS: Record<string, string> = {
@@ -42,6 +43,7 @@ export const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
   food,
   onClose,
   onEdit,
+  onSpinAgain,
 }) => {
   const {
     user,
@@ -251,28 +253,39 @@ export const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
         </div>
 
         {/* Pie de acciones */}
-        <div className="p-4 sm:px-6 bg-slate-50 border-t border-slate-100 flex items-center justify-between gap-2 flex-shrink-0">
-          {canManage && onEdit ? (
-            <button
-              onClick={() => {
-                onClose();
-                onEdit(food);
-              }}
-              className="flex items-center space-x-1.5 px-4 py-2 rounded-xl border border-slate-200 text-slate-600 hover:text-orange-600 hover:bg-white text-xs font-bold transition-all shadow-xs"
-            >
-              <Pencil className="w-3.5 h-3.5" />
-              <span>Modificar Plato</span>
-            </button>
-          ) : (
-            <div className="flex items-center space-x-1.5 text-xs text-slate-400 font-medium">
-              <Sparkles className="w-3.5 h-3.5 text-amber-500" />
-              <span>¿Qué comemos hoy?</span>
-            </div>
-          )}
+        <div className="p-3.5 sm:p-4 sm:px-6 bg-slate-50 border-t border-slate-100 flex items-center justify-between gap-2 flex-shrink-0">
+          <div className="flex items-center space-x-2">
+            {canManage && onEdit && (
+              <button
+                onClick={() => {
+                  onClose();
+                  onEdit(food);
+                }}
+                className="flex items-center space-x-1.5 px-3 py-2 rounded-xl border border-slate-200 text-slate-600 hover:text-orange-600 hover:bg-white text-xs font-bold transition-all shadow-xs"
+              >
+                <Pencil className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Modificar</span>
+              </button>
+            )}
+
+            {onSpinAgain && (
+              <button
+                onClick={() => {
+                  onClose();
+                  onSpinAgain();
+                }}
+                className="flex items-center space-x-1.5 px-3.5 py-2 rounded-xl border-2 border-orange-300 bg-white text-orange-700 hover:bg-orange-50 font-bold text-xs transition-all shadow-xs active:scale-95"
+                title="Lanzar la ruleta de nuevo"
+              >
+                <RotateCcw className="w-3.5 h-3.5 text-orange-600" />
+                <span>Volver a girar</span>
+              </button>
+            )}
+          </div>
 
           <button
             onClick={onClose}
-            className="px-6 py-2.5 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-bold text-xs shadow-md shadow-orange-500/20 transition-all active:scale-95"
+            className="px-5 py-2 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-bold text-xs shadow-md shadow-orange-500/20 transition-all active:scale-95"
           >
             Cerrar
           </button>
