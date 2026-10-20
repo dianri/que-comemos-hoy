@@ -34,10 +34,17 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       setIsLoading(true);
       setErrorMessage(null);
 
+      // URL de redirección: prioridad variable de entorno VITE_SITE_URL, dominio de producción oficial, o fallback al origen actual
+      const redirectUrl =
+        import.meta.env.VITE_SITE_URL ||
+        (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+          ? window.location.origin
+          : 'https://quecomemoshoy.dianrie.com');
+
       const { error } = await supabase.auth.signInWithOtp({
         email: cleanEmail,
         options: {
-          emailRedirectTo: window.location.origin,
+          emailRedirectTo: redirectUrl,
         },
       });
 
