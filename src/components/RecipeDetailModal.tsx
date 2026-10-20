@@ -217,26 +217,28 @@ export const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
 
         {/* Contenido del Modal */}
         <div className="flex-1 overflow-y-auto p-3.5 sm:p-6 space-y-3.5 sm:space-y-5">
-          {/* Barra de interacción rápida (Votos, Favorito, Votar) */}
-          <div className="flex items-center justify-between p-2.5 sm:p-3.5 bg-orange-50/70 border border-orange-200/60 rounded-xl sm:rounded-2xl">
-            <div className="flex items-center space-x-2">
-              <div className="w-8 h-8 rounded-xl bg-orange-500/10 text-orange-600 flex items-center justify-center">
+          {/* Barra de interacción rápida (Popularidad, Compartir, Favorito, Votar) */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 sm:p-3.5 bg-orange-50/70 border border-orange-200/60 rounded-2xl">
+            <div className="flex items-center space-x-2.5">
+              <div className="w-8 h-8 rounded-xl bg-orange-500/10 text-orange-600 flex items-center justify-center flex-shrink-0">
                 <Award className="w-4 h-4 text-orange-600" />
               </div>
               <div>
-                <p className="text-xs font-bold text-slate-700">Popularidad</p>
-                <p className="text-xs text-slate-500">
+                <p className="text-[11px] sm:text-xs font-bold text-slate-700">Popularidad</p>
+                <p className="text-[11px] sm:text-xs text-slate-500 font-medium">
                   {food.votes_count === 1 ? '1 voto registrado' : `${food.votes_count} votos en total`}
                 </p>
               </div>
             </div>
 
-            <div className="flex items-center space-x-1.5 sm:space-x-2">
+            {/* Contenedor responsivo: cuadrícula de 3 botones en móvil y fila flex en escritorio */}
+            <div className="grid grid-cols-3 gap-1.5 sm:gap-2 w-full sm:w-auto sm:flex sm:items-center">
               {/* Botón Compartir */}
               <button
+                type="button"
                 onClick={handleShare}
                 disabled={isSharing}
-                className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-xl transition-all shadow-xs active:scale-95 text-xs font-bold ${
+                className={`flex items-center justify-center space-x-1 sm:space-x-1.5 px-2 sm:px-3 py-2 sm:py-1.5 rounded-xl transition-all shadow-xs active:scale-95 text-xs font-bold ${
                   isShared
                     ? 'bg-emerald-500 text-white ring-2 ring-emerald-300'
                     : 'bg-white text-slate-700 hover:text-orange-600 hover:bg-orange-50 border border-slate-200'
@@ -245,41 +247,45 @@ export const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
               >
                 {isShared ? (
                   <>
-                    <Check className="w-3.5 h-3.5 stroke-[2.5]" />
-                    <span>¡Copiado!</span>
+                    <Check className="w-3.5 h-3.5 stroke-[2.5] flex-shrink-0" />
+                    <span className="truncate">¡Copiado!</span>
                   </>
                 ) : (
                   <>
-                    <Share2 className="w-3.5 h-3.5" />
-                    <span>Compartir</span>
+                    <Share2 className="w-3.5 h-3.5 flex-shrink-0" />
+                    <span className="truncate">Compartir</span>
                   </>
                 )}
               </button>
 
               {/* Botón Favorito */}
               <button
+                type="button"
                 onClick={() => toggleFavorite(food.id)}
-                className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-xl transition-all shadow-xs active:scale-95 text-xs font-bold ${
+                className={`flex items-center justify-center space-x-1 sm:space-x-1.5 px-2 sm:px-3 py-2 sm:py-1.5 rounded-xl transition-all shadow-xs active:scale-95 text-xs font-bold ${
                   isFav
                     ? 'bg-amber-400 text-amber-950 ring-2 ring-amber-300'
                     : 'bg-white text-slate-600 hover:text-amber-600 hover:bg-amber-50 border border-slate-200'
                 }`}
+                title={isFav ? 'Quitar de favoritos' : 'Guardar en favoritos'}
               >
-                <Star className={`w-3.5 h-3.5 ${isFav ? 'fill-amber-950' : ''}`} />
-                <span>{isFav ? 'Favorito' : 'Guardar'}</span>
+                <Star className={`w-3.5 h-3.5 flex-shrink-0 ${isFav ? 'fill-amber-950' : ''}`} />
+                <span className="truncate">{isFav ? 'Favorito' : 'Guardar'}</span>
               </button>
 
               {/* Botón Me Gusta */}
               <button
+                type="button"
                 onClick={handleVote}
-                className={`flex items-center space-x-1.5 px-3.5 py-1.5 rounded-xl transition-all shadow-xs active:scale-95 text-xs font-bold ${
+                className={`flex items-center justify-center space-x-1 sm:space-x-1.5 px-2 sm:px-3 py-2 sm:py-1.5 rounded-xl transition-all shadow-xs active:scale-95 text-xs font-bold ${
                   hasVoted
                     ? 'bg-rose-500 text-white shadow-rose-500/25 ring-2 ring-rose-400'
                     : 'bg-white text-slate-700 hover:text-rose-500 hover:bg-rose-50 border border-slate-200'
                 } ${isLiking ? 'scale-105' : ''}`}
+                title={hasVoted ? 'Quitar tu voto' : 'Votar este plato'}
               >
-                <Heart className={`w-3.5 h-3.5 ${hasVoted ? 'fill-current' : ''}`} />
-                <span>{hasVoted ? '¡Votado!' : 'Votar'}</span>
+                <Heart className={`w-3.5 h-3.5 flex-shrink-0 ${hasVoted ? 'fill-current' : ''}`} />
+                <span className="truncate">{hasVoted ? '¡Votado!' : 'Votar'}</span>
               </button>
             </div>
           </div>
