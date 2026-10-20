@@ -58,7 +58,7 @@ que-comemos-hoy/
   1. El texto del nombre de cada plato debe estar **perfectamente centrado** tanto radialmente (equidistante entre el eje central y el borde exterior: `midRadius = innerRadius + (radius - innerRadius) / 2`) como angularmente (`textAlign = 'center'`, `textBaseline = 'middle'`).
   2. Color del texto oscuro (`#18181b` / `zinc-900`) en negrita para asegurar contraste máximo sobre los sectores.
   3. La lógica de parada debe calcular el ángulo objetivo exacto para que el segmento ganador quede **físicamente bajo la flecha roja fija superior (12 en punto)**.
-- Efectos obligatorios: sonido de giro (sintetizador Web Audio API sin dependencias externas de audio) y confeti (`canvas-confetti`) tras detenerse.
+- Efectos obligatorios: sonido de giro mecánico (`playRouletteTick`) y sonido festivo "Pop de Confeti / Explosión de Fiesta" (`playConfettiPop`) sintetizados con Web Audio API (`src/lib/sound.ts`) sin dependencias externas, sincronizados con la animación de confeti (`canvas-confetti`) y con control de silencio (mute) persistido en `localStorage`.
 
 ### `FoodCard.tsx` (Tarjetas de Plato)
 - Imagen destacada con fallback automático si la URL falla (`onError`).

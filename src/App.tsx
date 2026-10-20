@@ -23,6 +23,7 @@ import { AuthModal } from './components/AuthModal';
 import { AdminUsersModal } from './components/AdminUsersModal';
 import { RecipeDetailModal } from './components/RecipeDetailModal';
 import { UserProvider, useUser } from './context/UserContext';
+import { playConfettiPop } from './lib/sound';
 
 const CATEGORIES: Category[] = [
   'Todas',
@@ -288,6 +289,7 @@ function MainApp() {
 
     setHighlightedFoodId(randomPick.id);
     setSelectedRecipe(randomPick);
+    playConfettiPop();
     confetti({
       particleCount: 100,
       spread: 70,
