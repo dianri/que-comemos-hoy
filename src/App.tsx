@@ -23,32 +23,27 @@ import { AuthModal } from './components/AuthModal';
 import { AdminUsersModal } from './components/AdminUsersModal';
 import { RecipeDetailModal } from './components/RecipeDetailModal';
 import { ArcadeModal } from './components/ArcadeModal';
+import { ManageCategoriesModal } from './components/ManageCategoriesModal';
 import { Toast } from './components/Toast';
 import { UserProvider, useUser } from './context/UserContext';
+import { CategoryProvider, useCategories } from './context/CategoryContext';
 import { playConfettiPop } from './lib/sound';
-
-const CATEGORIES: Category[] = [
-  'Todas',
-  'Tradicional',
-  'Carnes',
-  'Pescados',
-  'Sopas',
-  'Arroces',
-  'Italiana',
-  'Americana',
-  'Mexicana',
-  'Japonesa',
-  'Saludable',
-  'Postres',
-];
 
 function MainApp() {
   const [foods, setFoods] = useState<Food[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
+  const { categoriesWithAll } = useCategories();
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [selectedCategory, setSelectedCategory] = useState<Category>('Todas');
   const [sortBy, setSortBy] = useState<'votes' | 'recent' | 'name'>('votes');
   const [mainTab, setMainTab] = useState<MainTabFilter>('all');
+
+  // Si una categoría activa es eliminada por un superadmin, reajustar a 'Todas'
+  useEffect(() => {
+    if (selectedCategory !== 'Todas' && !categoriesWithAll.includes(selectedCategory)) {
+      setSelectedCategory('Todas');
+    }
+  }, [categoriesWithAll, selectedCategory]);
 
   // Autenticación, Roles y Favoritos
   const {
@@ -69,6 +64,7 @@ function MainApp() {
   const [isRouletteOpen, setIsRouletteOpen] = useState(false);
   const [rouletteAutoSpin, setRouletteAutoSpin] = useState(false);
   const [isArcadeOpen, setIsArcadeOpen] = useState(false);
+  const [isManageCategoriesOpen, setIsManageCategoriesOpen] = useState(false);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [editingFood, setEditingFood] = useState<Food | null>(null);
   const [selectedRecipe, setSelectedRecipe] = useState<Food | null>(null);
@@ -654,7 +650,7 @@ function MainApp() {
 
           {/* Categorías (Pills) */}
           <div className="flex items-center space-x-1.5 overflow-x-auto pb-0.5 scrollbar-none">
-            {CATEGORIES.map((cat) => {
+            {categoriesWithAll.map((cat) => {
               const active = selectedCategory === cat;
               return (
                 <button
@@ -670,6 +666,19 @@ function MainApp() {
                 </button>
               );
             })}
+
+            {/* Botón de Gestión de Categorías para Superusuarios */}
+            {isSuperUser && (
+              <button
+                type="button"
+                onClick={() => setIsManageCategoriesOpen(true)}
+                className="px-2.5 py-1 rounded-full text-xs font-bold transition-all flex-shrink-0 bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-300 flex items-center space-x-1 shadow-xs active:scale-95 cursor-pointer"
+                title="Añadir o gestionar categorías de filtros (Superusuario)"
+              >
+                <Plus className="w-3.5 h-3.5 text-amber-600" />
+                <span>Categoría</span>
+              </button>
+            )}
           </div>
         </div>
 
@@ -828,6 +837,13 @@ function MainApp() {
         onUserDeleted={fetchFoods}
       />
 
+      <ManageCategoriesModal
+        isOpen={isManageCategoriesOpen}
+        onClose={() => setIsManageCategoriesOpen(false)}
+        foods={foods}
+        onFoodsReassigned={fetchFoods}
+      />
+
       <Toast />
     </div>
   );
@@ -836,7 +852,9 @@ function MainApp() {
 export function App() {
   return (
     <UserProvider>
-      <MainApp />
+      <CategoryProvider>
+        <MainApp />
+      </CategoryProvider>
     </UserProvider>
   );
 }

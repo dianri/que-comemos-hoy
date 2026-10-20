@@ -18,20 +18,7 @@ export interface Vote {
   created_at?: string;
 }
 
-export type Category =
-  | 'Todas'
-  | 'Tradicional'
-  | 'Carnes'
-  | 'Pescados'
-  | 'Sopas'
-  | 'Arroces'
-  | 'Italiana'
-  | 'Americana'
-  | 'Mexicana'
-  | 'Japonesa'
-  | 'Saludable'
-  | 'Postres'
-  | 'General';
+export type Category = string;
 
 export type MainTabFilter = 'all' | 'my-foods' | 'favorites';
 
