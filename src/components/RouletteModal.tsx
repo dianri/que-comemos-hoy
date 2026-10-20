@@ -11,6 +11,7 @@ interface RouletteModalProps {
   onSelectWinner?: (food: Food) => void;
   subtitle?: string;
   autoSpin?: boolean;
+  onAutoSpinHandled?: () => void;
 }
 
 // Paleta viva con contraste óptimo para tipografía oscura
@@ -36,6 +37,7 @@ export const RouletteModal: React.FC<RouletteModalProps> = ({
   onSelectWinner,
   subtitle,
   autoSpin = false,
+  onAutoSpinHandled,
 }) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [isSpinning, setIsSpinning] = useState(false);
@@ -43,6 +45,8 @@ export const RouletteModal: React.FC<RouletteModalProps> = ({
   const [isMuted, setIsMuted] = useState<boolean>(() => isSoundMuted());
   const currentAngleRef = useRef(0);
   const animationFrameRef = useRef<number | null>(null);
+  const isSpinningRef = useRef(false);
+  const hasAutoSpunRef = useRef(false);
 
   // Función de renderizado del Canvas con centrado perfecto del texto
   const drawWheel = useCallback(
@@ -177,22 +181,36 @@ export const RouletteModal: React.FC<RouletteModalProps> = ({
         }
       }
       drawWheel(currentAngleRef.current);
+    } else {
+      // Limpiar estados de giro de forma estricta al cerrar
+      hasAutoSpunRef.current = false;
+      isSpinningRef.current = false;
+      setIsSpinning(false);
+      setWinner(null);
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+        animationFrameRef.current = null;
+      }
     }
 
     return () => {
       if (animationFrameRef.current) {
         cancelAnimationFrame(animationFrameRef.current);
+        animationFrameRef.current = null;
       }
     };
   }, [isOpen, drawWheel]);
 
   // Lógica del Giro con Sincronización Matemática 100% Precisa con la Flecha Superior
   const spin = useCallback(() => {
-    if (isSpinning || foods.length === 0) return;
-    // Desbloquear / activar AudioContext en el evento click del usuario
-    getAudioContext();
+    if (isSpinningRef.current || foods.length === 0) return;
+    // Bloquear inmediatamente mediante ref síncrono para evitar dobles disparos
+    isSpinningRef.current = true;
     setIsSpinning(true);
     setWinner(null);
+
+    // Desbloquear / activar AudioContext en el evento click del usuario
+    getAudioContext();
 
     const numSlices = foods.length;
     const arc = (2 * Math.PI) / numSlices;
@@ -258,6 +276,8 @@ export const RouletteModal: React.FC<RouletteModalProps> = ({
         // Asegurar que termina exactamente en targetAngle
         currentAngleRef.current = targetAngle;
         drawWheel(targetAngle);
+        // Desactivar estado de giro de forma definitiva y síncrona
+        isSpinningRef.current = false;
         setIsSpinning(false);
 
         // Breve pausa para apreciar la posición final de la flecha antes del festejo
@@ -279,26 +299,28 @@ export const RouletteModal: React.FC<RouletteModalProps> = ({
     };
 
     animationFrameRef.current = requestAnimationFrame(animate);
-  }, [foods, isSpinning, drawWheel]);
+  }, [foods, drawWheel]);
 
-  // Auto-giro inmediato si se abre con autoSpin (ej. desde "Volver a girar" o botón del banner)
+  // Auto-giro de UN SOLO USO (One-Shot): solo se activa una vez al abrirse con autoSpin
   useEffect(() => {
-    if (isOpen && autoSpin && !isSpinning) {
+    if (isOpen && autoSpin && !hasAutoSpunRef.current && !isSpinningRef.current) {
+      hasAutoSpunRef.current = true;
+      onAutoSpinHandled?.();
       const timer = setTimeout(() => {
         spin();
-      }, 80);
+      }, 100);
       return () => clearTimeout(timer);
     }
-  }, [isOpen, autoSpin, isSpinning, spin]);
+  }, [isOpen, autoSpin, spin, onAutoSpinHandled]);
 
-  // Manejador para volver a girar de inmediato sin requerir otro clic
-  const handleSpinAgain = () => {
-    if (isSpinning) return;
+  // Manejador para volver a girar explícitamente al pulsar el botón "Volver a girar"
+  const handleSpinAgain = useCallback(() => {
+    if (isSpinningRef.current) return;
     setWinner(null);
     setTimeout(() => {
       spin();
-    }, 40);
-  };
+    }, 50);
+  }, [spin]);
 
   if (!isOpen) return null;
 

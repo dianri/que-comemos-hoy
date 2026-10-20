@@ -663,6 +663,7 @@ function MainApp() {
         foods={roulettePool}
         subtitle={rouletteSubtitle}
         autoSpin={rouletteAutoSpin}
+        onAutoSpinHandled={() => setRouletteAutoSpin(false)}
         onSelectWinner={(winner) => {
           setHighlightedFoodId(winner.id);
           setIsRouletteOpen(false);
