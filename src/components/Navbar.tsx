@@ -41,7 +41,7 @@ export const Navbar: React.FC<NavbarProps> = ({ totalFoods }) => {
   };
 
   return (
-    <header className="sticky top-0 z-30 bg-white/90 backdrop-blur-md border-b border-orange-100/80 shadow-xs transition-all">
+    <header className="sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-orange-100/80 shadow-xs transition-all">
       <div className="max-w-6xl mx-auto px-3 sm:px-6 h-14 sm:h-16 flex items-center justify-between gap-2">
         {/* Logo alineado a la izquierda */}
         <div className="flex items-center space-x-2.5 sm:space-x-3 flex-shrink-0">

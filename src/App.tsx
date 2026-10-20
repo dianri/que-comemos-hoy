@@ -418,7 +418,7 @@ function MainApp() {
         )}
 
         {/* Zona sticky: pestañas + búsqueda + categorías */}
-        <div className="sticky top-16 z-20 bg-slate-50/95 backdrop-blur-md pt-1 pb-3 -mx-3 sm:-mx-6 px-3 sm:px-6 space-y-3 border-b border-slate-200/60 shadow-sm">
+        <div className="sticky top-14 sm:top-16 z-30 bg-slate-50/95 backdrop-blur-md pt-1 pb-3 -mx-3 sm:-mx-6 px-3 sm:px-6 space-y-3 border-b border-slate-200/60 shadow-sm">
           {/* Pestañas Principales: Todos / Mis Platos / Favoritos */}
           <div className="flex items-center space-x-1.5 p-1 bg-slate-200/70 backdrop-blur-md rounded-2xl w-fit shadow-inner">
             <button

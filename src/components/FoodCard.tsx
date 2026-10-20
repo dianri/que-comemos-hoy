@@ -129,7 +129,7 @@ export const FoodCard: React.FC<FoodCardProps> = ({
 
         {/* Badge Flotante Superior: Selección Ganadora / Destacada */}
         {isHighlighted && (
-          <div className="absolute top-2 left-1/2 -translate-x-1/2 z-30 pointer-events-none">
+          <div className="absolute top-2 left-1/2 -translate-x-1/2 z-10 pointer-events-none">
             <div className="bg-gradient-to-r from-orange-500 via-amber-500 to-orange-500 text-white text-[10px] sm:text-[11px] font-black px-2.5 sm:px-3.5 py-0.5 sm:py-1 rounded-full flex items-center space-x-1.5 shadow-xl shadow-orange-500/40 border border-white/60 animate-bounce-subtle whitespace-nowrap">
               <Sparkles className="w-3 h-3 text-amber-200 fill-amber-200" />
               <span className="tracking-wide uppercase text-[9px] sm:text-[10px]">¡Plato Seleccionado!</span>
@@ -138,7 +138,7 @@ export const FoodCard: React.FC<FoodCardProps> = ({
         )}
 
         {/* Badge de Categoría y Autoría */}
-        <div className={`absolute left-2.5 z-20 flex items-center space-x-1 transition-all ${
+        <div className={`absolute left-2.5 z-10 flex items-center space-x-1 transition-all ${
           isHighlighted ? 'top-8 sm:top-10' : 'top-2.5'
         }`}>
           <span
@@ -158,7 +158,7 @@ export const FoodCard: React.FC<FoodCardProps> = ({
         </div>
 
         {/* Botones de Favorito y Votar (Like) */}
-        <div className={`absolute right-2.5 z-20 flex items-center space-x-1 transition-all ${
+        <div className={`absolute right-2.5 z-10 flex items-center space-x-1 transition-all ${
           isHighlighted ? 'top-8 sm:top-10' : 'top-2.5'
         }`}>
           {/* Botón Favorito */}
