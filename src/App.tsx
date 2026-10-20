@@ -37,6 +37,7 @@ const CATEGORIES: Category[] = [
   'Mexicana',
   'Japonesa',
   'Saludable',
+  'Postres',
 ];
 
 function MainApp() {

@@ -30,6 +30,7 @@ export type Category =
   | 'Mexicana'
   | 'Japonesa'
   | 'Saludable'
+  | 'Postres'
   | 'General';
 
 export type MainTabFilter = 'all' | 'my-foods' | 'favorites';
