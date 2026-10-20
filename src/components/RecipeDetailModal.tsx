@@ -13,6 +13,7 @@ import {
   Check,
   BookOpen,
   ExternalLink,
+  ShoppingBag,
 } from 'lucide-react';
 import { Food } from '../types';
 import { useUser } from '../context/UserContext';
@@ -144,6 +145,13 @@ export const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
     if (!food) return;
     const query = encodeURIComponent(`receta de ${food.name}`);
     window.open(`https://www.google.com/search?q=${query}`, '_blank', 'noopener,noreferrer');
+  };
+
+  const handleOpenUberEats = (e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    if (!food) return;
+    const query = encodeURIComponent(food.name);
+    window.open(`https://www.ubereats.com/search?q=${query}`, '_blank', 'noopener,noreferrer');
   };
 
   return (
@@ -301,23 +309,39 @@ export const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
 
           {/* Sección de Descripción completa de la receta */}
           <div className="space-y-2">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
               <div className="flex items-center space-x-2 text-slate-800">
                 <Utensils className="w-4 h-4 text-orange-500" />
                 <h3 className="text-sm font-extrabold uppercase tracking-wider text-slate-700">
                   Sobre este plato
                 </h3>
               </div>
-              <button
-                type="button"
-                onClick={handleOpenExternalRecipe}
-                className="inline-flex items-center space-x-1 px-2.5 py-1 rounded-xl text-xs font-bold text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200/80 transition-all active:scale-95 cursor-pointer shadow-2xs"
-                title={`Buscar receta de ${food.name} en Google`}
-              >
-                <BookOpen className="w-3.5 h-3.5 text-amber-600" />
-                <span>Paso a paso</span>
-                <ExternalLink className="w-3 h-3 text-amber-600/80" />
-              </button>
+
+              <div className="flex items-center space-x-1.5 flex-wrap gap-1">
+                {/* Botón Paso a paso */}
+                <button
+                  type="button"
+                  onClick={handleOpenExternalRecipe}
+                  className="inline-flex items-center space-x-1 px-2.5 py-1 rounded-xl text-xs font-bold text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200/80 transition-all active:scale-95 cursor-pointer shadow-2xs"
+                  title={`Buscar receta de ${food.name} en Google`}
+                >
+                  <BookOpen className="w-3.5 h-3.5 text-amber-600" />
+                  <span>Paso a paso</span>
+                  <ExternalLink className="w-3 h-3 text-amber-600/80" />
+                </button>
+
+                {/* Botón Pedir en Uber Eats */}
+                <button
+                  type="button"
+                  onClick={handleOpenUberEats}
+                  className="inline-flex items-center space-x-1 px-2.5 py-1 rounded-xl text-xs font-bold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200/80 transition-all active:scale-95 cursor-pointer shadow-2xs"
+                  title={`Buscar "${food.name}" en Uber Eats`}
+                >
+                  <ShoppingBag className="w-3.5 h-3.5 text-emerald-600" />
+                  <span>Pedir en Uber Eats</span>
+                  <ExternalLink className="w-3 h-3 text-emerald-600/80" />
+                </button>
+              </div>
             </div>
 
             <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80">
