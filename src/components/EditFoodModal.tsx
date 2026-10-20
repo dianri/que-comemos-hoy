@@ -23,6 +23,7 @@ const CATEGORIES: Category[] = [
   'Mexicana',
   'Japonesa',
   'Saludable',
+  'Postres',
   'General',
 ];
 

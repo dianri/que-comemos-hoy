@@ -10,6 +10,7 @@ interface RouletteModalProps {
   foods: Food[];
   onSelectWinner?: (food: Food) => void;
   subtitle?: string;
+  autoSpin?: boolean;
 }
 
 // Paleta viva con contraste óptimo para tipografía oscura
@@ -34,6 +35,7 @@ export const RouletteModal: React.FC<RouletteModalProps> = ({
   foods,
   onSelectWinner,
   subtitle,
+  autoSpin = false,
 }) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [isSpinning, setIsSpinning] = useState(false);
@@ -161,7 +163,7 @@ export const RouletteModal: React.FC<RouletteModalProps> = ({
       setWinner(null);
       const canvas = canvasRef.current;
       if (canvas) {
-        const size = Math.min(window.innerWidth - 48, 360);
+        const size = Math.min(window.innerWidth - 64, 330);
         // Doble resolución para pantallas Retina/HiDPI
         canvas.width = size * 2;
         canvas.height = size * 2;
@@ -185,7 +187,7 @@ export const RouletteModal: React.FC<RouletteModalProps> = ({
   }, [isOpen, drawWheel]);
 
   // Lógica del Giro con Sincronización Matemática 100% Precisa con la Flecha Superior
-  const spin = () => {
+  const spin = useCallback(() => {
     if (isSpinning || foods.length === 0) return;
     // Desbloquear / activar AudioContext en el evento click del usuario
     getAudioContext();
@@ -277,107 +279,128 @@ export const RouletteModal: React.FC<RouletteModalProps> = ({
     };
 
     animationFrameRef.current = requestAnimationFrame(animate);
+  }, [foods, isSpinning, drawWheel]);
+
+  // Auto-giro inmediato si se abre con autoSpin (ej. desde "Volver a girar" o botón del banner)
+  useEffect(() => {
+    if (isOpen && autoSpin && !isSpinning) {
+      const timer = setTimeout(() => {
+        spin();
+      }, 80);
+      return () => clearTimeout(timer);
+    }
+  }, [isOpen, autoSpin, isSpinning, spin]);
+
+  // Manejador para volver a girar de inmediato sin requerir otro clic
+  const handleSpinAgain = () => {
+    if (isSpinning) return;
+    setWinner(null);
+    setTimeout(() => {
+      spin();
+    }, 40);
   };
 
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
-      <div className="relative w-full max-w-md bg-white rounded-3xl shadow-2xl border border-slate-100 overflow-hidden flex flex-col items-center p-6 max-h-[92vh] overflow-y-auto">
-        {/* Controles de cabecera: Silenciar y Cerrar */}
-        <div className="absolute top-4 right-4 flex items-center space-x-1">
-          <button
-            type="button"
-            onClick={() => {
-              const next = !isMuted;
-              setIsMuted(next);
-              setSoundMuted(next);
-            }}
-            className="p-2 rounded-full text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
-            title={isMuted ? 'Activar sonido de la ruleta y confeti' : 'Silenciar sonido'}
-          >
-            {isMuted ? (
-              <VolumeX className="w-5 h-5 text-slate-400" />
-            ) : (
-              <Volume2 className="w-5 h-5 text-orange-500" />
-            )}
-          </button>
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2.5 sm:p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
+      <div className="relative w-full max-w-md bg-white rounded-2xl sm:rounded-3xl shadow-2xl border border-slate-100 overflow-hidden flex flex-col max-h-[90vh]">
+        {/* Encabezado fijo superior */}
+        <div className="relative px-4 pt-3.5 pb-2 sm:px-6 sm:pt-4 sm:pb-3 text-center border-b border-slate-100 flex-shrink-0 bg-white">
+          {/* Controles de cabecera: Silenciar y Cerrar */}
+          <div className="absolute top-2.5 right-2.5 sm:top-3 sm:right-3 flex items-center space-x-1">
+            <button
+              type="button"
+              onClick={() => {
+                const next = !isMuted;
+                setIsMuted(next);
+                setSoundMuted(next);
+              }}
+              className="p-1.5 rounded-full text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
+              title={isMuted ? 'Activar sonido de la ruleta y confeti' : 'Silenciar sonido'}
+            >
+              {isMuted ? (
+                <VolumeX className="w-4 h-4 sm:w-5 sm:h-5 text-slate-400" />
+              ) : (
+                <Volume2 className="w-4 h-4 sm:w-5 sm:h-5 text-orange-500" />
+              )}
+            </button>
 
-          <button
-            onClick={onClose}
-            disabled={isSpinning}
-            className="p-2 rounded-full text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors disabled:opacity-40"
-            title="Cerrar ruleta"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
+            <button
+              onClick={onClose}
+              disabled={isSpinning}
+              className="p-1.5 rounded-full text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors disabled:opacity-40"
+              title="Cerrar ruleta"
+            >
+              <X className="w-4 h-4 sm:w-5 sm:h-5" />
+            </button>
+          </div>
 
-        {/* Encabezado */}
-        <div className="text-center mb-3">
-          <span className="inline-flex items-center space-x-1.5 px-3 py-1 rounded-full text-xs font-bold bg-orange-100 text-orange-700 mb-1">
-            <Sparkles className="w-3.5 h-3.5" />
+          <span className="inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-full text-[10px] sm:text-xs font-bold bg-orange-100 text-orange-700 mb-0.5">
+            <Sparkles className="w-3 h-3 text-orange-500" />
             <span>Ruleta de la Suerte</span>
           </span>
-          <h2 className="text-xl sm:text-2xl font-extrabold text-slate-800">
+          <h2 className="text-base sm:text-xl font-extrabold text-slate-800 leading-tight">
             ¿Qué comeremos hoy?
           </h2>
-          <p className="text-xs text-slate-500">
+          <p className="text-[11px] sm:text-xs text-slate-500 truncate max-w-[260px] sm:max-w-xs mx-auto">
             {subtitle || `${foods.length} platos en la ruleta. ¡Deja que el destino decida!`}
           </p>
         </div>
 
-        {/* Contenedor de la Ruleta y la Flecha Puntero Superior */}
-        <div className="relative my-2 flex items-center justify-center">
-          {/* Flecha Puntero Superior (12 en punto) Prominente y Definida */}
-          <div className="absolute -top-4 z-20 flex flex-col items-center pointer-events-none drop-shadow-lg">
-            {/* Triángulo rojo con borde exterior oscuro para contraste */}
-            <div className="relative">
-              {/* Sombra de contorno del triángulo */}
-              <div className="w-0 h-0 border-l-[18px] border-l-transparent border-r-[18px] border-r-transparent border-t-[28px] border-t-zinc-900" />
-              <div className="absolute top-0 left-1/2 -translate-x-1/2 w-0 h-0 border-l-[15px] border-l-transparent border-r-[15px] border-r-transparent border-t-[24px] border-t-red-600" />
+        {/* Cuerpo con scroll interior para la ruleta y la tarjeta del ganador */}
+        <div className="flex-1 overflow-y-auto px-3.5 py-2.5 sm:px-6 sm:py-3 flex flex-col items-center scrollbar-none">
+          {/* Contenedor de la Ruleta y la Flecha Puntero Superior */}
+          <div className="relative my-1 flex items-center justify-center flex-shrink-0">
+            {/* Flecha Puntero Superior (12 en punto) Prominente y Definida */}
+            <div className="absolute -top-3.5 z-20 flex flex-col items-center pointer-events-none drop-shadow-md">
+              <div className="relative">
+                <div className="w-0 h-0 border-l-[16px] border-l-transparent border-r-[16px] border-r-transparent border-t-[26px] border-t-zinc-900" />
+                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-0 h-0 border-l-[13px] border-l-transparent border-r-[13px] border-r-transparent border-t-[22px] border-t-red-600" />
+              </div>
+              <div className="w-3.5 h-3.5 rounded-full bg-white border-2 border-zinc-900 shadow -mt-5 z-10" />
             </div>
-            {/* Pequeño embellecedor superior */}
-            <div className="w-4 h-4 rounded-full bg-white border-2 border-zinc-900 shadow -mt-6 z-10" />
+
+            {/* Canvas de la Ruleta */}
+            <canvas ref={canvasRef} className="rounded-full select-none" />
           </div>
 
-          {/* Canvas de la Ruleta */}
-          <canvas
-            ref={canvasRef}
-            className="rounded-full select-none"
-          />
+          {/* Tarjeta del Plato Ganador */}
+          {winner && (
+            <div className="mt-2.5 w-full bg-gradient-to-br from-amber-50 to-orange-50 border-2 border-orange-300 rounded-2xl p-3 text-center animate-bounce-subtle shadow-xs">
+              <div className="flex items-center justify-center space-x-1.5 text-amber-600 mb-0.5">
+                <Trophy className="w-4 h-4 text-amber-500 animate-pulse" />
+                <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider">¡Plato Seleccionado!</span>
+              </div>
+              <h3 className="text-base sm:text-xl font-black text-slate-900 mb-1 leading-snug">
+                🎉 ¡Hoy toca: {winner.name}!
+              </h3>
+
+              {winner.image_url && (
+                <div className="relative h-28 sm:h-36 w-full rounded-xl overflow-hidden shadow-xs my-1.5 border border-orange-200">
+                  <img
+                    src={winner.image_url}
+                    alt={winner.name}
+                    className="w-full h-full object-cover"
+                  />
+                  <span className="absolute bottom-1.5 left-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold bg-black/70 text-white backdrop-blur-sm">
+                    {winner.category}
+                  </span>
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
-        {/* Resultado del Ganador o Botón de Girar */}
-        {winner ? (
-          <div className="mt-3 w-full bg-gradient-to-br from-amber-50 to-orange-50 border-2 border-orange-300 rounded-2xl p-4 text-center animate-bounce-subtle shadow-md">
-            <div className="flex items-center justify-center space-x-2 text-amber-600 mb-1">
-              <Trophy className="w-5 h-5 text-amber-500 animate-pulse" />
-              <span className="text-xs font-bold uppercase tracking-wider">¡Plato Seleccionado!</span>
-            </div>
-            <h3 className="text-lg sm:text-2xl font-black text-slate-900 mb-2">
-              🎉 ¡Hoy toca: {winner.name}!
-            </h3>
-
-            {winner.image_url && (
-              <div className="relative h-36 sm:h-40 w-full rounded-xl overflow-hidden shadow-md my-2 border border-orange-200">
-                <img
-                  src={winner.image_url}
-                  alt={winner.name}
-                  className="w-full h-full object-cover"
-                />
-                <span className="absolute bottom-2 left-2 px-2.5 py-0.5 rounded-full text-xs font-bold bg-black/70 text-white backdrop-blur-sm">
-                  {winner.category}
-                </span>
-              </div>
-            )}
-
-            <div className="flex flex-wrap items-center justify-center gap-2 mt-3">
+        {/* Barra inferior fija (Sticky Footer) con las acciones siempre visibles */}
+        <div className="sticky bottom-0 z-30 w-full bg-white/95 backdrop-blur-md px-3.5 py-2.5 sm:px-6 sm:py-3 border-t border-slate-100 flex items-center justify-between gap-2 flex-shrink-0">
+          {winner ? (
+            <div className="flex items-center justify-between gap-2 w-full">
               <button
                 type="button"
-                onClick={spin}
+                onClick={handleSpinAgain}
                 disabled={isSpinning}
-                className="flex-1 min-w-[130px] flex items-center justify-center space-x-1.5 px-4 py-2.5 rounded-xl bg-white border-2 border-orange-300 text-orange-700 font-bold text-xs sm:text-sm hover:bg-orange-100/80 active:scale-95 transition-all shadow-sm"
+                className="flex-1 flex items-center justify-center space-x-1.5 px-3 py-2.5 rounded-xl bg-white border-2 border-orange-300 text-orange-700 font-bold text-xs sm:text-sm hover:bg-orange-50 active:scale-95 transition-all shadow-xs"
               >
                 <RotateCcw className="w-4 h-4 text-orange-600" />
                 <span>Volver a girar</span>
@@ -391,18 +414,16 @@ export const RouletteModal: React.FC<RouletteModalProps> = ({
                   }
                   onClose();
                 }}
-                className="flex-1 min-w-[130px] flex items-center justify-center space-x-1.5 px-5 py-2.5 rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 text-white font-bold text-xs sm:text-sm hover:opacity-95 active:scale-95 transition-all shadow-md shadow-orange-500/25"
+                className="flex-1 flex items-center justify-center space-x-1.5 px-4 py-2.5 rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 text-white font-bold text-xs sm:text-sm hover:opacity-95 active:scale-95 transition-all shadow-md shadow-orange-500/25"
               >
                 <span>¡A cocinar! 😋</span>
               </button>
             </div>
-          </div>
-        ) : (
-          <div className="mt-4 w-full flex flex-col items-center">
+          ) : (
             <button
               onClick={spin}
               disabled={isSpinning || foods.length === 0}
-              className={`w-full py-3.5 px-6 rounded-2xl font-black text-white text-base sm:text-lg shadow-xl transition-all duration-200 flex items-center justify-center space-x-2 ${
+              className={`w-full py-2.5 sm:py-3 px-5 rounded-xl font-black text-white text-xs sm:text-sm shadow-lg transition-all duration-200 flex items-center justify-center space-x-2 ${
                 isSpinning
                   ? 'bg-slate-400 cursor-not-allowed scale-98'
                   : 'bg-gradient-to-r from-orange-500 via-amber-500 to-red-500 hover:opacity-95 active:scale-95 shadow-orange-500/30'
@@ -410,8 +431,8 @@ export const RouletteModal: React.FC<RouletteModalProps> = ({
             >
               <span>{isSpinning ? '¡Girando la Ruleta...!' : '🎯 ¡Girar la Ruleta!'}</span>
             </button>
-          </div>
-        )}
+          )}
+        </div>
       </div>
     </div>
   );

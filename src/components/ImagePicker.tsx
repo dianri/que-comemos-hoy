@@ -257,7 +257,25 @@ export const FOOD_IMAGES_CATALOG: FoodImageItem[] = [
     id: 'postre-cheesecake',
     name: 'Tarta de Queso / Cheesecake',
     url: 'https://images.unsplash.com/photo-1533134242443-d4fd215305ad?auto=format&fit=crop&w=800&q=80',
-    tags: ['tarta', 'queso', 'cheesecake', 'postre', 'dulce', 'frambuesa'],
+    tags: ['tarta', 'queso', 'cheesecake', 'postre', 'postres', 'dulce', 'frambuesa'],
+  },
+  {
+    id: 'postre-flan',
+    name: 'Flan Casero con Caramelo',
+    url: 'https://images.unsplash.com/photo-1528975604071-b4dc52a2d18c?auto=format&fit=crop&w=800&q=80',
+    tags: ['flan', 'caramelo', 'huevo', 'postre', 'postres', 'dulce', 'tradicional', 'vainilla'],
+  },
+  {
+    id: 'postre-brownie',
+    name: 'Brownie de Chocolate',
+    url: 'https://images.unsplash.com/photo-1606313564200-e75d5e30476c?auto=format&fit=crop&w=800&q=80',
+    tags: ['brownie', 'chocolate', 'postre', 'postres', 'dulce', 'helado', 'nueces'],
+  },
+  {
+    id: 'postre-tiramisu',
+    name: 'Tiramisú Tradicional',
+    url: 'https://images.unsplash.com/photo-1571877227200-a0d98ea607e9?auto=format&fit=crop&w=800&q=80',
+    tags: ['tiramisu', 'tiramisú', 'cafe', 'cacao', 'mascarpone', 'postre', 'postres', 'italiana', 'dulce'],
   },
 ];
 
@@ -272,6 +290,7 @@ const QUICK_FILTERS = [
   'Saludable',
   'Pizza',
   'Burger',
+  'Postres',
   'Tapas',
 ];
 

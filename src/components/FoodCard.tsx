@@ -23,6 +23,7 @@ const CATEGORY_COLORS: Record<string, string> = {
   Mexicana: 'bg-yellow-100 text-yellow-800 border-yellow-200',
   Japonesa: 'bg-purple-100 text-purple-800 border-purple-200',
   Saludable: 'bg-teal-100 text-teal-800 border-teal-200',
+  Postres: 'bg-pink-100 text-pink-800 border-pink-200',
   General: 'bg-slate-100 text-slate-800 border-slate-200',
 };
 
