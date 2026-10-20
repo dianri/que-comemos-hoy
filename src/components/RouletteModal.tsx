@@ -1,7 +1,8 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import confetti from 'canvas-confetti';
-import { X, Sparkles, Trophy, RotateCcw } from 'lucide-react';
+import { X, Sparkles, Trophy, RotateCcw, Volume2, VolumeX } from 'lucide-react';
 import { Food } from '../types';
+import { playConfettiPop, playRouletteTick, isSoundMuted, setSoundMuted, getAudioContext } from '../lib/sound';
 
 interface RouletteModalProps {
   isOpen: boolean;
@@ -37,76 +38,9 @@ export const RouletteModal: React.FC<RouletteModalProps> = ({
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [isSpinning, setIsSpinning] = useState(false);
   const [winner, setWinner] = useState<Food | null>(null);
+  const [isMuted, setIsMuted] = useState<boolean>(() => isSoundMuted());
   const currentAngleRef = useRef(0);
   const animationFrameRef = useRef<number | null>(null);
-
-  const audioCtxRef = useRef<AudioContext | null>(null);
-  const lastTickTimeRef = useRef<number>(0);
-
-  // Inicializar o reanudar AudioContext único
-  const getAudioContext = useCallback(() => {
-    try {
-      if (!audioCtxRef.current) {
-        const AudioContextClass =
-          window.AudioContext ||
-          (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
-        if (AudioContextClass) {
-          audioCtxRef.current = new AudioContextClass();
-        }
-      }
-      if (audioCtxRef.current && audioCtxRef.current.state === 'suspended') {
-        audioCtxRef.current.resume();
-      }
-      return audioCtxRef.current;
-    } catch {
-      return null;
-    }
-  }, []);
-
-  // Sintetizador Web Audio optimizado: sonido "clic" mecánico limpio con throttle
-  const playTickSound = useCallback(() => {
-    try {
-      const now = performance.now();
-      // Throttle de 40ms para evitar saturación y clics solapados a alta velocidad
-      if (now - lastTickTimeRef.current < 40) return;
-      lastTickTimeRef.current = now;
-
-      const audioCtx = getAudioContext();
-      if (!audioCtx) return;
-
-      const currentTime = audioCtx.currentTime;
-      const osc = audioCtx.createOscillator();
-      const gain = audioCtx.createGain();
-
-      // Ligera variación de frecuencia (780Hz - 850Hz) para simular imperfección mecánica
-      const baseFreq = 780 + Math.random() * 70;
-      osc.type = 'triangle';
-      osc.frequency.setValueAtTime(baseFreq, currentTime);
-      osc.frequency.exponentialRampToValueAtTime(baseFreq * 0.4, currentTime + 0.022);
-
-      // Envolvente de percusión corta (25ms) sin clics digitales
-      gain.gain.setValueAtTime(0.18, currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.001, currentTime + 0.022);
-
-      osc.connect(gain);
-      gain.connect(audioCtx.destination);
-
-      // Desconexión limpia garantizada tras finalizar
-      osc.onended = () => {
-        try {
-          osc.disconnect();
-          gain.disconnect();
-        } catch {
-          // Ya desconectado
-        }
-      };
-
-      osc.start(currentTime);
-      osc.stop(currentTime + 0.025);
-    } catch {
-      // AudioContext bloqueado o no disponible
-    }
-  }, [getAudioContext]);
 
   // Función de renderizado del Canvas con centrado perfecto del texto
   const drawWheel = useCallback(
@@ -250,16 +184,6 @@ export const RouletteModal: React.FC<RouletteModalProps> = ({
     };
   }, [isOpen, drawWheel]);
 
-  // Limpieza de AudioContext al desmontar el componente
-  useEffect(() => {
-    return () => {
-      if (audioCtxRef.current && audioCtxRef.current.state !== 'closed') {
-        audioCtxRef.current.close().catch(() => {});
-        audioCtxRef.current = null;
-      }
-    };
-  }, []);
-
   // Lógica del Giro con Sincronización Matemática 100% Precisa con la Flecha Superior
   const spin = () => {
     if (isSpinning || foods.length === 0) return;
@@ -323,7 +247,7 @@ export const RouletteModal: React.FC<RouletteModalProps> = ({
 
       if (activeSlice !== lastTickIndex) {
         lastTickIndex = activeSlice;
-        playTickSound();
+        playRouletteTick();
       }
 
       if (progress < 1) {
@@ -340,6 +264,9 @@ export const RouletteModal: React.FC<RouletteModalProps> = ({
           if (onSelectWinner) {
             onSelectWinner(winningFood);
           }
+
+          // Efecto de sonido alegre "Pop de Confeti" sincronizado con la animación
+          playConfettiPop();
 
           // Explosión de confeti festivo
           confetti({
@@ -360,15 +287,34 @@ export const RouletteModal: React.FC<RouletteModalProps> = ({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
       <div className="relative w-full max-w-md bg-white rounded-3xl shadow-2xl border border-slate-100 overflow-hidden flex flex-col items-center p-6 max-h-[92vh] overflow-y-auto">
-        {/* Botón cerrar */}
-        <button
-          onClick={onClose}
-          disabled={isSpinning}
-          className="absolute top-4 right-4 p-2 rounded-full text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors disabled:opacity-40"
-          title="Cerrar ruleta"
-        >
-          <X className="w-5 h-5" />
-        </button>
+        {/* Controles de cabecera: Silenciar y Cerrar */}
+        <div className="absolute top-4 right-4 flex items-center space-x-1">
+          <button
+            type="button"
+            onClick={() => {
+              const next = !isMuted;
+              setIsMuted(next);
+              setSoundMuted(next);
+            }}
+            className="p-2 rounded-full text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
+            title={isMuted ? 'Activar sonido de la ruleta y confeti' : 'Silenciar sonido'}
+          >
+            {isMuted ? (
+              <VolumeX className="w-5 h-5 text-slate-400" />
+            ) : (
+              <Volume2 className="w-5 h-5 text-orange-500" />
+            )}
+          </button>
+
+          <button
+            onClick={onClose}
+            disabled={isSpinning}
+            className="p-2 rounded-full text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors disabled:opacity-40"
+            title="Cerrar ruleta"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
 
         {/* Encabezado */}
         <div className="text-center mb-3">
