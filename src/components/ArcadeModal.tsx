@@ -77,7 +77,7 @@ export const ArcadeModal: React.FC<ArcadeModalProps> = ({ isOpen, onClose }) => 
     setScale(Math.min(fittedScale, 1.05));
   }, []);
 
-  // Consultar Top 10 puntuaciones de Supabase
+  // Consultar todas las puntuaciones de Supabase (ranking completo sin límite)
   const fetchLeaderboard = useCallback(async () => {
     setIsLoadingScores(true);
     try {
@@ -85,8 +85,7 @@ export const ArcadeModal: React.FC<ArcadeModalProps> = ({ isOpen, onClose }) => 
         .from('game_scores')
         .select('id, game_name, user_name, score, created_at')
         .eq('game_name', 'arkanoid')
-        .order('score', { ascending: false })
-        .limit(10);
+        .order('score', { ascending: false });
 
       if (error) {
         console.warn('Error al consultar ranking:', error.message);
@@ -418,21 +417,28 @@ export const ArcadeModal: React.FC<ArcadeModalProps> = ({ isOpen, onClose }) => 
             </div>
           </div>
         ) : (
-          /* Vista del Salón de la Fama / Ranking Top 10 */
-          <div className="relative flex-1 bg-zinc-950 p-3 sm:p-6 overflow-y-auto flex flex-col items-center justify-start font-mono space-y-4">
-            <div className="w-full max-w-2xl space-y-3">
+          /* Vista del Salón de la Fama / Ranking Completo */
+          <div className="relative flex-1 bg-zinc-950 p-3 sm:p-6 overflow-y-auto flex flex-col items-center justify-start font-mono space-y-4 overscroll-contain">
+            <div className="w-full max-w-2xl space-y-3 pb-4">
               {/* Encabezado del Ranking */}
               <div className="flex items-center justify-between border-b border-zinc-800 pb-3">
                 <div className="flex items-center space-x-2.5">
-                  <div className="w-9 h-9 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-400 flex items-center justify-center shadow-lg shadow-amber-500/10">
+                  <div className="w-9 h-9 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-400 flex items-center justify-center shadow-lg shadow-amber-500/10 shrink-0">
                     <Trophy className="w-5 h-5" />
                   </div>
                   <div>
-                    <h4 className="text-sm sm:text-base font-black text-white tracking-widest uppercase">
-                      Salón de la Fama Arkanoid
-                    </h4>
+                    <div className="flex items-center space-x-2">
+                      <h4 className="text-sm sm:text-base font-black text-white tracking-widest uppercase">
+                        Salón de la Fama
+                      </h4>
+                      {leaderboard.length > 0 && (
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-300 border border-amber-500/30">
+                          {leaderboard.length} récords
+                        </span>
+                      )}
+                    </div>
                     <p className="text-[11px] text-zinc-400">
-                      Top 10 mejores récords registrados por la comunidad
+                      Ranking global de todas las puntuaciones de la comunidad
                     </p>
                   </div>
                 </div>
@@ -506,19 +512,26 @@ export const ArcadeModal: React.FC<ArcadeModalProps> = ({ isOpen, onClose }) => 
                           </div>
 
                           <div className="min-w-0">
-                            <p
-                              className={`text-xs sm:text-sm font-bold truncate ${
-                                isFirst
-                                  ? 'text-amber-300 font-black'
-                                  : isSecond
-                                  ? 'text-slate-200'
-                                  : isThird
-                                  ? 'text-amber-400/90'
-                                  : 'text-zinc-300'
-                              }`}
-                            >
-                              {item.user_name}
-                            </p>
+                            <div className="flex items-center space-x-1.5">
+                              <p
+                                className={`text-xs sm:text-sm font-bold truncate ${
+                                  isFirst
+                                    ? 'text-amber-300 font-black'
+                                    : isSecond
+                                    ? 'text-slate-200'
+                                    : isThird
+                                    ? 'text-amber-400/90'
+                                    : 'text-zinc-300'
+                                }`}
+                              >
+                                {item.user_name}
+                              </p>
+                              {userName && item.user_name.toLowerCase() === userName.toLowerCase() && (
+                                <span className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 uppercase">
+                                  Tú
+                                </span>
+                              )}
+                            </div>
                             <p className="text-[10px] text-zinc-500 truncate">
                               {new Date(item.created_at).toLocaleDateString(undefined, {
                                 day: '2-digit',
