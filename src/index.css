@@ -10,4 +10,13 @@ body {
   .text-shadow {
     text-shadow: 0 2px 4px rgba(0,0,0,0.4);
   }
+
+  /* Ocultar barra de scroll para navegación táctil suave */
+  .scrollbar-none::-webkit-scrollbar {
+    display: none;
+  }
+  .scrollbar-none {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
 }
