@@ -3,7 +3,7 @@ import { supabase } from '../lib/supabase';
 import { useUser } from './UserContext';
 import { sanitizeText } from '../lib/sanitize';
 
-export const DEFAULT_CATEGORIES: string[] = [
+const DEFAULT_CATEGORIES: string[] = [
   'General',
   'Tradicional',
   'Carnes',
