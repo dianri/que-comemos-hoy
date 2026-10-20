@@ -114,9 +114,9 @@ function MainApp() {
   useEffect(() => {
     fetchFoods();
 
-    // Suscripción Realtime a cambios en la tabla 'foods'
+    // Suscripción Realtime a cambios en las tablas 'foods' y 'votes'
     const channel = supabase
-      .channel('public:foods_changes')
+      .channel('public:community_feed_changes')
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'foods' },
@@ -143,6 +143,45 @@ function MainApp() {
             if (deletedId) {
               setFoods((prev) => prev.filter((f) => f.id !== deletedId));
               setSelectedRecipe((prev) => (prev && prev.id === deletedId ? null : prev));
+            }
+          }
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'votes' },
+        (payload) => {
+          if (payload.eventType === 'INSERT') {
+            const newVote = payload.new as { food_id: string };
+            if (newVote?.food_id) {
+              setFoods((prevFoods) =>
+                prevFoods.map((f) =>
+                  f.id === newVote.food_id
+                    ? { ...f, votes_count: (f.votes_count || 0) + 1 }
+                    : f
+                )
+              );
+              setSelectedRecipe((prev) =>
+                prev && prev.id === newVote.food_id
+                  ? { ...prev, votes_count: (prev.votes_count || 0) + 1 }
+                  : prev
+              );
+            }
+          } else if (payload.eventType === 'DELETE') {
+            const oldVote = payload.old as { food_id?: string };
+            if (oldVote?.food_id) {
+              setFoods((prevFoods) =>
+                prevFoods.map((f) =>
+                  f.id === oldVote.food_id
+                    ? { ...f, votes_count: Math.max(0, (f.votes_count || 0) - 1) }
+                    : f
+                )
+              );
+              setSelectedRecipe((prev) =>
+                prev && prev.id === oldVote.food_id
+                  ? { ...prev, votes_count: Math.max(0, (prev.votes_count || 0) - 1) }
+                  : prev
+              );
             }
           }
         }
@@ -174,6 +213,22 @@ function MainApp() {
   const handleFoodAdded = (newFood: Food) => {
     setFoods((prev) => [newFood, ...prev]);
   };
+
+  // Actualización reactiva optimista de votos en el estado local de comidas
+  const handleOptimisticVote = useCallback((foodId: string, delta: number) => {
+    setFoods((prevFoods) =>
+      prevFoods.map((f) =>
+        f.id === foodId
+          ? { ...f, votes_count: Math.max(0, (f.votes_count || 0) + delta) }
+          : f
+      )
+    );
+    setSelectedRecipe((prevRecipe) =>
+      prevRecipe && prevRecipe.id === foodId
+        ? { ...prevRecipe, votes_count: Math.max(0, (prevRecipe.votes_count || 0) + delta) }
+        : prevRecipe
+    );
+  }, []);
 
   // Actualizar comida tras edición (actualización local inmediata + refresco de referencias)
   const handleFoodUpdated = (updatedFood: Food) => {
@@ -415,7 +470,7 @@ function MainApp() {
                       {dish.name}
                     </h4>
                     <span className="text-[11px] text-orange-600 font-semibold">
-                      ❤️ {dish.votes_count} votos
+                      ❤️ {dish.votes_count || 0} {dish.votes_count === 1 ? 'voto' : 'votos'}
                     </span>
                   </div>
                 </div>
@@ -627,6 +682,7 @@ function MainApp() {
                   onDelete={handleDeleteFood}
                   onEdit={setEditingFood}
                   onSelect={(f) => setSelectedRecipe(f)}
+                  onOptimisticVote={handleOptimisticVote}
                   isHighlighted={highlightedFoodId === food.id}
                 />
               ))}
@@ -685,6 +741,7 @@ function MainApp() {
           setRouletteAutoSpin(true);
           setIsRouletteOpen(true);
         }}
+        onOptimisticVote={handleOptimisticVote}
       />
 
       <AddFoodModal

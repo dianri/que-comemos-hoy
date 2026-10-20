@@ -9,6 +9,7 @@ interface FoodCardProps {
   onDelete?: (id: string) => void;
   onEdit?: (food: Food) => void;
   onSelect?: (food: Food) => void;
+  onOptimisticVote?: (foodId: string, delta: number) => void;
   isHighlighted?: boolean;
 }
 
@@ -34,6 +35,7 @@ export const FoodCard: React.FC<FoodCardProps> = ({
   onDelete,
   onEdit,
   onSelect,
+  onOptimisticVote,
   isHighlighted = false,
 }) => {
   const {
@@ -102,7 +104,9 @@ export const FoodCard: React.FC<FoodCardProps> = ({
     e.stopPropagation();
     if (isLiking) return;
     setIsLiking(true);
-    await toggleVote(food.id);
+    await toggleVote(food.id, (delta) => {
+      onOptimisticVote?.(food.id, delta);
+    });
     setTimeout(() => setIsLiking(false), 300);
   };
 

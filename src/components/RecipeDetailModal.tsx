@@ -19,6 +19,7 @@ interface RecipeDetailModalProps {
   onClose: () => void;
   onEdit?: (food: Food) => void;
   onSpinAgain?: () => void;
+  onOptimisticVote?: (foodId: string, delta: number) => void;
 }
 
 const CATEGORY_COLORS: Record<string, string> = {
@@ -45,6 +46,7 @@ export const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
   onClose,
   onEdit,
   onSpinAgain,
+  onOptimisticVote,
 }) => {
   const {
     user,
@@ -103,9 +105,11 @@ export const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
 
   const handleVote = async (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (isLiking) return;
+    if (isLiking || !food) return;
     setIsLiking(true);
-    await toggleVote(food.id);
+    await toggleVote(food.id, (delta) => {
+      onOptimisticVote?.(food.id, delta);
+    });
     setTimeout(() => setIsLiking(false), 300);
   };
 
