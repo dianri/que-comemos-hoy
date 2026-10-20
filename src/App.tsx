@@ -319,34 +319,34 @@ function MainApp() {
       {/* Barra de Navegación */}
       <Navbar totalFoods={visibleFoods.length} />
 
-      <main className="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-8">
-        {/* Banner Hero Central */}
-        <section className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-orange-600 via-amber-600 to-rose-600 text-white p-6 sm:p-10 shadow-2xl shadow-orange-600/20">
-          <div className="absolute -right-10 -bottom-10 opacity-15 pointer-events-none text-9xl">
+      <main className="flex-1 max-w-6xl w-full mx-auto px-3 sm:px-6 py-3 sm:py-6 space-y-4 sm:space-y-6">
+        {/* Banner Hero Central — compacto en móvil */}
+        <section className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-orange-600 via-amber-600 to-rose-600 text-white p-4 sm:p-8 shadow-xl shadow-orange-600/20">
+          <div className="absolute -right-8 -bottom-8 opacity-10 pointer-events-none text-8xl">
             🥘
           </div>
-          <div className="absolute top-0 right-1/4 w-72 h-72 bg-white/10 rounded-full blur-3xl pointer-events-none" />
+          <div className="absolute top-0 right-1/4 w-48 h-48 bg-white/10 rounded-full blur-3xl pointer-events-none" />
 
           <div className="relative z-10 max-w-2xl">
-            <div className="inline-flex items-center space-x-1.5 px-3 py-1 rounded-full text-xs font-bold bg-white/20 backdrop-blur-md mb-3 border border-white/20">
-              <Flame className="w-3.5 h-3.5 text-amber-300" />
+            <div className="inline-flex items-center space-x-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-white/20 backdrop-blur-md mb-2 border border-white/20">
+              <Flame className="w-3 h-3 text-amber-300" />
               <span>Decisión sin discusiones</span>
             </div>
 
-            <h2 className="text-2xl sm:text-4xl md:text-5xl font-black tracking-tight leading-tight">
+            <h2 className="text-lg sm:text-3xl md:text-4xl font-black tracking-tight leading-tight">
               ¿No sabes qué comer hoy?
             </h2>
-            <p className="mt-2 sm:mt-3 text-sm sm:text-base text-orange-100 font-medium leading-relaxed">
+            <p className="mt-1 sm:mt-2 text-xs sm:text-sm text-orange-100 font-medium leading-relaxed hidden sm:block">
               Vota con tu grupo o familia tus comidas preferidas y deja que la ruleta interactiva decida el menú de hoy por ti.
             </p>
 
             {/* Botones de Acción Hero */}
-            <div className="mt-6 flex flex-wrap gap-3">
+            <div className="mt-3 sm:mt-5 flex flex-wrap gap-2">
               <button
                 onClick={() => setIsRouletteOpen(true)}
-                className="group relative px-6 py-3.5 rounded-2xl bg-white text-orange-600 font-black text-sm sm:text-base shadow-xl hover:shadow-2xl hover:scale-105 active:scale-95 transition-all flex items-center space-x-2"
+                className="group relative px-4 py-2 sm:px-6 sm:py-3 rounded-xl bg-white text-orange-600 font-black text-sm shadow-lg hover:shadow-xl hover:scale-105 active:scale-95 transition-all flex items-center space-x-2"
               >
-                <span className="text-xl">🎯</span>
+                <span className="text-base sm:text-xl">🎯</span>
                 <span>
                   {mainTab === 'favorites'
                     ? '¡Girar Favoritos!'
@@ -354,14 +354,14 @@ function MainApp() {
                     ? '¡Girar Mis Platos!'
                     : '¡Girar la Ruleta!'}
                 </span>
-                <span className="ml-1 text-xs px-2 py-0.5 rounded-full bg-orange-100 text-orange-700 font-bold">
+                <span className="ml-1 text-[11px] px-1.5 py-0.5 rounded-full bg-orange-100 text-orange-700 font-bold">
                   {roulettePool.length}
                 </span>
               </button>
 
               <button
                 onClick={handleQuickPick}
-                className="px-5 py-3.5 rounded-2xl bg-black/20 hover:bg-black/30 border border-white/30 text-white font-bold text-sm sm:text-base backdrop-blur-md transition-all flex items-center space-x-2 active:scale-95"
+                className="px-3 py-2 sm:px-5 sm:py-3 rounded-xl bg-black/20 hover:bg-black/30 border border-white/30 text-white font-bold text-xs sm:text-sm backdrop-blur-md transition-all flex items-center space-x-2 active:scale-95"
               >
                 <Dices className="w-4 h-4" />
                 <span>Elección Rápida</span>
@@ -372,8 +372,8 @@ function MainApp() {
 
         {/* Podio Top 3 Platos Más Votados */}
         {topVoted.length > 0 && mainTab === 'all' && (
-          <section className="bg-white rounded-2xl p-4 sm:p-5 border border-slate-100 shadow-sm">
-            <div className="flex items-center justify-between mb-3">
+          <section className="bg-white rounded-2xl p-3 sm:p-4 border border-slate-100 shadow-sm">
+            <div className="flex items-center justify-between mb-2.5">
               <div className="flex items-center space-x-2">
                 <Trophy className="w-4 h-4 text-amber-500" />
                 <h3 className="text-sm font-bold text-slate-700 uppercase tracking-wider">
@@ -383,7 +383,7 @@ function MainApp() {
               <span className="text-xs text-slate-400">En tiempo real</span>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
               {topVoted.map((dish, idx) => (
                 <div
                   key={dish.id}
@@ -391,9 +391,9 @@ function MainApp() {
                     setHighlightedFoodId(dish.id);
                     setSelectedRecipe(dish);
                   }}
-                  className="flex items-center space-x-3 p-2.5 rounded-xl bg-slate-50 hover:bg-orange-50/60 border border-slate-100 transition-all cursor-pointer group"
+                  className="flex items-center space-x-3 p-2 rounded-xl bg-slate-50 hover:bg-orange-50/60 border border-slate-100 transition-all cursor-pointer group"
                 >
-                  <div className="relative w-12 h-12 rounded-lg overflow-hidden flex-shrink-0">
+                  <div className="relative w-10 h-10 rounded-lg overflow-hidden flex-shrink-0">
                     <img
                       src={dish.image_url}
                       alt={dish.name}
@@ -417,96 +417,97 @@ function MainApp() {
           </section>
         )}
 
-        {/* Pestañas Principales: Todos / Mis Platos / Favoritos */}
-        <div className="flex items-center space-x-2 p-1.5 bg-slate-200/70 backdrop-blur-md rounded-2xl w-fit shadow-inner">
-          <button
-            onClick={() => handleTabChange('all')}
-            className={`flex items-center space-x-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all ${
-              mainTab === 'all'
-                ? 'bg-white text-orange-600 shadow-md scale-102'
-                : 'text-slate-600 hover:text-slate-900'
-            }`}
-          >
-            <LayoutGrid className="w-4 h-4" />
-            <span>Todos los platos</span>
-            <span
-              className={`px-2 py-0.5 rounded-full text-[11px] font-extrabold ${
+        {/* Zona sticky: pestañas + búsqueda + categorías */}
+        <div className="sticky top-16 z-20 bg-slate-50/95 backdrop-blur-md pt-1 pb-3 -mx-3 sm:-mx-6 px-3 sm:px-6 space-y-3 border-b border-slate-200/60 shadow-sm">
+          {/* Pestañas Principales: Todos / Mis Platos / Favoritos */}
+          <div className="flex items-center space-x-1.5 p-1 bg-slate-200/70 backdrop-blur-md rounded-2xl w-fit shadow-inner">
+            <button
+              onClick={() => handleTabChange('all')}
+              className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
                 mainTab === 'all'
-                  ? 'bg-orange-100 text-orange-700'
-                  : 'bg-slate-300/80 text-slate-700'
+                  ? 'bg-white text-orange-600 shadow-md scale-102'
+                  : 'text-slate-600 hover:text-slate-900'
               }`}
             >
-              {visibleFoods.length}
-            </span>
-          </button>
-
-          <button
-            onClick={() => handleTabChange('my-foods')}
-            className={`flex items-center space-x-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all ${
-              mainTab === 'my-foods'
-                ? 'bg-white text-orange-600 shadow-md scale-102'
-                : 'text-slate-600 hover:text-slate-900'
-            }`}
-          >
-            <ChefHat className="w-4 h-4" />
-            <span>Mis Platos</span>
-            {isAuthenticated ? (
+              <LayoutGrid className="w-3.5 h-3.5" />
+              <span>Todos</span>
               <span
-                className={`px-2 py-0.5 rounded-full text-[11px] font-extrabold ${
-                  mainTab === 'my-foods'
+                className={`px-1.5 py-0.5 rounded-full text-[11px] font-extrabold ${
+                  mainTab === 'all'
                     ? 'bg-orange-100 text-orange-700'
                     : 'bg-slate-300/80 text-slate-700'
                 }`}
               >
-                {myFoodsCount}
+                {visibleFoods.length}
               </span>
-            ) : (
-              <Lock className="w-3.5 h-3.5 text-slate-400" />
-            )}
-          </button>
+            </button>
 
-          {isAuthenticated && (
             <button
-              onClick={() => handleTabChange('favorites')}
-              className={`flex items-center space-x-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all ${
-                mainTab === 'favorites'
-                  ? 'bg-white text-amber-600 shadow-md scale-102'
+              onClick={() => handleTabChange('my-foods')}
+              className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                mainTab === 'my-foods'
+                  ? 'bg-white text-orange-600 shadow-md scale-102'
                   : 'text-slate-600 hover:text-slate-900'
               }`}
             >
-              <Star
-                className={`w-4 h-4 ${
+              <ChefHat className="w-3.5 h-3.5" />
+              <span>Mis Platos</span>
+              {isAuthenticated ? (
+                <span
+                  className={`px-1.5 py-0.5 rounded-full text-[11px] font-extrabold ${
+                    mainTab === 'my-foods'
+                      ? 'bg-orange-100 text-orange-700'
+                      : 'bg-slate-300/80 text-slate-700'
+                  }`}
+                >
+                  {myFoodsCount}
+                </span>
+              ) : (
+                <Lock className="w-3 h-3 text-slate-400" />
+              )}
+            </button>
+
+            {isAuthenticated && (
+              <button
+                onClick={() => handleTabChange('favorites')}
+                className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
                   mainTab === 'favorites'
-                    ? 'fill-amber-400 text-amber-500'
-                    : 'text-amber-500'
-                }`}
-              />
-              <span>Favoritos</span>
-              <span
-                className={`px-2 py-0.5 rounded-full text-[11px] font-extrabold ${
-                  mainTab === 'favorites'
-                    ? 'bg-amber-100 text-amber-800'
-                    : 'bg-slate-300/80 text-slate-700'
+                    ? 'bg-white text-amber-600 shadow-md scale-102'
+                    : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
-                {favoritesCount}
-              </span>
-            </button>
-          )}
-        </div>
+                <Star
+                  className={`w-3.5 h-3.5 ${
+                    mainTab === 'favorites'
+                      ? 'fill-amber-400 text-amber-500'
+                      : 'text-amber-500'
+                  }`}
+                />
+                <span>Favoritos</span>
+                <span
+                  className={`px-1.5 py-0.5 rounded-full text-[11px] font-extrabold ${
+                    mainTab === 'favorites'
+                      ? 'bg-amber-100 text-amber-800'
+                      : 'bg-slate-300/80 text-slate-700'
+                  }`}
+                >
+                  {favoritesCount}
+                </span>
+              </button>
+            )}
+          </div>
 
-        {/* Barra de Filtros, Búsqueda y Ordenación */}
-        <section className="space-y-4">
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+          {/* Barra de Filtros, Búsqueda y Ordenación */}
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2">
             {/* Buscador */}
             <div className="relative flex-1">
-              <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Buscar por plato, ingrediente o receta..."
-                className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-white border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/30 transition-all shadow-sm"
+                placeholder="Buscar plato, ingrediente..."
+                className="w-full pl-9 pr-4 py-2 rounded-xl bg-white border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/30 transition-all shadow-sm"
               />
             </div>
 
@@ -518,7 +519,7 @@ function MainApp() {
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value as 'votes' | 'recent' | 'name')}
-                className="px-3 py-2.5 rounded-xl bg-white border border-slate-200 text-xs sm:text-sm font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-orange-500/30 shadow-sm cursor-pointer"
+                className="px-3 py-2 rounded-xl bg-white border border-slate-200 text-xs font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-orange-500/30 shadow-sm cursor-pointer"
               >
                 <option value="votes">🔥 Más votados</option>
                 <option value="recent">✨ Más recientes</option>
@@ -527,7 +528,7 @@ function MainApp() {
 
               <button
                 onClick={fetchFoods}
-                className="p-2.5 rounded-xl bg-white border border-slate-200 text-slate-500 hover:text-orange-600 hover:border-orange-200 transition-all shadow-sm"
+                className="p-2 rounded-xl bg-white border border-slate-200 text-slate-500 hover:text-orange-600 hover:border-orange-200 transition-all shadow-sm"
                 title="Refrescar lista"
               >
                 <RefreshCw className="w-4 h-4" />
@@ -536,14 +537,14 @@ function MainApp() {
           </div>
 
           {/* Categorías (Pills) */}
-          <div className="flex items-center space-x-2 overflow-x-auto pb-1 scrollbar-none">
+          <div className="flex items-center space-x-1.5 overflow-x-auto pb-0.5 scrollbar-none">
             {CATEGORIES.map((cat) => {
               const active = selectedCategory === cat;
               return (
                 <button
                   key={cat}
                   onClick={() => setSelectedCategory(cat)}
-                  className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-all flex-shrink-0 shadow-sm ${
+                  className={`px-3 py-1 rounded-full text-xs font-bold transition-all flex-shrink-0 shadow-sm ${
                     active
                       ? 'bg-orange-500 text-white shadow-orange-500/25 scale-105'
                       : 'bg-white hover:bg-slate-100 text-slate-600 border border-slate-200/80'
@@ -554,29 +555,29 @@ function MainApp() {
               );
             })}
           </div>
-        </section>
+        </div>
 
         {/* Cuadrícula de Tarjetas de Comidas */}
         <section>
           {loading ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-5">
               {[...Array(6)].map((_, i) => (
                 <div
                   key={i}
-                  className="bg-white rounded-3xl h-72 border border-slate-100 animate-pulse p-4 flex flex-col justify-between"
+                  className="bg-white rounded-2xl sm:rounded-3xl h-64 sm:h-72 border border-slate-100 animate-pulse p-3 sm:p-4 flex flex-col justify-between"
                 >
-                  <div className="w-full h-44 bg-slate-200 rounded-2xl" />
+                  <div className="w-full h-36 sm:h-44 bg-slate-200 rounded-xl sm:rounded-2xl" />
                   <div className="h-4 bg-slate-200 rounded w-3/4" />
                   <div className="h-3 bg-slate-200 rounded w-1/2" />
                 </div>
               ))}
             </div>
           ) : filteredFoods.length === 0 ? (
-            <div className="bg-white rounded-3xl border border-slate-200/80 p-10 text-center space-y-3">
-              <div className="text-5xl">
+            <div className="bg-white rounded-2xl sm:rounded-3xl border border-slate-200/80 p-6 sm:p-10 text-center space-y-3">
+              <div className="text-4xl sm:text-5xl">
                 {mainTab === 'favorites' ? '⭐' : mainTab === 'my-foods' ? '👨‍🍳' : '🍲'}
               </div>
-              <h3 className="text-lg font-bold text-slate-800">
+              <h3 className="text-base sm:text-lg font-bold text-slate-800">
                 {mainTab === 'favorites'
                   ? 'Aún no tienes platos favoritos'
                   : mainTab === 'my-foods'
@@ -611,7 +612,7 @@ function MainApp() {
               )}
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5 sm:gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-5">
               {filteredFoods.map((food) => (
                 <FoodCard
                   key={food.id}
@@ -628,10 +629,10 @@ function MainApp() {
       </main>
 
       {/* Botón Flotante para Añadir Comida (FAB) */}
-      <div className="fixed bottom-6 right-6 z-40">
+      <div className="fixed bottom-5 right-5 sm:bottom-6 sm:right-6 z-40">
         <button
           onClick={handleOpenAddFood}
-          className="group flex items-center space-x-2 px-5 py-3.5 rounded-full bg-gradient-to-r from-orange-500 to-amber-500 text-white font-extrabold text-sm shadow-xl shadow-orange-500/35 hover:scale-108 active:scale-95 transition-all duration-200 border-2 border-white"
+          className="group flex items-center space-x-2 px-4 py-3 sm:px-5 sm:py-3.5 rounded-full bg-gradient-to-r from-orange-500 to-amber-500 text-white font-extrabold text-sm shadow-xl shadow-orange-500/35 hover:scale-108 active:scale-95 transition-all duration-200 border-2 border-white"
           title={isAuthenticated ? 'Añadir nuevo plato a la carta' : 'Inicia sesión para añadir platos'}
         >
           <Plus className="w-5 h-5 transition-transform group-hover:rotate-90" />
@@ -641,10 +642,8 @@ function MainApp() {
       </div>
 
       {/* Footer */}
-      <footer className="mt-auto border-t border-slate-200 bg-white py-6 text-center text-xs text-slate-400">
-        <p>
-          ¿Qué comemos hoy? 🍽️ • Desarrollado con React, Vite, Tailwind CSS y Supabase • Listo para Vercel
-        </p>
+      <footer className="mt-14 sm:mt-20 border-t border-slate-100 bg-transparent py-4 text-center text-xs text-slate-300">
+        <p>¿Qué comemos hoy? 🍽️</p>
       </footer>
 
       {/* Modales */}

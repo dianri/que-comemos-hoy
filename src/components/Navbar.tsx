@@ -41,25 +41,25 @@ export const Navbar: React.FC<NavbarProps> = ({ totalFoods }) => {
   };
 
   return (
-    <header className="sticky top-0 z-30 bg-white/80 backdrop-blur-md border-b border-orange-100/80 shadow-sm transition-all">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-2">
-        {/* Logo */}
-        <div className="flex items-center space-x-3 flex-shrink-0">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-orange-500 to-amber-400 flex items-center justify-center text-white shadow-md shadow-orange-500/20">
-            <UtensilsCrossed className="w-5 h-5" />
+    <header className="sticky top-0 z-30 bg-white/90 backdrop-blur-md border-b border-orange-100/80 shadow-xs transition-all">
+      <div className="max-w-6xl mx-auto px-3 sm:px-6 h-14 sm:h-16 flex items-center justify-between gap-2">
+        {/* Logo alineado a la izquierda */}
+        <div className="flex items-center space-x-2.5 sm:space-x-3 flex-shrink-0">
+          <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-tr from-orange-500 to-amber-400 flex items-center justify-center text-white shadow-md shadow-orange-500/20">
+            <UtensilsCrossed className="w-4 h-4 sm:w-5 sm:h-5" />
           </div>
           <div>
-            <h1 className="text-base sm:text-xl font-extrabold tracking-tight bg-gradient-to-r from-orange-600 via-amber-600 to-red-600 bg-clip-text text-transparent">
+            <h1 className="text-sm sm:text-xl font-extrabold tracking-tight bg-gradient-to-r from-orange-600 via-amber-600 to-red-600 bg-clip-text text-transparent leading-none">
               ¿Qué comemos hoy?
             </h1>
-            <p className="text-[11px] text-slate-500 hidden sm:block">
+            <p className="text-[10px] sm:text-[11px] text-slate-500 hidden sm:block mt-0.5">
               {totalFoods} platos listos en la ruleta
             </p>
           </div>
         </div>
 
-        {/* Zona derecha: Perfil y Autenticación */}
-        <div className="flex items-center space-x-2">
+        {/* Zona derecha: Perfil y Autenticación alineados */}
+        <div className="flex items-center space-x-1.5 sm:space-x-2">
           {/* Nombre / Perfil de Voto: Solo visible si el usuario está autenticado */}
           {isAuthenticated && (
             isEditing ? (
