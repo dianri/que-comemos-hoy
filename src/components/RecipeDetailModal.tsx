@@ -284,10 +284,10 @@ export const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
                     ? 'bg-amber-400 text-amber-950 ring-2 ring-amber-300'
                     : 'bg-white text-slate-600 hover:text-amber-600 hover:bg-amber-50 border border-slate-200'
                 }`}
-                title={isFav ? 'Quitar de favoritos' : 'Guardar en favoritos'}
+                title={isFav ? 'Quitar de favoritos' : 'Añadir a favoritos'}
               >
                 <Star className={`w-3.5 h-3.5 flex-shrink-0 ${isFav ? 'fill-amber-950' : ''}`} />
-                <span className="truncate">{isFav ? 'Favorito' : 'Guardar'}</span>
+                <span className="truncate">Favorito</span>
               </button>
 
               {/* Botón Me Gusta */}
