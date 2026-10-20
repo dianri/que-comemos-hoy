@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect, useCallback } fr
 import { User } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
 import { Food, UserRole } from '../types';
+import { sanitizeText } from '../lib/sanitize';
 
 interface UserContextType {
   userName: string;
@@ -223,10 +224,13 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const setUserName = (name: string) => {
-    const trimmed = name.trim();
+    // Sanitizar para eliminar etiquetas HTML y espacios antes de guardar
+    const trimmed = sanitizeText(name);
     if (!trimmed) return;
-    localStorage.setItem('que_comemos_user', trimmed);
-    setUserNameState(trimmed);
+    // Limitar longitud máxima para prevenir abusos
+    const safe = trimmed.slice(0, 40);
+    localStorage.setItem('que_comemos_user', safe);
+    setUserNameState(safe);
   };
 
   // Cargar votos del usuario actual desde Supabase
