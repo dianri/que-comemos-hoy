@@ -118,8 +118,20 @@ export const FoodCard: React.FC<FoodCardProps> = ({
         {/* Gradiente oscuro superior e inferior para legibilidad */}
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/20 pointer-events-none" />
 
-        {/* Badge de Categoría */}
-        <div className="absolute top-3 left-3 z-10 flex items-center space-x-1">
+        {/* Badge Flotante Superior: Selección Ganadora / Destacada */}
+        {isHighlighted && (
+          <div className="absolute top-2.5 left-1/2 -translate-x-1/2 z-30 pointer-events-none">
+            <div className="bg-gradient-to-r from-orange-500 via-amber-500 to-orange-500 text-white text-[11px] font-black px-3.5 py-1 rounded-full flex items-center space-x-1.5 shadow-xl shadow-orange-500/40 border border-white/60 animate-bounce-subtle whitespace-nowrap">
+              <Sparkles className="w-3.5 h-3.5 text-amber-200 fill-amber-200" />
+              <span className="tracking-wide uppercase text-[10px]">¡Plato Seleccionado!</span>
+            </div>
+          </div>
+        )}
+
+        {/* Badge de Categoría y Autoría */}
+        <div className={`absolute left-3 z-20 flex items-center space-x-1 transition-all ${
+          isHighlighted ? 'top-10' : 'top-3'
+        }`}>
           <span
             className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold backdrop-blur-md shadow-sm border ${categoryColor}`}
           >
@@ -137,7 +149,9 @@ export const FoodCard: React.FC<FoodCardProps> = ({
         </div>
 
         {/* Botones de Favorito y Votar (Like) */}
-        <div className="absolute top-3 right-3 z-10 flex items-center space-x-1.5">
+        <div className={`absolute right-3 z-20 flex items-center space-x-1.5 transition-all ${
+          isHighlighted ? 'top-10' : 'top-3'
+        }`}>
           {/* Botón Favorito */}
           <button
             onClick={(e) => {
@@ -176,14 +190,6 @@ export const FoodCard: React.FC<FoodCardProps> = ({
             <span className="text-xs">{food.votes_count}</span>
           </button>
         </div>
-
-        {/* Título sobre imagen en pantallas pequeñas / decorativo */}
-        {isHighlighted && (
-          <div className="absolute top-3 left-1/2 -translate-x-1/2 bg-orange-500 text-white text-[11px] font-bold px-3 py-1 rounded-full flex items-center space-x-1 shadow-lg animate-bounce-subtle">
-            <Sparkles className="w-3 h-3" />
-            <span>¡Plato Seleccionado!</span>
-          </div>
-        )}
       </div>
 
       {/* Contenido de la Tarjeta */}
