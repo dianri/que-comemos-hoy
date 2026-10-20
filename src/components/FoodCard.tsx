@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Heart, Sparkles, Trash2, Star, Pencil, ChefHat } from 'lucide-react';
 import { Food } from '../types';
 import { useUser } from '../context/UserContext';
+import { safeImageUrl } from '../lib/sanitize';
 
 interface FoodCardProps {
   food: Food;
@@ -45,12 +46,13 @@ export const FoodCard: React.FC<FoodCardProps> = ({
     isSuperUser,
   } = useUser();
 
-  const [imgSrc, setImgSrc] = useState(food.image_url || FALLBACK_IMAGE);
+  const [imgSrc, setImgSrc] = useState(safeImageUrl(food.image_url));
   const [isLiking, setIsLiking] = useState(false);
 
   // Sincronizar imgSrc si food.image_url cambia externamente por edición o realtime
+  // Siempre pasar por safeImageUrl para bloquear esquemas peligrosos (javascript:, data:, etc.)
   React.useEffect(() => {
-    setImgSrc(food.image_url || FALLBACK_IMAGE);
+    setImgSrc(safeImageUrl(food.image_url));
   }, [food.image_url]);
 
   const hasVoted = userVotes.has(food.id);

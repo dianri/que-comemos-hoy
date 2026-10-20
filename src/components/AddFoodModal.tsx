@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabase';
 import { useUser } from '../context/UserContext';
 import { Category, Food } from '../types';
 import { ImagePicker } from './ImagePicker';
+import { sanitizeText, safeImageUrl, SAFE_FALLBACK_IMAGE } from '../lib/sanitize';
 
 interface AddFoodModalProps {
   isOpen: boolean;
@@ -49,14 +50,20 @@ export const AddFoodModal: React.FC<AddFoodModalProps> = ({
       return;
     }
 
-    if (!name.trim()) {
+    // Sanitizar inputs de texto antes de cualquier validación
+    const safeName = sanitizeText(name);
+    const safeDescription = sanitizeText(description);
+
+    if (!safeName) {
       setErrorMsg('Por favor introduce el nombre del plato.');
       return;
     }
 
-    const finalImage =
-      imageUrl.trim() ||
-      'https://images.unsplash.com/photo-1498837167922-ddd27525d352?auto=format&fit=crop&w=800&q=80';
+    // Validar URL de imagen: si no está vacía debe ser https://
+    const rawImageUrl = imageUrl.trim();
+    const finalImage = rawImageUrl
+      ? safeImageUrl(rawImageUrl)
+      : SAFE_FALLBACK_IMAGE;
 
     try {
       setIsSubmitting(true);
@@ -67,10 +74,10 @@ export const AddFoodModal: React.FC<AddFoodModalProps> = ({
       const creatorEmail = user?.email || '';
 
       const newRecord = {
-        name: name.trim(),
+        name: safeName,
         image_url: finalImage,
         category,
-        description: description.trim(),
+        description: safeDescription,
         votes_count: 0,
         created_by: creatorUid,
         user_id: user?.id,

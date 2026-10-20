@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { Search, Link as LinkIcon, Check, Image as ImageIcon, Sparkles, ExternalLink, AlertTriangle } from 'lucide-react';
+import { isSafeImageUrl } from '../lib/sanitize';
 
 export interface FoodImageItem {
   id: string;
@@ -490,13 +491,31 @@ export const ImagePicker: React.FC<ImagePickerProps> = ({ selectedUrl, onSelectU
               type="url"
               value={selectedUrl}
               onChange={(e) => {
+                const rawUrl = e.target.value;
                 setPreviewError(false);
-                onSelectUrl(e.target.value);
+                // Solo pasamos la URL si está vacía (para borrar) o es segura (https://)
+                if (!rawUrl || isSafeImageUrl(rawUrl)) {
+                  onSelectUrl(rawUrl);
+                } else if (rawUrl.startsWith('https://')) {
+                  // URL https en construcción (aún no válida), la pasamos igual para no bloquear tipado
+                  onSelectUrl(rawUrl);
+                } else if (rawUrl.length > 0) {
+                  // Esquema no seguro detectado (javascript:, data:, http:, etc.) — bloquear y alertar
+                  setPreviewError(true);
+                  onSelectUrl('');
+                }
               }}
               placeholder="https://ejemplo.com/tu-foto.jpg"
               className="w-full pl-9 pr-3 py-2 rounded-xl border border-slate-200 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/40 bg-white"
             />
           </div>
+          {/* Aviso de esquema no seguro */}
+          {previewError && !selectedUrl && (
+            <div className="flex items-center space-x-2 text-xs text-red-600 bg-red-50 border border-red-200 rounded-xl px-3 py-2">
+              <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0" />
+              <span>Solo se permiten URLs seguras que comiencen por <strong>https://</strong>. Se han bloqueado esquemas peligrosos.</span>
+            </div>
+          )}
 
           {/* Guía visual para el usuario */}
           <p className="text-[11px] text-slate-500 leading-relaxed bg-slate-50 p-2 rounded-lg border border-slate-100 flex items-start space-x-1.5">
