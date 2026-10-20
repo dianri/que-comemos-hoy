@@ -10,10 +10,11 @@ import {
   Star,
   ChefHat,
   LayoutGrid,
+  Check,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { supabase } from './lib/supabase';
-import { Food, Category, MainTabFilter } from './types';
+import { Food, MainTabFilter } from './types';
 import { Navbar } from './components/Navbar';
 import { FoodCard } from './components/FoodCard';
 import { RouletteModal } from './components/RouletteModal';
@@ -32,18 +33,57 @@ import { playConfettiPop } from './lib/sound';
 function MainApp() {
   const [foods, setFoods] = useState<Food[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
-  const { categoriesWithAll } = useCategories();
+  const { categories } = useCategories();
   const [searchQuery, setSearchQuery] = useState<string>('');
-  const [selectedCategory, setSelectedCategory] = useState<Category>('Todas');
+  const [selectedCategories, setSelectedCategories] = useState<string[]>(() => [...categories]);
+  const [hasInitializedCategories, setHasInitializedCategories] = useState<boolean>(false);
   const [sortBy, setSortBy] = useState<'votes' | 'recent' | 'name'>('votes');
   const [mainTab, setMainTab] = useState<MainTabFilter>('all');
 
-  // Si una categoría activa es eliminada por un superadmin, reajustar a 'Todas'
+  // Inicializar con todas las categorías activas en cuanto categories esté disponible
   useEffect(() => {
-    if (selectedCategory !== 'Todas' && !categoriesWithAll.includes(selectedCategory)) {
-      setSelectedCategory('Todas');
+    if (categories.length > 0 && !hasInitializedCategories) {
+      setSelectedCategories([...categories]);
+      setHasInitializedCategories(true);
     }
-  }, [categoriesWithAll, selectedCategory]);
+  }, [categories, hasInitializedCategories]);
+
+  // Sincronizar si se añade o elimina una categoría en la base de datos
+  useEffect(() => {
+    if (hasInitializedCategories) {
+      setSelectedCategories((prev) => {
+        const prevAllSelected = categories.length > 0 && categories.every((c) => prev.includes(c));
+        if (prevAllSelected) {
+          return [...categories];
+        }
+        return prev.filter((c) => categories.includes(c));
+      });
+    }
+  }, [categories, hasInitializedCategories]);
+
+  // Comprobar si todas las categorías están actualmente activas
+  const isAllSelected =
+    categories.length > 0 && categories.every((cat) => selectedCategories.includes(cat));
+
+  // Manejador del botón "Todas": selecciona todas o resetea todas
+  const handleToggleAll = () => {
+    if (isAllSelected) {
+      setSelectedCategories([]);
+    } else {
+      setSelectedCategories([...categories]);
+    }
+  };
+
+  // Manejador para conmutar un filtro individual
+  const handleToggleCategory = (cat: string) => {
+    setSelectedCategories((prev) => {
+      if (prev.includes(cat)) {
+        return prev.filter((c) => c !== cat);
+      } else {
+        return [...prev, cat];
+      }
+    });
+  };
 
   // Autenticación, Roles y Favoritos
   const {
@@ -343,9 +383,10 @@ function MainApp() {
           if (!favorites.has(f.id)) return false;
         }
 
-        // 2. Filtro por categoría
-        const matchesCategory =
-          selectedCategory === 'Todas' || f.category === selectedCategory;
+        // 2. Filtro por categoría (selección múltiple)
+        const matchesCategory = isAllSelected
+          ? true
+          : selectedCategories.includes(f.category || 'General');
 
         // 3. Filtro por búsqueda
         const matchesSearch =
@@ -361,7 +402,7 @@ function MainApp() {
         }
         return a.name.localeCompare(b.name);
       });
-  }, [visibleFoods, mainTab, selectedCategory, searchQuery, sortBy, user, favorites]);
+  }, [visibleFoods, mainTab, selectedCategories, isAllSelected, searchQuery, sortBy, user, favorites]);
 
   // Pool de platos para la ruleta (respeta filtros si hay elementos, o usa el total visible)
   const roulettePool = useMemo(() => {
@@ -396,11 +437,14 @@ function MainApp() {
     if (mainTab === 'my-foods') {
       return `Girando entre tus ${roulettePool.length} platos creados 👨‍🍳`;
     }
-    if (selectedCategory !== 'Todas') {
-      return `Girando entre ${roulettePool.length} platos de la categoría "${selectedCategory}"`;
+    if (!isAllSelected && selectedCategories.length > 0) {
+      if (selectedCategories.length === 1) {
+        return `Girando entre ${roulettePool.length} platos de la categoría "${selectedCategories[0]}"`;
+      }
+      return `Girando entre ${roulettePool.length} platos de ${selectedCategories.length} categorías seleccionadas`;
     }
     return `${roulettePool.length} platos en la ruleta. ¡Deja que el destino decida!`;
-  }, [mainTab, selectedCategory, roulettePool]);
+  }, [mainTab, isAllSelected, selectedCategories, roulettePool]);
 
   return (
     <div className="min-h-screen flex flex-col bg-slate-50 text-slate-800">
@@ -648,19 +692,44 @@ function MainApp() {
             </div>
           </div>
 
-          {/* Categorías (Pills) */}
+          {/* Categorías (Pills con Selección Múltiple) */}
           <div className="flex items-center space-x-1.5 overflow-x-auto pb-0.5 scrollbar-none">
-            {categoriesWithAll.map((cat) => {
-              const active = selectedCategory === cat;
+            {/* Botón "Todas" */}
+            <button
+              type="button"
+              onClick={handleToggleAll}
+              className={`px-3 py-1 rounded-full text-xs font-bold transition-all flex-shrink-0 shadow-sm cursor-pointer select-none ${
+                isAllSelected
+                  ? 'bg-orange-500 text-white shadow-orange-500/25 scale-105'
+                  : 'bg-white hover:bg-slate-100 text-slate-500 border border-slate-200/80 hover:text-slate-800'
+              }`}
+              title={
+                isAllSelected
+                  ? 'Todas las categorías activas (clic para deseleccionar)'
+                  : 'Seleccionar todas las categorías'
+              }
+            >
+              Todas
+            </button>
+
+            {/* Píldoras individuales */}
+            {categories.map((cat) => {
+              const isSelected = selectedCategories.includes(cat);
               return (
                 <button
+                  type="button"
                   key={cat}
-                  onClick={() => setSelectedCategory(cat)}
-                  className={`px-3 py-1 rounded-full text-xs font-bold transition-all flex-shrink-0 shadow-sm ${
-                    active
-                      ? 'bg-orange-500 text-white shadow-orange-500/25 scale-105'
-                      : 'bg-white hover:bg-slate-100 text-slate-600 border border-slate-200/80'
+                  onClick={() => handleToggleCategory(cat)}
+                  className={`px-3 py-1 rounded-full text-xs font-bold transition-all flex-shrink-0 shadow-xs cursor-pointer select-none ${
+                    isSelected
+                      ? 'bg-orange-500 text-white shadow-orange-500/20 scale-[1.02]'
+                      : 'bg-slate-100/90 hover:bg-slate-200 text-slate-400 border border-slate-200/70 hover:text-slate-600'
                   }`}
+                  title={
+                    isSelected
+                      ? `Desactivar filtro "${cat}"`
+                      : `Activar filtro "${cat}"`
+                  }
                 >
                   {cat}
                 </button>
@@ -714,10 +783,21 @@ function MainApp() {
                   ? 'Pulsa en el icono de la estrella ⭐ de cualquier tarjeta para guardarla en tus favoritos y poder elegir rápidamente entre ellos.'
                   : mainTab === 'my-foods'
                   ? 'Crea tus platos favoritos con foto e ingredientes para que entren en la ruleta del grupo.'
+                  : selectedCategories.length === 0
+                  ? 'No tienes ninguna categoría activa. Pulsa en "Todas" o activa alguna para ver platos.'
                   : 'No hay ningún plato que coincida con tus filtros actuales.'}
               </p>
 
-              {mainTab === 'favorites' ? (
+              {selectedCategories.length === 0 ? (
+                <button
+                  type="button"
+                  onClick={handleToggleAll}
+                  className="mt-2 inline-flex items-center space-x-1.5 px-4 py-2 rounded-xl bg-orange-500 text-white text-xs font-bold hover:bg-orange-600 shadow-md transition-all cursor-pointer"
+                >
+                  <Check className="w-4 h-4" />
+                  <span>Activar todas las categorías</span>
+                </button>
+              ) : mainTab === 'favorites' ? (
                 <button
                   onClick={() => setMainTab('all')}
                   className="mt-2 inline-flex items-center space-x-1.5 px-4 py-2 rounded-xl bg-orange-500 text-white text-xs font-bold hover:bg-orange-600 shadow-md transition-all"
