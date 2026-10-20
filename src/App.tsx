@@ -22,6 +22,7 @@ import { EditFoodModal } from './components/EditFoodModal';
 import { AuthModal } from './components/AuthModal';
 import { AdminUsersModal } from './components/AdminUsersModal';
 import { RecipeDetailModal } from './components/RecipeDetailModal';
+import { ArcadeModal } from './components/ArcadeModal';
 import { Toast } from './components/Toast';
 import { UserProvider, useUser } from './context/UserContext';
 import { playConfettiPop } from './lib/sound';
@@ -67,6 +68,7 @@ function MainApp() {
   // Modales
   const [isRouletteOpen, setIsRouletteOpen] = useState(false);
   const [rouletteAutoSpin, setRouletteAutoSpin] = useState(false);
+  const [isArcadeOpen, setIsArcadeOpen] = useState(false);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [editingFood, setEditingFood] = useState<Food | null>(null);
   const [selectedRecipe, setSelectedRecipe] = useState<Food | null>(null);
@@ -412,6 +414,27 @@ function MainApp() {
       <main className="flex-1 max-w-6xl w-full mx-auto px-3 sm:px-6 py-3 sm:py-6 space-y-4 sm:space-y-6">
         {/* Banner Hero Central — compacto en móvil */}
         <section className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-orange-600 via-amber-600 to-rose-600 text-white p-4 sm:p-8 shadow-xl shadow-orange-600/20">
+          {/* Botón Nave Espacial Retro (Minijuego Arkanoid) */}
+          <button
+            type="button"
+            onClick={() => setIsArcadeOpen(true)}
+            title="Jugar al Arkanoid"
+            aria-label="Jugar al Arkanoid"
+            className="absolute top-3 right-3 sm:top-4 sm:right-4 z-20 group flex items-center gap-1.5 px-2.5 py-1.5 sm:px-3 sm:py-1.5 rounded-full bg-white/15 hover:bg-white/25 active:bg-white/30 backdrop-blur-md border border-white/25 hover:border-white/40 shadow-xs hover:shadow-md transition-all duration-200 cursor-pointer text-white"
+          >
+            <svg
+              className="w-4 h-4 sm:w-4.5 sm:h-4.5 text-amber-200 group-hover:text-amber-100 group-hover:-translate-y-0.5 group-hover:scale-110 transition-transform duration-150 drop-shadow-xs"
+              viewBox="0 0 24 24"
+              fill="currentColor"
+              aria-hidden="true"
+            >
+              <path d="M11 2h2v2h-2zM10 4h4v2h-4zM9 6h6v2H9zM8 8h8v2H8zM7 10h10v2H7zM6 12h12v2H6zM4 14h16v2H4zM2 16h20v2H2zM4 18h2v2H4zM18 18h2v2h-2zM10 18h4v2h-4zM11 20h2v2h-2z" />
+            </svg>
+            <span className="hidden sm:inline-block text-[11px] font-bold text-white/95 group-hover:text-white tracking-tight">
+              Arkanoid
+            </span>
+          </button>
+
           <div className="absolute -right-8 -bottom-8 opacity-10 pointer-events-none text-8xl">
             🥘
           </div>
@@ -773,6 +796,11 @@ function MainApp() {
           setIsRouletteOpen(true);
         }}
         onOptimisticVote={handleOptimisticVote}
+      />
+
+      <ArcadeModal
+        isOpen={isArcadeOpen}
+        onClose={() => setIsArcadeOpen(false)}
       />
 
       <AddFoodModal
