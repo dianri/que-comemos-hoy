@@ -31,3 +31,11 @@ export interface AdminUserItem {
   created_at: string;
   last_sign_in_at: string | null;
 }
+
+export interface GameScore {
+  id: string;
+  game_name: string;
+  user_name: string;
+  score: number;
+  created_at: string;
+}
