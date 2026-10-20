@@ -10,6 +10,7 @@ interface RouletteModalProps {
   foods: Food[];
   onSelectWinner?: (food: Food) => void;
   subtitle?: string;
+  autoSpin?: boolean;
 }
 
 // Paleta viva con contraste óptimo para tipografía oscura
@@ -34,6 +35,7 @@ export const RouletteModal: React.FC<RouletteModalProps> = ({
   foods,
   onSelectWinner,
   subtitle,
+  autoSpin = false,
 }) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [isSpinning, setIsSpinning] = useState(false);
@@ -185,7 +187,7 @@ export const RouletteModal: React.FC<RouletteModalProps> = ({
   }, [isOpen, drawWheel]);
 
   // Lógica del Giro con Sincronización Matemática 100% Precisa con la Flecha Superior
-  const spin = () => {
+  const spin = useCallback(() => {
     if (isSpinning || foods.length === 0) return;
     // Desbloquear / activar AudioContext en el evento click del usuario
     getAudioContext();
@@ -277,6 +279,25 @@ export const RouletteModal: React.FC<RouletteModalProps> = ({
     };
 
     animationFrameRef.current = requestAnimationFrame(animate);
+  }, [foods, isSpinning, drawWheel]);
+
+  // Auto-giro inmediato si se abre con autoSpin (ej. desde "Volver a girar" o botón del banner)
+  useEffect(() => {
+    if (isOpen && autoSpin && !isSpinning) {
+      const timer = setTimeout(() => {
+        spin();
+      }, 80);
+      return () => clearTimeout(timer);
+    }
+  }, [isOpen, autoSpin, isSpinning, spin]);
+
+  // Manejador para volver a girar de inmediato sin requerir otro clic
+  const handleSpinAgain = () => {
+    if (isSpinning) return;
+    setWinner(null);
+    setTimeout(() => {
+      spin();
+    }, 40);
   };
 
   if (!isOpen) return null;
@@ -377,7 +398,7 @@ export const RouletteModal: React.FC<RouletteModalProps> = ({
             <div className="flex items-center justify-between gap-2 w-full">
               <button
                 type="button"
-                onClick={spin}
+                onClick={handleSpinAgain}
                 disabled={isSpinning}
                 className="flex-1 flex items-center justify-center space-x-1.5 px-3 py-2.5 rounded-xl bg-white border-2 border-orange-300 text-orange-700 font-bold text-xs sm:text-sm hover:bg-orange-50 active:scale-95 transition-all shadow-xs"
               >

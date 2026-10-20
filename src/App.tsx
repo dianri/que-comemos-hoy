@@ -65,6 +65,7 @@ function MainApp() {
 
   // Modales
   const [isRouletteOpen, setIsRouletteOpen] = useState(false);
+  const [rouletteAutoSpin, setRouletteAutoSpin] = useState(false);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [editingFood, setEditingFood] = useState<Food | null>(null);
   const [selectedRecipe, setSelectedRecipe] = useState<Food | null>(null);
@@ -346,7 +347,10 @@ function MainApp() {
             {/* Botones de Acción Hero */}
             <div className="mt-3 sm:mt-5 flex flex-wrap gap-2">
               <button
-                onClick={() => setIsRouletteOpen(true)}
+                onClick={() => {
+                  setRouletteAutoSpin(true);
+                  setIsRouletteOpen(true);
+                }}
                 className="group relative px-4 py-2 sm:px-6 sm:py-3 rounded-xl bg-white text-orange-600 font-black text-sm shadow-lg hover:shadow-xl hover:scale-105 active:scale-95 transition-all flex items-center space-x-2"
               >
                 <span className="text-base sm:text-xl">🎯</span>
@@ -652,12 +656,17 @@ function MainApp() {
       {/* Modales */}
       <RouletteModal
         isOpen={isRouletteOpen}
-        onClose={() => setIsRouletteOpen(false)}
+        onClose={() => {
+          setIsRouletteOpen(false);
+          setRouletteAutoSpin(false);
+        }}
         foods={roulettePool}
         subtitle={rouletteSubtitle}
+        autoSpin={rouletteAutoSpin}
         onSelectWinner={(winner) => {
           setHighlightedFoodId(winner.id);
           setIsRouletteOpen(false);
+          setRouletteAutoSpin(false);
           setSelectedRecipe(winner);
         }}
       />
@@ -672,6 +681,7 @@ function MainApp() {
         }}
         onSpinAgain={() => {
           setSelectedRecipe(null);
+          setRouletteAutoSpin(true);
           setIsRouletteOpen(true);
         }}
       />
