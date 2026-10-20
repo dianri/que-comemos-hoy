@@ -161,3 +161,11 @@ Este protocolo es de **cumplimiento estricto e inquebrantable** para cualquier d
   3. Cambiar a la rama principal `main` y asegurarse de que esté actualizada (`git pull`).
   4. Realizar la **fusión automática (merge)** de la rama de características hacia la rama principal `main`.
   5. Hacer el `push` de `main` a `origin`, dejando la rama principal lista, estable y sincronizada.
+
+---
+
+## 8. Protocolo de Desarrollo Paralelo (Multi-Agente)
+- **Aislamiento de Ramas Estricto:** Cada agente debe trabajar **siempre y exclusivamente** en su propia rama de características dedicada (`features/nombre-especifico-de-la-tarea`). Está terminantemente prohibido que dos agentes operen sobre la misma rama de desarrollo o hagan commits directos en `main` simultáneamente.
+- **Sincronización Previa Obligatoria:** Antes de iniciar cualquier tarea, el agente debe verificar el estado actual del repositorio y asegurar que parte del último commit estable de `main`.
+- **Resolución Atómica de Archivos:** Las tareas asignadas a cada agente deben ser ortogonales (es decir, tocar componentes o archivos diferentes) siempre que sea posible para minimizar futuros conflictos de fusión.
+- **Orden de Fusión y Actualización:** Si un agente realiza un *merge* a `main`, el segundo agente debe actualizar obligatoriamente su rama local con los cambios de `main` (`git pull origin main`) antes de proceder con su propio *merge*.
