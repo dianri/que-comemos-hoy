@@ -64,14 +64,22 @@ que-comemos-hoy/
 - Imagen destacada con fallback automático si la URL falla (`onError`).
 - El contador de votos se actualiza reactivamente gracias a Supabase Realtime y el trigger de base de datos.
 - Indicador visual del estado del voto del usuario actual (corazón relleno/activo).
+- **Z-Index y Capas:** El badge flotante superior (`¡Plato Seleccionado!`) se posiciona en `z-30 pointer-events-none` centrado arriba. Cuando la tarjeta está destacada (`isHighlighted`), la categoría y las acciones de voto/favorito se desplazan suavemente hacia abajo (`top-10`) para prevenir solapamientos visuales.
+- **Sincronización:** Estado `imgSrc` reactivo al cambio de `food.image_url` mediante `useEffect` para reflejar ediciones de forma instantánea.
 
 ### `RecipeDetailModal.tsx` (Detalle de Receta)
 - Modal centralizado de alta resolución abierto al hacer clic en cualquier tarjeta, al pulsar "Elección Rápida" o tras pulsar "¡A cocinar!" en la Ruleta.
 - Muestra fotografía HD, categoría, nombre del plato, descripción completa de la receta, popularidad/votos y botón para favoritos/likes.
 - **Privacidad estricta:** Oculta cualquier dirección de correo electrónico, mostrando nombres de usuario o perfiles locales dinámicos.
 
+### `ImagePicker.tsx` (Selector y Buscador de Fotos)
+- Catálogo de imágenes optimizadas de platos tradicionales y filtros rápidos.
+- Pestaña de URL Directa con acceso directo "🔍 Buscar en Google" que abre en una nueva pestaña Google Images con el nombre del plato prefiltrado.
+- Previsualización reactiva de URL con alerta visual si la imagen no carga o tiene enlace roto.
+
 ### `EditFoodModal.tsx` (Editar Plato)
-- Formulario de modificación prellenado con los datos actuales del plato (nombre, categoría, descripción y foto).
+- Formulario de modificación prellenado con los datos actuales del plato (nombre, categoría, descripción y foto con `ImagePicker`).
+- Actualización inmutable estricta en el estado global (`map` con nuevo objeto clonado) y emisión optimista instantánea sin esperar la resolución de WebSocket.
 - Accesible para los superusuarios o el propietario del plato.
 
 ### `AdminUsersModal.tsx` (Panel de Administración de Usuarios)
