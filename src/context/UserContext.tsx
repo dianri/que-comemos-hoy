@@ -20,7 +20,7 @@ interface UserContextType {
   toggleVote: (foodId: string) => Promise<boolean>;
   isLoadingVotes: boolean;
   favorites: Set<string>;
-  toggleFavorite: (foodId: string) => void;
+  toggleFavorite: (foodId: string) => boolean;
   isFavorite: (foodId: string) => boolean;
   isAuthModalOpen: boolean;
   authModalReason: string | undefined;
@@ -116,8 +116,13 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, [user]);
 
-  // Alternar plato favorito
-  const toggleFavorite = (foodId: string) => {
+  // Alternar plato favorito (solo usuarios autenticados)
+  const toggleFavorite = (foodId: string): boolean => {
+    if (!user) {
+      openAuthModal('Inicia sesión con tu correo para guardar tus platos favoritos.');
+      return false;
+    }
+
     setFavorites((prev) => {
       const next = new Set(prev);
       if (next.has(foodId)) {
@@ -133,6 +138,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
       return next;
     });
+    return true;
   };
 
   const isFavorite = (foodId: string) => {
@@ -246,8 +252,13 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
     fetchUserVotes();
   }, [userName]);
 
-  // Alternar voto (dar / quitar me gusta)
+  // Alternar voto (dar / quitar me gusta) - Solo usuarios autenticados
   const toggleVote = async (foodId: string): Promise<boolean> => {
+    if (!user) {
+      openAuthModal('Inicia sesión con tu correo para votar por tus platos favoritos.');
+      return false;
+    }
+
     const hasVoted = userVotes.has(foodId);
 
     // Optimistic update

@@ -83,6 +83,10 @@ function MainApp() {
       openAuthModal('Inicia sesión con tu correo para ver y gestionar los platos que has creado.');
       return;
     }
+    if (tab === 'favorites' && !isAuthenticated) {
+      openAuthModal('Inicia sesión con tu correo para guardar y consultar tus platos favoritos.');
+      return;
+    }
     setMainTab(tab);
   };
 
@@ -473,32 +477,34 @@ function MainApp() {
             )}
           </button>
 
-          <button
-            onClick={() => handleTabChange('favorites')}
-            className={`flex items-center space-x-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all ${
-              mainTab === 'favorites'
-                ? 'bg-white text-amber-600 shadow-md scale-102'
-                : 'text-slate-600 hover:text-slate-900'
-            }`}
-          >
-            <Star
-              className={`w-4 h-4 ${
+          {isAuthenticated && (
+            <button
+              onClick={() => handleTabChange('favorites')}
+              className={`flex items-center space-x-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all ${
                 mainTab === 'favorites'
-                  ? 'fill-amber-400 text-amber-500'
-                  : 'text-amber-500'
-              }`}
-            />
-            <span>Favoritos</span>
-            <span
-              className={`px-2 py-0.5 rounded-full text-[11px] font-extrabold ${
-                mainTab === 'favorites'
-                  ? 'bg-amber-100 text-amber-800'
-                  : 'bg-slate-300/80 text-slate-700'
+                  ? 'bg-white text-amber-600 shadow-md scale-102'
+                  : 'text-slate-600 hover:text-slate-900'
               }`}
             >
-              {favoritesCount}
-            </span>
-          </button>
+              <Star
+                className={`w-4 h-4 ${
+                  mainTab === 'favorites'
+                    ? 'fill-amber-400 text-amber-500'
+                    : 'text-amber-500'
+                }`}
+              />
+              <span>Favoritos</span>
+              <span
+                className={`px-2 py-0.5 rounded-full text-[11px] font-extrabold ${
+                  mainTab === 'favorites'
+                    ? 'bg-amber-100 text-amber-800'
+                    : 'bg-slate-300/80 text-slate-700'
+                }`}
+              >
+                {favoritesCount}
+              </span>
+            </button>
+          )}
         </div>
 
         {/* Barra de Filtros, Búsqueda y Ordenación */}
