@@ -367,19 +367,19 @@ export const ImagePicker: React.FC<ImagePickerProps> = ({ selectedUrl, onSelectU
         <div className="space-y-2.5 animate-fade-in">
           {/* Barra de Búsqueda de Fotos */}
           <div className="relative">
-            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+            <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Buscar foto (ej. lentejas, fideuà, asado, albóndigas...)"
-              className="w-full pl-9 pr-8 py-2 rounded-xl border border-slate-200 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/40 bg-slate-50/60"
+              placeholder="Buscar foto (lentejas, fideuà, asado...)"
+              className="w-full h-8 sm:h-9 pl-8 pr-7 py-1 rounded-xl border border-slate-200 text-xs focus:outline-none focus:ring-2 focus:ring-orange-500/40 bg-slate-50/60"
             />
             {searchQuery && (
               <button
                 type="button"
                 onClick={() => setSearchQuery('')}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-slate-400 hover:text-slate-600 p-1"
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-slate-400 hover:text-slate-600 p-0.5"
                 title="Limpiar búsqueda"
               >
                 ✕
@@ -388,7 +388,7 @@ export const ImagePicker: React.FC<ImagePickerProps> = ({ selectedUrl, onSelectU
           </div>
 
           {/* Filtros rápidos con presets */}
-          <div className="flex items-center space-x-1.5 overflow-x-auto pb-1 text-xs scrollbar-none">
+          <div className="flex items-center space-x-1 overflow-x-auto pb-0.5 text-xs scrollbar-none">
             {QUICK_FILTERS.map((filter) => {
               const active = activeFilter === filter;
               return (
@@ -399,9 +399,9 @@ export const ImagePicker: React.FC<ImagePickerProps> = ({ selectedUrl, onSelectU
                     setActiveFilter(filter);
                     setSearchQuery('');
                   }}
-                  className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold whitespace-nowrap transition-colors flex-shrink-0 ${
+                  className={`px-2 py-0.5 rounded-lg text-[10px] font-semibold whitespace-nowrap transition-colors flex-shrink-0 ${
                     active
-                      ? 'bg-orange-500 text-white shadow-sm'
+                      ? 'bg-orange-500 text-white shadow-xs'
                       : 'bg-slate-100 hover:bg-slate-200 text-slate-600'
                   }`}
                 >
@@ -413,14 +413,14 @@ export const ImagePicker: React.FC<ImagePickerProps> = ({ selectedUrl, onSelectU
 
           {/* Cuadrícula de Fotos con selección visual */}
           {filteredImages.length === 0 ? (
-            <div className="py-6 text-center bg-slate-50 rounded-xl border border-dashed border-slate-200 space-y-1">
+            <div className="py-4 text-center bg-slate-50 rounded-xl border border-dashed border-slate-200 space-y-1">
               <p className="text-xs font-semibold text-slate-600">No encontramos fotos para "{searchQuery}"</p>
-              <p className="text-[11px] text-slate-400">
-                Prueba con otro término o pega una URL personalizada en la pestaña "URL Directa".
+              <p className="text-[10px] text-slate-400">
+                Prueba con otro término o pega una URL en "URL Directa".
               </p>
             </div>
           ) : (
-            <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 max-h-52 overflow-y-auto p-1 bg-slate-50/50 rounded-xl border border-slate-100">
+            <div className="grid grid-cols-3 sm:grid-cols-4 gap-1.5 sm:gap-2 max-h-40 sm:max-h-52 overflow-y-auto p-1 bg-slate-50/50 rounded-xl border border-slate-100">
               {filteredImages.map((item) => {
                 const isSelected = selectedUrl === item.url;
                 return (
@@ -428,10 +428,10 @@ export const ImagePicker: React.FC<ImagePickerProps> = ({ selectedUrl, onSelectU
                     type="button"
                     key={item.id}
                     onClick={() => onSelectUrl(item.url)}
-                    className={`group relative aspect-video rounded-lg overflow-hidden border transition-all text-left ${
+                    className={`group relative aspect-[4/3] sm:aspect-video rounded-lg overflow-hidden border transition-all text-left ${
                       isSelected
                         ? 'ring-2 ring-orange-500 border-orange-500 shadow-md scale-98'
-                        : 'border-slate-200 hover:border-orange-300 hover:shadow-sm opacity-90 hover:opacity-100'
+                        : 'border-slate-200 hover:border-orange-300 hover:shadow-xs opacity-90 hover:opacity-100'
                     }`}
                   >
                     <img
@@ -444,14 +444,14 @@ export const ImagePicker: React.FC<ImagePickerProps> = ({ selectedUrl, onSelectU
                     {/* Check de selección */}
                     {isSelected && (
                       <div className="absolute inset-0 bg-orange-500/25 flex items-center justify-center">
-                        <div className="w-5 h-5 rounded-full bg-orange-600 text-white flex items-center justify-center shadow-md">
-                          <Check className="w-3.5 h-3.5" />
+                        <div className="w-4 h-4 rounded-full bg-orange-600 text-white flex items-center justify-center shadow-md">
+                          <Check className="w-3 h-3" />
                         </div>
                       </div>
                     )}
 
                     <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/85 via-black/45 to-transparent p-1 pointer-events-none">
-                      <p className="text-[10px] text-white font-medium truncate leading-tight">
+                      <p className="text-[9px] sm:text-[10px] text-white font-medium truncate leading-tight">
                         {item.name}
                       </p>
                     </div>
@@ -529,14 +529,14 @@ export const ImagePicker: React.FC<ImagePickerProps> = ({ selectedUrl, onSelectU
 
       {/* Vista previa reactiva de la foto seleccionada con validación visual */}
       {selectedUrl && (
-        <div className="space-y-1.5">
-          <div className="relative h-28 sm:h-32 rounded-xl overflow-hidden border border-slate-200 bg-slate-100 shadow-inner group">
+        <div className="space-y-1">
+          <div className="relative h-20 sm:h-28 rounded-xl overflow-hidden border border-slate-200 bg-slate-100 shadow-inner group">
             {previewError ? (
-              <div className="w-full h-full flex flex-col items-center justify-center p-3 text-center bg-red-50/70 border border-red-200 text-red-600">
-                <AlertTriangle className="w-5 h-5 mb-1 text-red-500" />
-                <p className="text-xs font-bold">No pudimos cargar la vista previa</p>
-                <p className="text-[10px] text-red-500/90 mt-0.5 max-w-xs">
-                  Asegúrate de copiar la dirección directa de la imagen (que termine en .jpg, .png o .webp).
+              <div className="w-full h-full flex flex-col items-center justify-center p-2 text-center bg-red-50/70 border border-red-200 text-red-600">
+                <AlertTriangle className="w-4 h-4 mb-0.5 text-red-500" />
+                <p className="text-[11px] font-bold">No pudimos cargar la vista previa</p>
+                <p className="text-[9px] text-red-500/90 mt-0.5 max-w-xs">
+                  Asegúrate de copiar la dirección directa de la imagen (.jpg, .png o .webp).
                 </p>
               </div>
             ) : (
@@ -548,8 +548,8 @@ export const ImagePicker: React.FC<ImagePickerProps> = ({ selectedUrl, onSelectU
                   onLoad={() => setPreviewError(false)}
                   onError={() => setPreviewError(true)}
                 />
-                <div className="absolute top-2 left-2 px-2 py-0.5 rounded-full bg-black/60 backdrop-blur-md text-white text-[10px] font-bold flex items-center space-x-1">
-                  <Sparkles className="w-3 h-3 text-amber-300" />
+                <div className="absolute top-1.5 left-1.5 px-2 py-0.5 rounded-full bg-black/60 backdrop-blur-md text-white text-[9px] font-bold flex items-center space-x-1">
+                  <Sparkles className="w-2.5 h-2.5 text-amber-300" />
                   <span>Foto Seleccionada</span>
                 </div>
               </>

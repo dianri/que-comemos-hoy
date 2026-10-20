@@ -108,14 +108,14 @@ export const FoodCard: React.FC<FoodCardProps> = ({
   return (
     <div
       onClick={() => onSelect?.(food)}
-      className={`group relative flex flex-col bg-white rounded-3xl overflow-hidden border transition-all duration-300 hover:shadow-xl hover:-translate-y-1.5 cursor-pointer ${
+      className={`group relative flex flex-col bg-white rounded-2xl sm:rounded-3xl overflow-hidden border transition-all duration-300 hover:shadow-xl hover:-translate-y-1.5 cursor-pointer ${
         isHighlighted
           ? 'border-orange-500 shadow-2xl shadow-orange-500/20 ring-4 ring-orange-400/40 scale-[1.02]'
           : 'border-slate-100 shadow-md hover:border-orange-200'
       }`}
     >
       {/* Contenedor de la Imagen */}
-      <div className="relative h-48 sm:h-52 w-full overflow-hidden bg-slate-100">
+      <div className="relative h-40 sm:h-50 w-full overflow-hidden bg-slate-100">
         <img
           src={imgSrc}
           alt={food.name}
@@ -129,26 +129,26 @@ export const FoodCard: React.FC<FoodCardProps> = ({
 
         {/* Badge Flotante Superior: Selección Ganadora / Destacada */}
         {isHighlighted && (
-          <div className="absolute top-2.5 left-1/2 -translate-x-1/2 z-30 pointer-events-none">
-            <div className="bg-gradient-to-r from-orange-500 via-amber-500 to-orange-500 text-white text-[11px] font-black px-3.5 py-1 rounded-full flex items-center space-x-1.5 shadow-xl shadow-orange-500/40 border border-white/60 animate-bounce-subtle whitespace-nowrap">
-              <Sparkles className="w-3.5 h-3.5 text-amber-200 fill-amber-200" />
-              <span className="tracking-wide uppercase text-[10px]">¡Plato Seleccionado!</span>
+          <div className="absolute top-2 left-1/2 -translate-x-1/2 z-10 pointer-events-none">
+            <div className="bg-gradient-to-r from-orange-500 via-amber-500 to-orange-500 text-white text-[10px] sm:text-[11px] font-black px-2.5 sm:px-3.5 py-0.5 sm:py-1 rounded-full flex items-center space-x-1.5 shadow-xl shadow-orange-500/40 border border-white/60 animate-bounce-subtle whitespace-nowrap">
+              <Sparkles className="w-3 h-3 text-amber-200 fill-amber-200" />
+              <span className="tracking-wide uppercase text-[9px] sm:text-[10px]">¡Plato Seleccionado!</span>
             </div>
           </div>
         )}
 
         {/* Badge de Categoría y Autoría */}
-        <div className={`absolute left-3 z-20 flex items-center space-x-1 transition-all ${
-          isHighlighted ? 'top-10' : 'top-3'
+        <div className={`absolute left-2.5 z-10 flex items-center space-x-1 transition-all ${
+          isHighlighted ? 'top-8 sm:top-10' : 'top-2.5'
         }`}>
           <span
-            className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold backdrop-blur-md shadow-sm border ${categoryColor}`}
+            className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold backdrop-blur-md shadow-sm border ${categoryColor}`}
           >
             {food.category || 'General'}
           </span>
           {canManage && (
             <span
-              className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold backdrop-blur-md shadow-sm text-white ${
+              className={`inline-flex items-center px-1.5 py-0.5 rounded-full text-[9px] font-bold backdrop-blur-md shadow-sm text-white ${
                 isSuperUser ? 'bg-purple-600/90' : 'bg-slate-900/80'
               }`}
             >
@@ -158,8 +158,8 @@ export const FoodCard: React.FC<FoodCardProps> = ({
         </div>
 
         {/* Botones de Favorito y Votar (Like) */}
-        <div className={`absolute right-3 z-20 flex items-center space-x-1.5 transition-all ${
-          isHighlighted ? 'top-10' : 'top-3'
+        <div className={`absolute right-2.5 z-10 flex items-center space-x-1 transition-all ${
+          isHighlighted ? 'top-8 sm:top-10' : 'top-2.5'
         }`}>
           {/* Botón Favorito */}
           <button
@@ -175,7 +175,7 @@ export const FoodCard: React.FC<FoodCardProps> = ({
             title={isFav ? 'Quitar de favoritos' : 'Marcar como favorito'}
           >
             <Star
-              className={`w-4 h-4 transition-transform ${
+              className={`w-3.5 h-3.5 transition-transform ${
                 isFav ? 'fill-amber-400 text-amber-950 scale-110' : ''
               }`}
             />
@@ -184,7 +184,7 @@ export const FoodCard: React.FC<FoodCardProps> = ({
           {/* Botón Votar */}
           <button
             onClick={handleVote}
-            className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-full backdrop-blur-md transition-all shadow-md active:scale-90 ${
+            className={`flex items-center space-x-1 px-2.5 py-1 rounded-full backdrop-blur-md transition-all shadow-md active:scale-90 ${
               hasVoted
                 ? 'bg-rose-500 text-white font-bold shadow-rose-500/30'
                 : 'bg-white/80 hover:bg-white text-slate-700 hover:text-rose-500'
@@ -192,31 +192,31 @@ export const FoodCard: React.FC<FoodCardProps> = ({
             title={hasVoted ? 'Quitar tu voto' : 'Votar este plato'}
           >
             <Heart
-              className={`w-4 h-4 transition-transform ${
+              className={`w-3.5 h-3.5 transition-transform ${
                 hasVoted ? 'fill-current scale-110' : ''
               }`}
             />
-            <span className="text-xs">{food.votes_count}</span>
+            <span className="text-[11px] font-bold">{food.votes_count}</span>
           </button>
         </div>
       </div>
 
       {/* Contenido de la Tarjeta */}
-      <div className="p-4 sm:p-5 flex-1 flex flex-col justify-between">
+      <div className="p-3 sm:p-4 flex-1 flex flex-col justify-between">
         <div>
-          <h3 className="text-base sm:text-lg font-bold text-slate-800 group-hover:text-orange-600 transition-colors line-clamp-1">
+          <h3 className="text-sm sm:text-base font-bold text-slate-800 group-hover:text-orange-600 transition-colors line-clamp-1">
             {food.name}
           </h3>
           {food.description && (
-            <p className="mt-1 text-xs sm:text-sm text-slate-500 line-clamp-2">
+            <p className="mt-0.5 text-xs text-slate-500 line-clamp-2">
               {food.description}
             </p>
           )}
         </div>
 
         {/* Footer de la Tarjeta */}
-        <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-400">
-          <span className="flex items-center space-x-1.5 text-slate-500 font-medium truncate max-w-[170px] sm:max-w-[210px]">
+        <div className="mt-2.5 pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-400">
+          <span className="flex items-center space-x-1 text-slate-500 font-medium truncate max-w-[150px] sm:max-w-[200px]">
             <ChefHat className="w-3.5 h-3.5 text-orange-500 flex-shrink-0" />
             <span className="truncate">{getCreatorDisplayName()}</span>
           </span>
@@ -230,10 +230,10 @@ export const FoodCard: React.FC<FoodCardProps> = ({
                     e.stopPropagation();
                     onEdit(food);
                   }}
-                  className="text-slate-400 hover:text-orange-600 hover:bg-orange-50 p-1.5 rounded-lg transition-colors"
+                  className="text-slate-400 hover:text-orange-600 hover:bg-orange-50 p-1 rounded-lg transition-colors"
                   title="Modificar receta"
                 >
-                  <Pencil className="w-3.5 h-3.5" />
+                  <Pencil className="w-3 h-3" />
                 </button>
               )}
 
@@ -245,10 +245,10 @@ export const FoodCard: React.FC<FoodCardProps> = ({
                       onDelete(food.id);
                     }
                   }}
-                  className="text-slate-400 hover:text-red-500 hover:bg-red-50 p-1.5 rounded-lg transition-colors"
+                  className="text-slate-400 hover:text-red-500 hover:bg-red-50 p-1 rounded-lg transition-colors"
                   title="Eliminar plato"
                 >
-                  <Trash2 className="w-3.5 h-3.5" />
+                  <Trash2 className="w-3 h-3" />
                 </button>
               )}
             </div>

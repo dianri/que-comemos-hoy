@@ -107,10 +107,10 @@ export const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/65 backdrop-blur-md animate-fade-in">
-      <div className="relative w-full max-w-xl bg-white rounded-3xl shadow-2xl border border-slate-100 overflow-hidden flex flex-col max-h-[92vh] animate-scale-up">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2.5 sm:p-4 bg-black/65 backdrop-blur-md animate-fade-in">
+      <div className="relative w-full max-w-xl bg-white rounded-2xl sm:rounded-3xl shadow-2xl border border-slate-100 overflow-hidden flex flex-col max-h-[92vh] animate-scale-up">
         {/* Foto de alta resolución y encabezado visual */}
-        <div className="relative h-60 sm:h-72 w-full overflow-hidden bg-slate-100 flex-shrink-0">
+        <div className="relative h-44 sm:h-72 w-full overflow-hidden bg-slate-100 flex-shrink-0">
           <img
             src={food.image_url || FALLBACK_IMAGE}
             alt={food.name}
@@ -126,16 +126,16 @@ export const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
           {/* Botón cerrar flotante */}
           <button
             onClick={onClose}
-            className="absolute top-4 right-4 z-20 p-2 rounded-full bg-black/40 hover:bg-black/60 text-white backdrop-blur-md transition-all shadow-md active:scale-90"
+            className="absolute top-3 right-3 sm:top-4 sm:right-4 z-20 p-1.5 sm:p-2 rounded-full bg-black/40 hover:bg-black/60 text-white backdrop-blur-md transition-all shadow-md active:scale-90"
             title="Cerrar detalle"
           >
-            <X className="w-5 h-5" />
+            <X className="w-4 h-4 sm:w-5 sm:h-5" />
           </button>
 
           {/* Badges superiores */}
-          <div className="absolute top-4 left-4 z-20 flex items-center space-x-2">
+          <div className="absolute top-3 left-3 sm:top-4 sm:left-4 z-20 flex items-center space-x-1.5 sm:space-x-2">
             <span
-              className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold backdrop-blur-md shadow-md border ${categoryColor}`}
+              className={`inline-flex items-center px-2.5 py-0.5 sm:px-3 sm:py-1 rounded-full text-[11px] sm:text-xs font-bold backdrop-blur-md shadow-md border ${categoryColor}`}
             >
               <Tag className="w-3 h-3 mr-1" />
               {food.category || 'General'}
@@ -143,7 +143,7 @@ export const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
 
             {canManage && (
               <span
-                className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold backdrop-blur-md shadow-md text-white ${
+                className={`inline-flex items-center px-2 py-0.5 sm:px-2.5 rounded-full text-[10px] sm:text-xs font-bold backdrop-blur-md shadow-md text-white ${
                   isSuperUser ? 'bg-purple-600/90' : 'bg-slate-900/80'
                 }`}
               >
@@ -153,13 +153,13 @@ export const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
           </div>
 
           {/* Nombre y datos sobre la imagen en la base */}
-          <div className="absolute bottom-4 inset-x-4 z-20 text-white space-y-1">
-            <h2 className="text-2xl sm:text-3xl font-black tracking-tight drop-shadow-md leading-tight">
+          <div className="absolute bottom-3 inset-x-3 sm:bottom-4 sm:inset-x-4 z-20 text-white space-y-0.5 sm:space-y-1">
+            <h2 className="text-xl sm:text-3xl font-black tracking-tight drop-shadow-md leading-tight">
               {food.name}
             </h2>
-            <div className="flex items-center space-x-2 text-xs sm:text-sm text-slate-200">
-              <span className="flex items-center space-x-1 font-medium bg-black/40 px-2.5 py-0.5 rounded-full backdrop-blur-sm">
-                <ChefHat className="w-3.5 h-3.5 text-orange-400" />
+            <div className="flex items-center space-x-2 text-[11px] sm:text-sm text-slate-200">
+              <span className="flex items-center space-x-1 font-medium bg-black/40 px-2 sm:px-2.5 py-0.5 rounded-full backdrop-blur-sm">
+                <ChefHat className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-orange-400" />
                 <span>Creado por {getCreatorDisplayName()}</span>
               </span>
             </div>
@@ -167,9 +167,9 @@ export const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
         </div>
 
         {/* Contenido del Modal */}
-        <div className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-5">
+        <div className="flex-1 overflow-y-auto p-3.5 sm:p-6 space-y-3.5 sm:space-y-5">
           {/* Barra de interacción rápida (Votos, Favorito, Votar) */}
-          <div className="flex items-center justify-between p-3.5 bg-orange-50/70 border border-orange-200/60 rounded-2xl">
+          <div className="flex items-center justify-between p-2.5 sm:p-3.5 bg-orange-50/70 border border-orange-200/60 rounded-xl sm:rounded-2xl">
             <div className="flex items-center space-x-2">
               <div className="w-8 h-8 rounded-xl bg-orange-500/10 text-orange-600 flex items-center justify-center">
                 <Award className="w-4 h-4 text-orange-600" />

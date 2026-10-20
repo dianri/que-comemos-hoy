@@ -111,44 +111,44 @@ export const EditFoodModal: React.FC<EditFoodModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
-      <div className="relative w-full max-w-lg bg-white rounded-3xl shadow-2xl border border-slate-100 overflow-hidden p-6 max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2.5 sm:p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
+      <div className="relative w-full max-w-lg bg-white rounded-2xl sm:rounded-3xl shadow-2xl border border-slate-100 overflow-hidden p-4 sm:p-6 max-h-[92vh] overflow-y-auto">
         {/* Botón cerrar */}
         <button
           onClick={onClose}
           disabled={isSubmitting}
-          className="absolute top-4 right-4 p-2 rounded-full text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors disabled:opacity-40"
+          className="absolute top-3 right-3 sm:top-4 sm:right-4 p-1.5 sm:p-2 rounded-full text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors disabled:opacity-40"
           title="Cerrar"
         >
           <X className="w-5 h-5" />
         </button>
 
         {/* Encabezado */}
-        <div className="mb-5">
-          <div className="flex items-center space-x-2 text-orange-600 mb-1">
-            <Sparkles className="w-4 h-4" />
-            <span className="text-xs font-bold uppercase tracking-wider">Modificar Receta</span>
+        <div className="mb-3.5 sm:mb-4">
+          <div className="flex items-center space-x-1.5 text-orange-600 mb-0.5">
+            <Sparkles className="w-3.5 h-3.5" />
+            <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider">Modificar Receta</span>
           </div>
-          <h2 className="text-xl sm:text-2xl font-extrabold text-slate-800">
+          <h2 className="text-lg sm:text-xl font-extrabold text-slate-800">
             Editar Plato
           </h2>
-          <p className="text-xs sm:text-sm text-slate-500">
+          <p className="text-[11px] sm:text-xs text-slate-500">
             Modifica los detalles, categoría o foto de este plato.
           </p>
         </div>
 
         {errorMsg && (
-          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl text-red-700 text-xs flex items-center space-x-2">
+          <div className="mb-3 p-2.5 bg-red-50 border border-red-200 rounded-xl text-red-700 text-xs flex items-center space-x-2">
             <AlertCircle className="w-4 h-4 flex-shrink-0" />
             <span>{errorMsg}</span>
           </div>
         )}
 
         {/* Formulario */}
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-3">
           {/* Nombre del plato */}
           <div>
-            <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+            <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
               Nombre del Plato *
             </label>
             <input
@@ -157,19 +157,19 @@ export const EditFoodModal: React.FC<EditFoodModalProps> = ({
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="Ej. Paella, Pizza..."
-              className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-orange-500/40 text-sm font-medium"
+              className="w-full h-9 sm:h-10 px-3 py-1 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-orange-500/40 text-xs sm:text-sm font-medium"
             />
           </div>
 
           {/* Categoría */}
           <div>
-            <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+            <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
               Categoría
             </label>
             <select
               value={category}
               onChange={(e) => setCategory(e.target.value as Category)}
-              className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-orange-500/40 text-sm font-medium bg-white"
+              className="w-full h-9 sm:h-10 px-3 py-1 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-orange-500/40 text-xs sm:text-sm font-medium bg-white"
             >
               {CATEGORIES.map((cat) => (
                 <option key={cat} value={cat}>
@@ -187,7 +187,7 @@ export const EditFoodModal: React.FC<EditFoodModalProps> = ({
 
           {/* Descripción opcional */}
           <div>
-            <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+            <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
               Descripción corta (Opcional)
             </label>
             <textarea
@@ -195,24 +195,24 @@ export const EditFoodModal: React.FC<EditFoodModalProps> = ({
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Ingredientes, detalles de preparación..."
               rows={2}
-              className="w-full px-4 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-orange-500/40 text-sm resize-none"
+              className="w-full px-3 py-1.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-orange-500/40 text-xs sm:text-sm resize-none"
             />
           </div>
 
           {/* Botones de acción */}
-          <div className="pt-2 flex items-center justify-end space-x-2">
+          <div className="pt-1 flex items-center justify-end space-x-2">
             <button
               type="button"
               onClick={onClose}
               disabled={isSubmitting}
-              className="px-4 py-2.5 rounded-xl text-slate-600 font-bold text-sm hover:bg-slate-100 transition-colors"
+              className="px-3.5 py-2 rounded-xl text-slate-600 font-bold text-xs sm:text-sm hover:bg-slate-100 transition-colors"
             >
               Cancelar
             </button>
             <button
               type="submit"
               disabled={isSubmitting}
-              className="px-6 py-2.5 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-bold text-sm shadow-lg shadow-orange-500/25 transition-all flex items-center space-x-1.5 disabled:opacity-50"
+              className="px-5 py-2 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-bold text-xs sm:text-sm shadow-md shadow-orange-500/25 transition-all flex items-center space-x-1.5 disabled:opacity-50"
             >
               <Save className="w-4 h-4" />
               <span>{isSubmitting ? 'Guardando...' : 'Guardar Cambios'}</span>

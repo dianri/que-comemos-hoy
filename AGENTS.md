@@ -64,7 +64,7 @@ que-comemos-hoy/
 - Imagen destacada con fallback automático si la URL falla (`onError`).
 - El contador de votos se actualiza reactivamente gracias a Supabase Realtime y el trigger de base de datos.
 - Indicador visual del estado del voto del usuario actual (corazón relleno/activo).
-- **Z-Index y Capas:** El badge flotante superior (`¡Plato Seleccionado!`) se posiciona en `z-30 pointer-events-none` centrado arriba. Cuando la tarjeta está destacada (`isHighlighted`), la categoría y las acciones de voto/favorito se desplazan suavemente hacia abajo (`top-10`) para prevenir solapamientos visuales.
+- **Z-Index y Capas:** El badge flotante superior (`¡Plato Seleccionado!`) y las etiquetas/botones de la tarjeta se posicionan en `z-10`. Cuando la tarjeta está destacada (`isHighlighted`), la categoría y las acciones de voto/favorito se desplazan suavemente hacia abajo (`top-8 sm:top-10`) para prevenir solapamientos visuales. El contenedor sticky superior de filtros/buscador en `App.tsx` usa `z-30` y la barra de navegación `z-40` para garantizar que los elementos de las tarjetas pasen siempre por detrás al hacer scroll.
 - **Sincronización:** Estado `imgSrc` reactivo al cambio de `food.image_url` mediante `useEffect` para reflejar ediciones de forma instantánea.
 
 ### `RecipeDetailModal.tsx` (Detalle de Receta)
