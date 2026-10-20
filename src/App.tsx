@@ -22,6 +22,7 @@ import { EditFoodModal } from './components/EditFoodModal';
 import { AuthModal } from './components/AuthModal';
 import { AdminUsersModal } from './components/AdminUsersModal';
 import { RecipeDetailModal } from './components/RecipeDetailModal';
+import { Toast } from './components/Toast';
 import { UserProvider, useUser } from './context/UserContext';
 import { playConfettiPop } from './lib/sound';
 
@@ -113,6 +114,17 @@ function MainApp() {
 
   useEffect(() => {
     fetchFoods();
+
+    // Deep-linking: Si la URL contiene ?food=<id>, abrir y destacar automáticamente la receta compartida
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const sharedFoodId = params.get('food');
+      if (sharedFoodId) {
+        setHighlightedFoodId(sharedFoodId);
+      }
+    } catch {
+      // Ignorar
+    }
 
     // Suscripción Realtime a cambios en las tablas 'foods' y 'votes'
     const channel = supabase
@@ -229,6 +241,25 @@ function MainApp() {
         : prevRecipe
     );
   }, []);
+
+  // Apertura automática de receta compartida por enlace directo (?food=<id>)
+  useEffect(() => {
+    if (foods.length === 0) return;
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const sharedFoodId = params.get('food');
+      if (sharedFoodId) {
+        const found = foods.find((f) => f.id === sharedFoodId);
+        if (found) {
+          setSelectedRecipe(found);
+          setHighlightedFoodId(found.id);
+          window.history.replaceState({}, '', window.location.pathname);
+        }
+      }
+    } catch {
+      // Ignorar restricciones en entornos sin manipulación de historial
+    }
+  }, [foods]);
 
   // Actualizar comida tras edición (actualización local inmediata + refresco de referencias)
   const handleFoodUpdated = (updatedFood: Food) => {
@@ -768,6 +799,8 @@ function MainApp() {
         onClose={closeAdminModal}
         onUserDeleted={fetchFoods}
       />
+
+      <Toast />
     </div>
   );
 }

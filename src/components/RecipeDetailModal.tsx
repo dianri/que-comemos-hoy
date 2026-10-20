@@ -9,9 +9,13 @@ import {
   Award,
   Tag,
   RotateCcw,
+  Share2,
+  Check,
 } from 'lucide-react';
 import { Food } from '../types';
 import { useUser } from '../context/UserContext';
+import { shareFood } from '../lib/share';
+import { showToast } from '../lib/toast';
 
 interface RecipeDetailModalProps {
   isOpen: boolean;
@@ -60,6 +64,8 @@ export const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
   } = useUser();
 
   const [isLiking, setIsLiking] = useState(false);
+  const [isSharing, setIsSharing] = useState(false);
+  const [isShared, setIsShared] = useState(false);
 
   if (!isOpen || !food) return null;
 
@@ -113,6 +119,24 @@ export const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
     setTimeout(() => setIsLiking(false), 300);
   };
 
+  const handleShare = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (isSharing || !food) return;
+    setIsSharing(true);
+    try {
+      const result = await shareFood(food, getCreatorDisplayName());
+      if (result.success) {
+        setIsShared(true);
+        if (result.message) {
+          showToast(result.message);
+        }
+        setTimeout(() => setIsShared(false), 2400);
+      }
+    } finally {
+      setIsSharing(false);
+    }
+  };
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-2.5 sm:p-4 bg-black/65 backdrop-blur-md animate-fade-in">
       <div className="relative w-full max-w-xl bg-white rounded-2xl sm:rounded-3xl shadow-2xl border border-slate-100 overflow-hidden flex flex-col max-h-[92vh] animate-scale-up">
@@ -129,6 +153,24 @@ export const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
 
           {/* Gradiente para contraste */}
           <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-black/40 pointer-events-none" />
+
+          {/* Botón compartir flotante en la cabecera */}
+          <button
+            onClick={handleShare}
+            disabled={isSharing}
+            className={`absolute top-3 right-11 sm:top-4 sm:right-14 z-20 p-1.5 sm:p-2 rounded-full backdrop-blur-md transition-all shadow-md active:scale-90 ${
+              isShared
+                ? 'bg-emerald-500 text-white ring-2 ring-emerald-300'
+                : 'bg-black/40 hover:bg-black/60 text-white'
+            }`}
+            title="Compartir plato"
+          >
+            {isShared ? (
+              <Check className="w-4 h-4 sm:w-5 sm:h-5 text-white stroke-[2.5]" />
+            ) : (
+              <Share2 className="w-4 h-4 sm:w-5 sm:h-5" />
+            )}
+          </button>
 
           {/* Botón cerrar flotante */}
           <button
@@ -189,7 +231,31 @@ export const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
               </div>
             </div>
 
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center space-x-1.5 sm:space-x-2">
+              {/* Botón Compartir */}
+              <button
+                onClick={handleShare}
+                disabled={isSharing}
+                className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-xl transition-all shadow-xs active:scale-95 text-xs font-bold ${
+                  isShared
+                    ? 'bg-emerald-500 text-white ring-2 ring-emerald-300'
+                    : 'bg-white text-slate-700 hover:text-orange-600 hover:bg-orange-50 border border-slate-200'
+                }`}
+                title="Compartir receta por WhatsApp o copiar enlace"
+              >
+                {isShared ? (
+                  <>
+                    <Check className="w-3.5 h-3.5 stroke-[2.5]" />
+                    <span>¡Copiado!</span>
+                  </>
+                ) : (
+                  <>
+                    <Share2 className="w-3.5 h-3.5" />
+                    <span>Compartir</span>
+                  </>
+                )}
+              </button>
+
               {/* Botón Favorito */}
               <button
                 onClick={() => toggleFavorite(food.id)}
