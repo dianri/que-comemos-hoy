@@ -68,10 +68,7 @@ export const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
     const isMine =
       (user && food.user_id && food.user_id === user.id) ||
       (user && food.user_email && food.user_email.toLowerCase() === user.email?.toLowerCase()) ||
-      (user?.email &&
-        food.created_by &&
-        (food.created_by.toLowerCase() === user.email.toLowerCase() ||
-          food.created_by.toLowerCase() === user.email.split('@')[0].toLowerCase()));
+      (food.created_by && user && (food.created_by === user.id || (user.email && food.created_by.toLowerCase() === user.email.toLowerCase())));
 
     if (isMine) {
       return userName;
@@ -79,6 +76,14 @@ export const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
 
     if (!food.created_by || food.created_by.toLowerCase() === 'anónimo') {
       return 'Receta Oficial';
+    }
+
+    const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(food.created_by);
+    if (isUUID) {
+      if (food.user_email && food.user_email.toLowerCase() === 'dianrie@hotmail.com') {
+        return 'Chef Dianrie';
+      }
+      return 'Chef de la Comunidad';
     }
 
     let clean = food.created_by;

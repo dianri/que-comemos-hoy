@@ -206,16 +206,11 @@ function MainApp() {
       // 2. Si el usuario actual es superadmin, ve todas para moderar
       if (isSuperUser) return true;
 
-      // 3. Si el usuario está autenticado, ve sus propias recetas creadas
+      // 3. Si el usuario está autenticado, ve sus propias recetas creadas (estrictamente por ID o email)
       if (user) {
         if (f.user_id && f.user_id === user.id) return true;
         if (f.user_email && f.user_email.toLowerCase() === user.email?.toLowerCase()) return true;
-        const emailPrefix = user.email ? user.email.split('@')[0].toLowerCase() : '';
-        if (
-          f.created_by &&
-          (f.created_by.toLowerCase() === user.email?.toLowerCase() ||
-            f.created_by.toLowerCase() === emailPrefix)
-        ) {
+        if (f.created_by && (f.created_by === user.id || (user.email && f.created_by.toLowerCase() === user.email.toLowerCase()))) {
           return true;
         }
       }
@@ -231,17 +226,14 @@ function MainApp() {
     return foods.filter(isFoodVisible);
   }, [foods, isFoodVisible]);
 
-  // Conteo de platos por pestaña
+  // Conteo de platos por pestaña (evaluado estrictamente por auth.uid y email)
   const myFoodsCount = useMemo(() => {
     if (!user) return 0;
-    const userEmailPrefix = user.email ? user.email.split('@')[0].toLowerCase() : '';
     return visibleFoods.filter(
       (f) =>
         (f.user_id && f.user_id === user.id) ||
         (f.user_email && f.user_email.toLowerCase() === user.email?.toLowerCase()) ||
-        (user.email &&
-          (f.created_by?.toLowerCase() === user.email.toLowerCase() ||
-            f.created_by?.toLowerCase() === userEmailPrefix))
+        (f.created_by && (f.created_by === user.id || (user.email && f.created_by.toLowerCase() === user.email.toLowerCase())))
     ).length;
   }, [visibleFoods, user]);
 
@@ -251,8 +243,6 @@ function MainApp() {
 
   // Filtrado y ordenación
   const filteredFoods = useMemo(() => {
-    const userEmailPrefix = user?.email ? user.email.split('@')[0].toLowerCase() : '';
-
     return visibleFoods
       .filter((f) => {
         // 1. Filtro por pestaña principal
@@ -260,9 +250,7 @@ function MainApp() {
           const isMine =
             (f.user_id && f.user_id === user?.id) ||
             (f.user_email && f.user_email.toLowerCase() === user?.email?.toLowerCase()) ||
-            (user?.email &&
-              (f.created_by?.toLowerCase() === user.email.toLowerCase() ||
-                f.created_by?.toLowerCase() === userEmailPrefix));
+            (f.created_by && (f.created_by === user?.id || (user?.email && f.created_by.toLowerCase() === user.email.toLowerCase())));
           if (!isMine) return false;
         } else if (mainTab === 'favorites') {
           if (!favorites.has(f.id)) return false;

@@ -30,7 +30,7 @@ export const AddFoodModal: React.FC<AddFoodModalProps> = ({
   onClose,
   onFoodAdded,
 }) => {
-  const { userName, user, isAuthenticated, openAuthModal } = useUser();
+  const { user, isAuthenticated, openAuthModal } = useUser();
   const [name, setName] = useState('');
   const [imageUrl, setImageUrl] = useState('');
   const [category, setCategory] = useState<Category>('General');
@@ -62,7 +62,9 @@ export const AddFoodModal: React.FC<AddFoodModalProps> = ({
       setIsSubmitting(true);
       setErrorMsg(null);
 
-      const creatorIdentifier = user?.email ? user.email.split('@')[0] : userName;
+      // Atribución de creador basada estrictamente en el ID único (auth.uid) y email
+      const creatorUid = user?.id || '';
+      const creatorEmail = user?.email || '';
 
       const newRecord = {
         name: name.trim(),
@@ -70,9 +72,9 @@ export const AddFoodModal: React.FC<AddFoodModalProps> = ({
         category,
         description: description.trim(),
         votes_count: 0,
-        created_by: creatorIdentifier,
+        created_by: creatorUid,
         user_id: user?.id,
-        user_email: user?.email,
+        user_email: creatorEmail,
       };
 
       const { data, error } = await supabase

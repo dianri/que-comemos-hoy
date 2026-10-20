@@ -311,16 +311,15 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (!user) return false;
       // 1. Superusuarios (raíz y delegados) tienen permisos de gestión total
       if (isSuperUser) return true;
-      // 2. Coincidencia por user_id
+      // 2. Coincidencia estricta por user_id (auth.uid)
       if (food.user_id && food.user_id === user.id) return true;
-      // 3. Coincidencia por user_email
+      // 3. Coincidencia estricta por user_email único registrado
       if (food.user_email && food.user_email.toLowerCase() === user.email?.toLowerCase()) return true;
-      // 4. Coincidencia por created_by (email completo o prefijo de usuario)
-      const emailPrefix = user.email ? user.email.split('@')[0].toLowerCase() : '';
+      // 4. Coincidencia por created_by si coincide con el UID o el email exacto
       if (
         food.created_by &&
-        (food.created_by.toLowerCase() === user.email?.toLowerCase() ||
-          food.created_by.toLowerCase() === emailPrefix)
+        (food.created_by === user.id ||
+          (user.email && food.created_by.toLowerCase() === user.email.toLowerCase()))
       ) {
         return true;
       }
