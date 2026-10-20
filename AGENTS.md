@@ -137,13 +137,27 @@ que-comemos-hoy/
 ---
 
 ## 7. Flujo de Trabajo Git y Control de Calidad
-- **Estrategia de Ramas:**
-  - Toda nueva característica o corrección debe desarrollarse en ramas con el formato:  
-    `features/XX-nombre-descriptivo` (ej. `features/01-meal-roulette-improvements`).
-  - No commitear directamente sobre `main` para tareas aisladas.
-- **Quality Gate Obligatorio:**
-  - Antes de confirmar o dar por finalizada cualquier tarea, **siempre** ejecutar:
-    ```bash
-    npm run build
-    ```
-    El comando ejecuta `tsc -b && vite build`. Debe pasar con **0 errores de TypeScript y 0 advertencias**.
+
+Este protocolo es de **cumplimiento estricto e inquebrantable** para cualquier desarrollo, modificación o mejora en el proyecto:
+
+### 1. Creación Obligatoria de Rama (`features/...`)
+- Cada vez que el usuario solicite una nueva funcionalidad, mejora, refactorización o cambio ("algo nuevo"), el agente **debe obligatoriamente crear y cambiar a una nueva rama de características** antes de modificar cualquier archivo de código.
+- La rama debe seguir estrictamente el formato de nomenclatura:  
+  `features/nombre-descriptivo-de-la-rama` (ej. `features/09-image-search`, `features/10-admin-filters`, `features/19-nuevo-ajuste`).
+- **Bajo ninguna circunstancia se debe desarrollar o realizar commits directamente sobre `main`**.
+
+### 2. Desarrollo y Quality Gate Riguroso
+- Todo el ciclo de desarrollo, modificaciones, depuración y pruebas debe realizarse exclusivamente en dicha rama de características.
+- **Quality Gate Obligatorio:** Antes de considerar finalizada cualquier tarea o proceder a la fusión, es imprescindible ejecutar y superar con éxito el comando de compilación:
+  ```bash
+  npm run build
+  ```
+  El comando ejecuta `tsc -b && vite build`. Debe pasar con **0 errores de TypeScript y 0 advertencias**.
+
+### 3. Fusión (Merge) a `main` y Sincronización
+- Una vez que la tarea esté completamente terminada, validada y aprobada por el usuario:
+  1. Realizar el `commit` con un mensaje semántico y descriptivo de los cambios realizados.
+  2. Hacer `push` de la rama de características al repositorio remoto (`origin`).
+  3. Cambiar a la rama principal `main` y asegurarse de que esté actualizada (`git pull`).
+  4. Realizar la **fusión automática (merge)** de la rama de características hacia la rama principal `main`.
+  5. Hacer el `push` de `main` a `origin`, dejando la rama principal lista, estable y sincronizada.
