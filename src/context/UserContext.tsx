@@ -18,7 +18,7 @@ interface UserContextType {
   isAuthLoading: boolean;
   signOut: () => Promise<void>;
   userVotes: Set<string>;
-  toggleVote: (foodId: string) => Promise<boolean>;
+  toggleVote: (foodId: string, onOptimisticDelta?: (delta: number) => void) => Promise<boolean>;
   isLoadingVotes: boolean;
   favorites: Set<string>;
   toggleFavorite: (foodId: string) => boolean;
@@ -233,60 +233,126 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setUserNameState(safe);
   };
 
-  // Cargar votos del usuario actual desde Supabase
+  // Cargar votos del usuario actual desde Supabase asociados a su auth.uid()
   useEffect(() => {
+    let isMounted = true;
+
     const fetchUserVotes = async () => {
+      if (!user) {
+        setUserVotes(new Set());
+        setIsLoadingVotes(false);
+        return;
+      }
+
       try {
         setIsLoadingVotes(true);
+        // Consultar votos del usuario por auth.uid() (user_id) con fallback por user_name
         const { data, error } = await supabase
           .from('votes')
           .select('food_id')
-          .eq('user_name', userName);
+          .or(`user_id.eq.${user.id},user_name.eq.${userName}`);
 
-        if (!error && data) {
+        if (error) {
+          console.error('Error al cargar votos del usuario desde Supabase:', error);
+          return;
+        }
+
+        if (isMounted && data) {
           setUserVotes(new Set(data.map((v) => v.food_id)));
         }
       } catch (err) {
         console.error('Error al cargar votos del usuario:', err);
       } finally {
-        setIsLoadingVotes(false);
+        if (isMounted) {
+          setIsLoadingVotes(false);
+        }
       }
     };
 
     fetchUserVotes();
-  }, [userName]);
 
-  // Alternar voto (dar / quitar me gusta) - Solo usuarios autenticados
-  const toggleVote = async (foodId: string): Promise<boolean> => {
+    return () => {
+      isMounted = false;
+    };
+  }, [user, userName]);
+
+  // Suscripción Realtime a cambios en la tabla 'votes' para el usuario actual
+  useEffect(() => {
+    if (!user) return;
+
+    const votesChannel = supabase
+      .channel(`public:user_votes_${user.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'votes',
+        },
+        (payload) => {
+          if (payload.eventType === 'INSERT') {
+            const newVote = payload.new as { food_id: string; user_id?: string; user_name?: string };
+            if (newVote && (newVote.user_id === user.id || newVote.user_name === userName)) {
+              setUserVotes((prev) => new Set(prev).add(newVote.food_id));
+            }
+          } else if (payload.eventType === 'DELETE') {
+            const oldVote = payload.old as { food_id?: string; user_id?: string; user_name?: string };
+            if (oldVote?.food_id && (oldVote.user_id === user.id || oldVote.user_name === userName)) {
+              setUserVotes((prev) => {
+                const next = new Set(prev);
+                next.delete(oldVote.food_id!);
+                return next;
+              });
+            }
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(votesChannel);
+    };
+  }, [user, userName]);
+
+  // Alternar voto (dar / quitar me gusta) - Sincronizado con Supabase y auth.uid()
+  const toggleVote = async (
+    foodId: string,
+    onOptimisticDelta?: (delta: number) => void
+  ): Promise<boolean> => {
     if (!user) {
       openAuthModal('Inicia sesión con tu correo para votar por tus platos favoritos.');
       return false;
     }
 
     const hasVoted = userVotes.has(foodId);
+    const delta = hasVoted ? -1 : 1;
 
-    // Optimistic update
+    // 1. Actualización optimista inmediata en el estado del usuario y en el contador del componente
     setUserVotes((prev) => {
       const next = new Set(prev);
       if (hasVoted) next.delete(foodId);
       else next.add(foodId);
       return next;
     });
+    onOptimisticDelta?.(delta);
 
     try {
       if (hasVoted) {
+        // Eliminar voto en Supabase filtrando por food_id y user_id
         const { error } = await supabase
           .from('votes')
           .delete()
           .eq('food_id', foodId)
-          .eq('user_name', userName);
+          .or(`user_id.eq.${user.id},user_name.eq.${userName}`);
 
         if (error) throw error;
       } else {
+        // Insertar voto en Supabase garantizando user_id (auth.uid) y user_name
         const { error } = await supabase.from('votes').insert([
           {
             food_id: foodId,
-            user_name: userName,
+            user_id: user.id,
+            user_name: userName || user.email?.split('@')[0] || 'Gourmet',
           },
         ]);
 
@@ -294,14 +360,15 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
       return true;
     } catch (err) {
-      console.error('Error al actualizar voto:', err);
-      // Revertir optimismo
+      console.error('Error al actualizar voto en Supabase:', err);
+      // Revertir optimismo si falló la operación en Supabase
       setUserVotes((prev) => {
         const next = new Set(prev);
         if (hasVoted) next.add(foodId);
         else next.delete(foodId);
         return next;
       });
+      onOptimisticDelta?.(-delta);
       return false;
     }
   };
