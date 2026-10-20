@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, Sparkles, AlertCircle, Save } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import { useCategories } from '../context/CategoryContext';
 import { Category, Food } from '../types';
 import { ImagePicker } from './ImagePicker';
 import { sanitizeText, safeImageUrl, SAFE_FALLBACK_IMAGE } from '../lib/sanitize';
@@ -12,28 +13,13 @@ interface EditFoodModalProps {
   onFoodUpdated: (updatedFood: Food) => void;
 }
 
-const CATEGORIES: Category[] = [
-  'Tradicional',
-  'Carnes',
-  'Pescados',
-  'Sopas',
-  'Arroces',
-  'Italiana',
-  'Americana',
-  'Mexicana',
-  'Japonesa',
-  'Saludable',
-  'Postres',
-  'General',
-];
-
-
 export const EditFoodModal: React.FC<EditFoodModalProps> = ({
   isOpen,
   onClose,
   food,
   onFoodUpdated,
 }) => {
+  const { categories } = useCategories();
   const [name, setName] = useState('');
   const [imageUrl, setImageUrl] = useState('');
   const [category, setCategory] = useState<Category>('General');
@@ -172,7 +158,7 @@ export const EditFoodModal: React.FC<EditFoodModalProps> = ({
               onChange={(e) => setCategory(e.target.value as Category)}
               className="w-full h-9 sm:h-10 px-3 py-1 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-orange-500/40 text-xs sm:text-sm font-medium bg-white"
             >
-              {CATEGORIES.map((cat) => (
+              {categories.map((cat) => (
                 <option key={cat} value={cat}>
                   {cat}
                 </option>

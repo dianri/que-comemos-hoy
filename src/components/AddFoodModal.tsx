@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { X, Plus, Sparkles, AlertCircle } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useUser } from '../context/UserContext';
+import { useCategories } from '../context/CategoryContext';
 import { Category, Food } from '../types';
 import { ImagePicker } from './ImagePicker';
 import { sanitizeText, safeImageUrl, SAFE_FALLBACK_IMAGE } from '../lib/sanitize';
@@ -12,27 +13,13 @@ interface AddFoodModalProps {
   onFoodAdded: (newFood: Food) => void;
 }
 
-const CATEGORIES: Category[] = [
-  'Tradicional',
-  'Carnes',
-  'Pescados',
-  'Sopas',
-  'Arroces',
-  'Italiana',
-  'Americana',
-  'Mexicana',
-  'Japonesa',
-  'Saludable',
-  'Postres',
-  'General',
-];
-
 export const AddFoodModal: React.FC<AddFoodModalProps> = ({
   isOpen,
   onClose,
   onFoodAdded,
 }) => {
   const { user, isAuthenticated, openAuthModal } = useUser();
+  const { categories } = useCategories();
   const [name, setName] = useState('');
   const [imageUrl, setImageUrl] = useState('');
   const [category, setCategory] = useState<Category>('General');
@@ -170,7 +157,7 @@ export const AddFoodModal: React.FC<AddFoodModalProps> = ({
               onChange={(e) => setCategory(e.target.value as Category)}
               className="w-full h-9 sm:h-10 px-3 py-1 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-orange-500/40 text-xs sm:text-sm font-medium bg-white"
             >
-              {CATEGORIES.map((cat) => (
+              {categories.map((cat) => (
                 <option key={cat} value={cat}>
                   {cat}
                 </option>
