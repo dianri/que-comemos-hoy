@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Heart, Sparkles, Trash2, Star, Pencil, ChefHat, Share2, Check, BookOpen } from 'lucide-react';
+import { Heart, Sparkles, Trash2, Star, Pencil, ChefHat, Share2, Check } from 'lucide-react';
 import { Food } from '../types';
 import { useUser } from '../context/UserContext';
 import { safeImageUrl } from '../lib/sanitize';
@@ -260,61 +260,44 @@ export const FoodCard: React.FC<FoodCardProps> = ({
         </div>
 
         {/* Footer de la Tarjeta */}
-        <div className="mt-2.5 pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-400 gap-1.5">
-          <span className="flex items-center space-x-1 text-slate-500 font-medium truncate max-w-[110px] sm:max-w-[150px]">
+        <div className="mt-2.5 pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-400">
+          <span className="flex items-center space-x-1 text-slate-500 font-medium truncate max-w-[150px] sm:max-w-[200px]">
             <ChefHat className="w-3.5 h-3.5 text-orange-500 flex-shrink-0" />
             <span className="truncate">{getCreatorDisplayName()}</span>
           </span>
 
-          <div className="flex items-center space-x-1.5 flex-shrink-0">
-            {/* Botón directo Receta */}
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                const query = encodeURIComponent(`receta de ${food.name}`);
-                window.open(`https://www.google.com/search?q=${query}`, '_blank', 'noopener,noreferrer');
-              }}
-              className="inline-flex items-center space-x-1 px-2 py-0.5 rounded-lg text-[11px] font-bold text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200/80 transition-all active:scale-95 cursor-pointer shadow-2xs"
-              title={`Buscar receta de ${food.name} en Google`}
-            >
-              <BookOpen className="w-3 h-3 text-amber-600" />
-              <span>Receta</span>
-            </button>
+          {/* Acciones de gestión protegidas: solo propietario o superusuario */}
+          {canManage && (
+            <div className="flex items-center space-x-1">
+              {onEdit && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onEdit(food);
+                  }}
+                  className="text-slate-400 hover:text-orange-600 hover:bg-orange-50 p-1 rounded-lg transition-colors"
+                  title="Modificar receta"
+                >
+                  <Pencil className="w-3 h-3" />
+                </button>
+              )}
 
-            {/* Acciones de gestión protegidas: solo propietario o superusuario */}
-            {canManage && (
-              <div className="flex items-center space-x-1">
-                {onEdit && (
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onEdit(food);
-                    }}
-                    className="text-slate-400 hover:text-orange-600 hover:bg-orange-50 p-1 rounded-lg transition-colors"
-                    title="Modificar receta"
-                  >
-                    <Pencil className="w-3 h-3" />
-                  </button>
-                )}
-
-                {onDelete && (
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      if (confirm(`¿Eliminar "${food.name}" de las opciones?`)) {
-                        onDelete(food.id);
-                      }
-                    }}
-                    className="text-slate-400 hover:text-red-500 hover:bg-red-50 p-1 rounded-lg transition-colors"
-                    title="Eliminar plato"
-                  >
-                    <Trash2 className="w-3 h-3" />
-                  </button>
-                )}
-              </div>
-            )}
-          </div>
+              {onDelete && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (confirm(`¿Eliminar "${food.name}" de las opciones?`)) {
+                      onDelete(food.id);
+                    }
+                  }}
+                  className="text-slate-400 hover:text-red-500 hover:bg-red-50 p-1 rounded-lg transition-colors"
+                  title="Eliminar plato"
+                >
+                  <Trash2 className="w-3 h-3" />
+                </button>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </div>
