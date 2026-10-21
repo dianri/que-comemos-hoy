@@ -112,6 +112,51 @@ function MainApp() {
     }
   }, [selectedCategories]);
 
+  // Estados y referencias para Drag-to-Scroll horizontal en la barra de categorías (escritorio)
+  const categoryScrollRef = useRef<HTMLDivElement | null>(null);
+  const isDraggingRef = useRef(false);
+  const startXRef = useRef(0);
+  const scrollLeftRef = useRef(0);
+  const hasDraggedRef = useRef(false);
+  const [isDragging, setIsDragging] = useState(false);
+
+  const handleCategoryMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+    // Solo responder al clic principal (izquierdo)
+    if (e.button !== 0 || !categoryScrollRef.current) return;
+    isDraggingRef.current = true;
+    hasDraggedRef.current = false;
+    startXRef.current = e.pageX - categoryScrollRef.current.offsetLeft;
+    scrollLeftRef.current = categoryScrollRef.current.scrollLeft;
+    setIsDragging(true);
+  };
+
+  const handleCategoryMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!isDraggingRef.current || !categoryScrollRef.current) return;
+    const x = e.pageX - categoryScrollRef.current.offsetLeft;
+    const walk = (x - startXRef.current) * 1.5;
+    if (Math.abs(walk) > 4) {
+      hasDraggedRef.current = true;
+    }
+    categoryScrollRef.current.scrollLeft = scrollLeftRef.current - walk;
+  };
+
+  const handleCategoryMouseUpOrLeave = () => {
+    if (!isDraggingRef.current) return;
+    isDraggingRef.current = false;
+    setIsDragging(false);
+    // Pequeño margen para permitir que onClickCapture intercepte el clic si hubo arrastre
+    setTimeout(() => {
+      hasDraggedRef.current = false;
+    }, 50);
+  };
+
+  const handleCategoryClickCapture = (e: React.MouseEvent) => {
+    if (hasDraggedRef.current) {
+      e.stopPropagation();
+      e.preventDefault();
+    }
+  };
+
   // Comprobar si todas las categorías están actualmente activas
   const isAllSelected =
     categories.length > 0 && categories.every((cat) => selectedCategories.includes(cat));
@@ -750,8 +795,18 @@ function MainApp() {
             </div>
           </div>
 
-          {/* Categorías (Pills con Selección Múltiple) */}
-          <div className="flex items-center space-x-1.5 overflow-x-auto pb-0.5 scrollbar-none">
+          {/* Categorías (Pills con Selección Múltiple y Drag-to-Scroll para escritorio) */}
+          <div
+            ref={categoryScrollRef}
+            onMouseDown={handleCategoryMouseDown}
+            onMouseMove={handleCategoryMouseMove}
+            onMouseUp={handleCategoryMouseUpOrLeave}
+            onMouseLeave={handleCategoryMouseUpOrLeave}
+            onClickCapture={handleCategoryClickCapture}
+            className={`flex items-center space-x-1.5 overflow-x-auto pb-0.5 scrollbar-none select-none ${
+              isDragging ? 'cursor-grabbing [&_*]:cursor-grabbing' : 'cursor-grab'
+            }`}
+          >
             {/* Botón "Todas" */}
             <button
               type="button"
