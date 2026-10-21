@@ -3,7 +3,6 @@ import {
   X,
   Gamepad2,
   RotateCcw,
-  Smartphone,
   Trophy,
   RefreshCw,
   Sparkles,
@@ -414,14 +413,6 @@ export const ArcadeModal: React.FC<ArcadeModalProps> = ({ isOpen, onClose }) => 
               <LogIn className="w-3 h-3" />
               <span>Iniciar Sesión</span>
             </button>
-          </div>
-        )}
-
-        {/* Banner informativo de adaptabilidad para dispositivos móviles (solo en vista juego) */}
-        {activeTab === 'game' && (
-          <div className="sm:hidden px-3 py-1.5 bg-gradient-to-r from-cyan-950/70 via-zinc-900 to-cyan-950/70 border-b border-cyan-800/30 text-[10.5px] font-mono text-cyan-200 flex items-center space-x-1.5 flex-shrink-0">
-            <Smartphone className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
-            <span className="truncate">Gira el móvil en horizontal para mayor comodidad</span>
           </div>
         )}
 
