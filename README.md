@@ -1,66 +1,90 @@
 # 🍽️ ¿Qué comemos hoy?
 
-Aplicación web moderna y colaborativa para decidir las comidas de forma aleatoria mediante una ruleta interactiva y permitir votaciones en tiempo real entre múltiples usuarios (familia, compañeros, amigos).
+Aplicación web moderna, colaborativa e interactiva para decidir qué comer de forma divertida mediante una ruleta de la suerte inteligente, votaciones populares y sincronización multi-dispositivo en tiempo real entre comensales (familia, compañeros de trabajo, grupos de amigos).
 
-Diseñada especialmente para alojarse en **Vercel** y respaldada por **Supabase (PostgreSQL)** con sincronización en tiempo real.
+Alojada en **Vercel** y respaldada por **Supabase (PostgreSQL + Realtime)**.
 
 ---
 
 ## ✨ Características Principales
 
-1. **🎲 Ruleta de la Suerte Interactiva**:
-   - Ruleta animada con Canvas en tiempo real (escala 2x Retina), física de giro suave (*ease-out*) y sonido sintético de clicks sin dependencias externas.
-   - Textos perfectamente centrados y contrastados con alineación radial y angular exacta.
-   - Efectos festivos de confeti al salir el plato ganador y botón "¡A cocinar!" que abre directamente la receta.
-   - Modo "Elección Rápida" para indecisos con apertura inmediata de receta.
+### 1. 🎲 Ruleta de la Suerte Inteligente y Selección Rápida
+- **Gajos Coloreados por Categoría:** Cada porción de la ruleta se dibuja con una paleta cromática distintiva según el tipo de comida (tonos cálidos/tierra para carnes, azulados/marinos para pescados, ámbar/dorados para arroces y pastas, etc.).
+- **Sincronización con Filtros Activos:** La ruleta y la función de "Elección Rápida" giran exclusivamente entre los platos que cumplen con la búsqueda y los filtros seleccionados en pantalla.
+- **Canvas Retina 2x de Alta Precisión:** Textos perfectamente centrados radial y angularmente con contraste óptimo y parada física exacta bajo la flecha de las 12 en punto.
+- **Efectos de Audio y Celebración:** Sonido de giro mecánico sintetizado con Web Audio API (sin dependencias externas), explosión festiva de confeti (`canvas-confetti`) y botón directo *"¡A cocinar!"* que abre la receta ganadora.
 
-2. **🎴 Gestión y Galería de Tarjetas**:
-   - Tarjetas visuales estilo app moderna con fotografía HD, badges de categorías y capas visuales sin solapamientos.
-   - Contador de votos y botón "Me gusta" con actualización instantánea.
-   - Selector de fotos integrado con catálogo de recetas tradicionales y botón directo para **buscar imágenes en Google**.
-   - Filtros por categorías (Tradicional, Carnes, Pescados, Sopas, Arroces, Italiana, Americana, Mexicana, Japonesa, Saludable, etc.) y barra de búsqueda.
-   - Pestañas principales: **Todos los platos**, **Mis Platos** y **⭐ Favoritos**.
-   - Podio Top 3 con los platos más votados en tiempo real.
+### 2. 🎴 Gestión Gastronómica y Tarjetas Visuales
+- **Múltiples Categorías por Plato:** Un plato puede pertenecer simultáneamente a varias categorías (ej. *Italiana*, *Pasta*, *Cenas Rápidas*).
+- **⭐ Favoritos Sincronizados en la Nube:** Los platos favoritos se guardan en Supabase (`public.user_favorites`) vinculados a tu cuenta, estando disponibles al instante en móvil, tablet y ordenador sin perder sincronización.
+- **✨ Autocompletado de Descripciones con IA:** Al crear o editar un plato, pulsa el botón mágico ✨ para generar una descripción culinaria concisa, apetitosa e irresistible gracias a su arquitectura en cascada con tolerancia a fallos (Gemini Flash, Pollinations AI, Wikipedia REST API y motor heurístico gastronómico).
+- **🖼️ Selector de Fotos y Buscador en Google:** Catálogo integrado de imágenes en alta resolución con acceso directo "🔍 Buscar en Google" que abre Google Images con el nombre del plato prefiltrado.
 
-3. **📖 Modal de Detalle Centralizado de Receta**:
-   - Vista centralizada a pantalla completa al hacer clic en cualquier tarjeta, al pulsar "Elección Rápida" o desde la Ruleta.
-   - Foto en alta resolución, ingredientes/descripción completa, categoría, popularidad y acciones de like y favoritos.
-   - **Privacidad estricta:** Oculta correos electrónicos mostrando nombres amigables de chef/usuario.
+### 3. 🔍 Filtros Horizontales Drag-to-Scroll y Reordenación
+- **Desplazamiento por Arrastre (Drag-to-Scroll):** La barra de filtros permite navegar fluidamente haciendo clic izquierdo y arrastrando el ratón en escritorio o deslizando con el dedo en móviles.
+- **Botón "Todas" Diferenciado:** Botón de selección global estilizado y separado adecuadamente para facilitar la alternancia rápida de categorías.
+- **Reordenación Personalizada de Categorías:** Panel de administración donde los superusuarios pueden crear, eliminar y cambiar el orden visual de los filtros con persistencia en Supabase.
+- **Pestañas Principales:** Acceso rápido a **Todos los platos**, **Mis Platos** (los creados por el usuario) y **⭐ Favoritos**.
 
-4. **👥 Autenticación con Enlace Mágico y Roles de Usuario**:
-   - Inicio de sesión sin contraseñas mediante Enlace Mágico (Magic Link) de Supabase.
-   - Control de acceso por roles: Superusuario Raíz (`dianrie@hotmail.com`), Superusuarios Delegados y Usuarios Normales.
-   - Panel de administración de usuarios exclusivo para superusuarios con gestión de roles y bajas.
-   - Moderación del feed: Los usuarios visitantes ven únicamente recetas oficiales o de superusuarios; los creadores ven también sus propios platos.
+### 4. 📖 Modal de Detalle de Receta HD
+- Vista centralizada a pantalla completa accesible desde cualquier tarjeta, ruleta o elección rápida.
+- Fotografía en alta resolución, descripción gastronómica completa, etiquetas de categorías, contador de votos y botón directo para añadir a favoritos o compartir mediante la Web Share API.
+- **Privacidad estricta:** Oculta direcciones de correo electrónico, mostrando nombres de chef amigables.
 
-5. **⚡ Sincronización Realtime**:
-   - Suscripción bidireccional inmediata mediante Supabase Realtime Channels (`INSERT`, `UPDATE` y `DELETE`).
-   - Sincronización optimista e inmutable en el cliente para reflejar ediciones al instante sin recargar la página.
+### 5. 👥 Autenticación sin Contraseña y Moderación
+- **Enlace Mágico (Magic Link):** Inicio de sesión seguro vía correo sin necesidad de recordar contraseñas, con aviso informativo sobre la carpeta de spam para agilizar el acceso.
+- **Roles y Jerarquía:** Superusuario Raíz (`dianrie@hotmail.com`), Superusuarios Delegados y Usuarios Estándar.
+- **Panel de Administración de Usuarios:** Métricas en tiempo real, gestión de roles y eliminación de cuentas.
+- **Moderación Automática:** Los visitantes ven platos oficiales o de superusuarios; los usuarios ven adicionalmente sus propias creaciones.
 
-6. **🚀 Preparada para Vercel**:
-   - Empaquetada con Vite + React + Tailwind CSS.
-   - `vercel.json` configurado para SPA rewrites.
+### 6. 🎮 Minijuego Arcade Integrado
+- Minijuego recreativo integrado para amenizar la espera mientras se decide la comida, con tabla de mejores puntuaciones en tiempo real (`public.game_scores`).
 
 ---
 
 ## 🛠️ Stack Tecnológico
 
 - **Frontend:** React 18, TypeScript, Tailwind CSS, Lucide Icons, Canvas Confetti.
-- **Herramienta de construcción:** Vite 6.
-- **Backend / Base de Datos:** Supabase (PostgreSQL + Realtime).
-- **Despliegue:** Vercel.
+- **Herramienta de Construcción:** Vite 6 (`tsc -b && vite build`).
+- **Base de Datos & Backend:** Supabase (PostgreSQL 15, Row Level Security, Realtime Channels).
+- **Despliegue & Hosting:** Vercel (con `vercel.json` para SPA rewrites).
+
+---
+
+## 🗄️ Esquema de Base de Datos (Supabase)
+
+- **`public.foods`**: Platos de la carta (`name`, `image_url`, `categories` TEXT[], `description`, `votes_count`, `user_id`, `user_email`).
+- **`public.votes`**: Registro de votos en tiempo real por usuario y plato.
+- **`public.user_favorites`**: Platos favoritos sincronizados en la nube por usuario autenticado.
+- **`public.categories`**: Categorías culinarias con soporte de orden personalizado (`display_order`).
+- **`public.user_roles`**: Asignación de roles de seguridad (`root_admin`, `superadmin`, `user`).
+- **`public.game_scores`**: Registro de puntuaciones del minijuego arcade.
+
+---
+
+## ⚙️ Variables de Entorno
+
+Copia el archivo `.env.example` como `.env` y configura tus credenciales:
+
+```env
+# Supabase
+VITE_SUPABASE_URL=https://tu-proyecto.supabase.co
+VITE_SUPABASE_ANON_KEY=tu-clave-anon-publica
+
+# IA (Opcional - Gemini Flash para descripciones gastronómicas automáticas)
+VITE_GEMINI_API_KEY=tu-api-key-de-google-gemini
+```
+
+> **Nota:** Si no se proporciona `VITE_GEMINI_API_KEY`, la aplicación utiliza automáticamente el servicio gratuito Pollinations AI, la API REST de Wikipedia y su generador heurístico artesanal como respaldo sin coste alguno.
 
 ---
 
 ## 🚀 Despliegue en Vercel
 
-1. Entra en [vercel.com](https://vercel.com) e inicia sesión con tu cuenta de GitHub.
-2. Haz clic en **"Add New..."** > **"Project"**.
-3. Selecciona el repositorio **`que-comemos-hoy`**.
-4. En **Environment Variables**, añade:
-   - `VITE_SUPABASE_URL`: Tu URL del proyecto Supabase.
-   - `VITE_SUPABASE_ANON_KEY`: Tu clave pública `anon` de Supabase.
-5. Haz clic en **"Deploy"** y ¡listo!
+1. Haz un fork o sube este repositorio a tu cuenta de GitHub.
+2. Inicia sesión en [vercel.com](https://vercel.com) y crea un nuevo proyecto apuntando al repositorio.
+3. Configura las variables de entorno `VITE_SUPABASE_URL` y `VITE_SUPABASE_ANON_KEY`.
+4. Haz clic en **Deploy**.
 
 ---
 
@@ -70,9 +94,9 @@ Diseñada especialmente para alojarse en **Vercel** y respaldada por **Supabase 
 # 1. Instalar dependencias
 npm install
 
-# 2. Iniciar servidor de desarrollo
+# 2. Iniciar servidor de desarrollo local
 npm run dev
 
-# 3. Compilar para producción
+# 3. Compilación y control de calidad (TypeScript + Vite)
 npm run build
 ```

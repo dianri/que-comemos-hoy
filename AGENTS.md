@@ -23,29 +23,43 @@ Este documento define las reglas de estilo, la arquitectura, el flujo de datos y
 ## 3. Estructura del Proyecto
 ```text
 que-comemos-hoy/
-├── public/                 # Recursos estáticos
+├── public/                     # Recursos estáticos
 ├── src/
-│   ├── components/         # Componentes modulares
-│   │   ├── Navbar.tsx      # Barra de navegación e identidad local de usuario
-│   │   ├── FoodCard.tsx    # Tarjeta visual con votos y categoría
-│   │   ├── RouletteModal.tsx # Ruleta Canvas animada con sincronización precisa
-│   │   ├── AddFoodModal.tsx  # Formulario modal para añadir platos
-│   │   ├── EditFoodModal.tsx # Formulario modal para editar platos existentes
-│   │   └── AuthModal.tsx     # Modal de inicio de sesión con Enlace Mágico (Magic Link)
+│   ├── components/             # Componentes modulares
+│   │   ├── Navbar.tsx          # Barra de navegación e identidad de usuario
+│   │   ├── FoodCard.tsx        # Tarjeta visual con votos, categorías y favoritos
+│   │   ├── RouletteModal.tsx   # Ruleta Canvas coloreada por categoría con parada sincronizada
+│   │   ├── RecipeDetailModal.tsx # Detalle centralizado de receta a pantalla completa
+│   │   ├── AddFoodModal.tsx    # Modal para añadir platos con autocompletado IA
+│   │   ├── EditFoodModal.tsx   # Modal para editar platos con autocompletado IA
+│   │   ├── AuthModal.tsx       # Modal de inicio de sesión Magic Link con aviso de spam
+│   │   ├── AdminUsersModal.tsx # Panel de administración de usuarios y roles
+│   │   ├── ManageCategoriesModal.tsx # Gestión y reordenación personalizada de filtros
+│   │   ├── ArcadeModal.tsx     # Minijuego arcade integrado con puntuaciones
+│   │   ├── ImagePicker.tsx     # Selector de fotos y buscador directo en Google Images
+│   │   └── Toast.tsx           # Notificaciones emergentes ligeras y reactivas
 │   ├── context/
-│   │   └── UserContext.tsx # Estado global de usuario, sesión Supabase Auth y votos
+│   │   ├── UserContext.tsx     # Estado global de usuario, roles, votos y favoritos Supabase
+│   │   └── CategoryContext.tsx # Categorías dinámicas, orden personalizado y realtime
 │   ├── lib/
-│   │   └── supabase.ts     # Inicialización del cliente Supabase y fallbacks
-│   ├── types.ts            # Definiciones de TypeScript (Food, Vote, Category)
-│   ├── vite-env.d.ts       # Tipado para variables de entorno de Vite
-│   ├── index.css           # Directivas de Tailwind y estilos base
-│   ├── App.tsx             # Vista principal, podio, filtros y suscripción realtime
-│   └── main.tsx            # Punto de entrada de la aplicación
-├── .env.example            # Plantilla de variables de entorno
-├── vercel.json             # Configuración de rutas para despliegue en Vercel
-├── vite.config.ts          # Configuración de bundler Vite
-├── tailwind.config.js      # Configuración y paleta de colores de Tailwind
-└── tsconfig*.json          # Configuración de compilación TypeScript
+│   │   ├── aiDescription.ts    # Generación y autocompletado de descripciones con IA (cascada)
+│   │   ├── sanitize.ts         # Sanitización XSS y validación de URLs de imágenes
+│   │   ├── share.ts            # Compartir recetas mediante Web Share API o portapapeles
+│   │   ├── sound.ts            # Síntesis de sonido Web Audio API (ruleta, pop festivo, arcade)
+│   │   ├── supabase.ts         # Inicialización del cliente Supabase y fallbacks
+│   │   └── toast.ts            # Despachador global de eventos Toast
+│   ├── constants/
+│   │   └── foodImages.ts       # Catálogo de fotografías gastronómicas optimizadas
+│   ├── types.ts                # Definiciones de TypeScript (Food, Vote, Category, UserRole)
+│   ├── vite-env.d.ts           # Tipado para variables de entorno de Vite
+│   ├── index.css               # Directivas de Tailwind y estilos base
+│   ├── App.tsx                 # Vista principal, podio, filtros drag-to-scroll y realtime
+│   └── main.tsx                # Punto de entrada de la aplicación
+├── .env.example                # Plantilla de variables de entorno
+├── vercel.json                 # Configuración de rutas para despliegue en Vercel
+├── vite.config.ts              # Configuración de bundler Vite
+├── tailwind.config.js          # Configuración y paleta de colores de Tailwind
+└── tsconfig*.json              # Configuración de compilación TypeScript
 ```
 
 ---
@@ -54,6 +68,8 @@ que-comemos-hoy/
 
 ### `RouletteModal.tsx` (La Ruleta)
 - La ruleta se dibuja dinámicamente en un elemento HTML5 Canvas compatible con pantallas Retina (escala 2x).
+- **Gajos Coloreados por Categoría:** Cada porción de la ruleta adopta un color distintivo según su categoría culinaria (tonos tierra para carnes, azulados/marinos para pescados, dorados/ámbar para arroces/pastas, etc.), evitando la monotonía visual.
+- **Sincronización con Filtros Activos:** La ruleta gira exclusivamente entre los platos que coinciden con los filtros de categoría y el texto de búsqueda activos en la pantalla principal.
 - **Regla de Oro:** 
   1. El texto del nombre de cada plato debe estar **perfectamente centrado** tanto radialmente (equidistante entre el eje central y el borde exterior: `midRadius = innerRadius + (radius - innerRadius) / 2`) como angularmente (`textAlign = 'center'`, `textBaseline = 'middle'`).
   2. Color del texto oscuro (`#18181b` / `zinc-900`) en negrita para asegurar contraste máximo sobre los sectores.
@@ -62,30 +78,30 @@ que-comemos-hoy/
 
 ### `FoodCard.tsx` (Tarjetas de Plato)
 - Imagen destacada con fallback automático si la URL falla (`onError`).
-- El contador de votos se actualiza reactivamente gracias a Supabase Realtime y el trigger de base de datos.
-- Indicador visual del estado del voto del usuario actual (corazón relleno/activo).
+- Soporte para **múltiples categorías por plato**: se visualizan las etiquetas pertinentes en la tarjeta.
+- Contador de votos reactivo gracias a Supabase Realtime y el trigger de base de datos.
+- Botón de favoritos (estrella ⭐) sincronizado en tiempo real con Supabase (`public.user_favorites`).
 - **Z-Index y Capas:** El badge flotante superior (`¡Plato Seleccionado!`) y las etiquetas/botones de la tarjeta se posicionan en `z-10`. Cuando la tarjeta está destacada (`isHighlighted`), la categoría y las acciones de voto/favorito se desplazan suavemente hacia abajo (`top-8 sm:top-10`) para prevenir solapamientos visuales. El contenedor sticky superior de filtros/buscador en `App.tsx` usa `z-30` y la barra de navegación `z-40` para garantizar que los elementos de las tarjetas pasen siempre por detrás al hacer scroll.
 - **Sincronización:** Estado `imgSrc` reactivo al cambio de `food.image_url` mediante `useEffect` para reflejar ediciones de forma instantánea.
 
 ### `RecipeDetailModal.tsx` (Detalle de Receta)
 - Modal centralizado de alta resolución abierto al hacer clic en cualquier tarjeta, al pulsar "Elección Rápida" o tras pulsar "¡A cocinar!" en la Ruleta.
-- Muestra fotografía HD, categoría, nombre del plato, descripción completa de la receta, popularidad/votos y botón para favoritos/likes.
+- Muestra fotografía HD, todas las categorías asignadas, nombre del plato, descripción completa de la receta, popularidad/votos y botón para favoritos/likes.
 - **Privacidad estricta:** Oculta cualquier dirección de correo electrónico, mostrando nombres de usuario o perfiles locales dinámicos.
 
-### `ImagePicker.tsx` (Selector y Buscador de Fotos)
-- Catálogo de imágenes optimizadas de platos tradicionales y filtros rápidos.
-- Pestaña de URL Directa con acceso directo "🔍 Buscar en Google" que abre en una nueva pestaña Google Images con el nombre del plato prefiltrado.
-- Previsualización reactiva de URL con alerta visual si la imagen no carga o tiene enlace roto.
+### `AddFoodModal.tsx` y `EditFoodModal.tsx` (Creación y Edición de Platos)
+- **Selección Múltiple de Categorías:** Permite asignar una o varias categorías a cada plato mediante chips interactivos.
+- **Autocompletado con IA para Descripción Corta:** Botón con icono de destellos ✨ (`Sparkles` / `Loader2`) que genera descripciones gastronómicas atractivas y concisas mediante el servicio de cascada en `aiDescription.ts`. El texto es completamente editable por el usuario.
+- **ImagePicker integrado:** Catálogo de fotos y acceso directo a Google Images prefiltrado por el nombre del plato.
 
-### `EditFoodModal.tsx` (Editar Plato)
-- Formulario de modificación prellenado con los datos actuales del plato (nombre, categoría, descripción y foto con `ImagePicker`).
-- Actualización inmutable estricta en el estado global (`map` con nuevo objeto clonado) y emisión optimista instantánea sin esperar la resolución de WebSocket.
-- Accesible para los superusuarios o el propietario del plato.
+### `ManageCategoriesModal.tsx` (Gestor de Categorías y Filtros)
+- Panel accesible para superusuarios para crear nuevas categorías, eliminarlas o **reordenarlas personalmente** (subir/bajar).
+- El orden establecido se persiste en la base de datos de Supabase (`public.categories.display_order`) y se refleja en tiempo real en todos los clientes.
 
 ### `AdminUsersModal.tsx` (Panel de Administración de Usuarios)
 - Panel reservado exclusivamente para superusuarios con conteo y métricas en tiempo real.
-- **Superusuario Raíz (`dianrie@hotmail.com`):** Es inmutable y cuenta con privilegios para ascender a otros usuarios a superusuarios o degradarlos a usuarios normales (`set_user_role`).
-- **Superusuarios Delegados:** Tienen acceso al panel y pueden eliminar usuarios del sistema (`delete_user_admin`), pero no pueden alterar roles ni eliminar al superusuario raíz.
+- **Superusuario Raíz (`dianrie@hotmail.com`):** Inmutable, con privilegios exclusivos para ascender a otros usuarios a superusuarios o degradarlos a usuarios normales (`set_user_role`).
+- **Superusuarios Delegados:** Pueden eliminar usuarios del sistema (`delete_user_admin`), pero no pueden alterar roles ni eliminar al superusuario raíz.
 - Lista completa de usuarios con búsqueda dinámica, estados de sesión y acciones protegidas con modal de confirmación.
 
 ---
@@ -93,16 +109,18 @@ que-comemos-hoy/
 ## 5. Base de Datos, Triggers y Realtime
 
 ### Tablas Principales
-- **`public.foods`**: `id`, `name`, `image_url`, `category`, `description`, `votes_count`, `created_by`, `user_id` (UUID), `user_email` (TEXT), `created_at`.
-- **`public.votes`**: `id`, `food_id` (FK cascade), `user_name`, `created_at`.
+- **`public.foods`**: `id`, `name`, `image_url`, `category`, `categories` (TEXT[]), `description`, `votes_count`, `created_by`, `user_id` (UUID), `user_email` (TEXT), `created_at`.
+- **`public.votes`**: `id`, `food_id` (FK cascade), `user_name`, `user_id` (UUID), `created_at`.
   - Restricción única: `CONSTRAINT unique_user_food_vote UNIQUE (food_id, user_name)`.
 - **`public.user_favorites`**: `id`, `user_id` (UUID FK cascade), `user_email` (TEXT), `food_id` (UUID FK cascade), `created_at`.
   - Restricción única: `CONSTRAINT unique_user_food_favorite UNIQUE (user_email, food_id)`.
+- **`public.categories`**: `id`, `name`, `emoji`, `display_order` (INT), `created_at`.
 - **`public.user_roles`**: `id`, `user_id` (UUID), `user_email` (TEXT UNIQUE), `role` ('root_admin' | 'superadmin' | 'user'), `created_at`, `updated_at`.
+- **`public.game_scores`**: `id`, `user_name`, `score`, `created_at`.
 
 ### Sistema de Visibilidad, Moderación y Favoritos
 - **Visibilidad del Feed:** El feed principal muestra exclusivamente recetas oficiales del sistema y recetas creadas por superusuarios. Las recetas añadidas por usuarios normales son visibles para su propio creador y para los superusuarios (para moderación), manteniéndose ocultas ante terceros y visitantes no registrados para prevenir spam.
-- **Favoritos Sincronizados:** Los favoritos se guardan y sincronizan en tiempo real directamente en la base de datos de Supabase (`public.user_favorites`) vinculados al usuario autenticado, permitiendo acceso multi-dispositivo inmediato (móvil, tablet, escritorio) con caché local optimista en `localStorage` (`que_comemos_favs_<email>`).
+- **Favoritos Sincronizados en Supabase:** Los favoritos se guardan directamente en `public.user_favorites` asociados a la cuenta del usuario autenticado, asegurando disponibilidad multi-dispositivo inmediata (móvil, tablet, ordenador) con sincronización bidireccional Realtime y caché local optimista en `localStorage` (`que_comemos_favs_<email>`).
 - En la interfaz principal existen tres pestañas: **Todos los platos**, **Mis Platos** (solo los creados por el usuario activo) y **⭐ Favoritos**.
 - La Ruleta y la Elección Rápida respetan el filtro activo y las reglas de visibilidad, girando únicamente entre los platos visibles.
 
@@ -115,17 +133,22 @@ que-comemos-hoy/
     - **Propietarios:** Usuarios autenticados solo pueden editar o borrar los platos que ellos mismos hayan creado.
 - **`public.user_favorites`**:
   - **Lectura, Inserción y Eliminación:** Protegidas por RLS. Exclusivas para el propio usuario autenticado (`user_id = auth.uid()` o `user_email = auth.jwt() ->> 'email'`) y superusuarios.
+- **`public.categories`**:
+  - Lectura pública (`SELECT true`). Inserciones, actualizaciones y borrados restringidos a superusuarios (`is_superadmin()`).
 - **`public.user_roles`**:
   - Lectura pública (`SELECT true`). Inserciones y modificaciones de rol exclusivamente a través de la función RPC con verificación de seguridad `set_user_role` reservada para el superusuario raíz.
 - **`public.votes`**:
-  - Lectura, inserción y eliminación libres (`true`) para permitir votaciones fluidas por nombre local.
+  - Lectura libre (`true`), inserción y eliminación protegidas para usuarios autenticados.
 
-### Trigger en PostgreSQL
-- La función `update_food_votes_count()` recalcula automáticamente `foods.votes_count` ante operaciones `INSERT` o `DELETE` en la tabla `votes`. El frontend nunca calcula votos manualmente.
+### Triggers y Funciones en PostgreSQL
+- `update_food_votes_count()`: Recalcula automáticamente `foods.votes_count` ante operaciones `INSERT` o `DELETE` en la tabla `votes`.
+- `is_superadmin(check_email)`: Determina de forma segura y centralizada los privilegios administrativos en funciones y políticas RLS.
 
-### Suscripción Realtime
-- En `App.tsx` se mantiene activa la suscripción al canal `public:foods_changes` escuchando eventos `INSERT`, `UPDATE` y `DELETE` para refrescar el feed instantáneamente en todos los clientes conectados.
-- En `UserContext.tsx` se mantienen suscripciones en tiempo real a los canales `public:user_votes_${user.id}` y `public:user_favorites_${user.id}` para reflejar cambios instantáneos entre pestañas y dispositivos.
+### Suscripciones Realtime Activas
+- `public:foods_changes`: En `App.tsx` para reflejar adiciones, modificaciones y borrados de platos al instante.
+- `public:categories_changes`: En `CategoryContext.tsx` para refrescar el orden y listado de filtros en tiempo real.
+- `public:user_votes_${user.id}`: En `UserContext.tsx` para reflejar votos de forma reactiva entre sesiones.
+- `public:user_favorites_${user.id}`: En `UserContext.tsx` para mantener los favoritos sincronizados al instante en todos los dispositivos conectados.
 
 ---
 
@@ -133,11 +156,12 @@ que-comemos-hoy/
 - **Variables de Entorno**:
   - `VITE_SUPABASE_URL`: URL del proyecto Supabase.
   - `VITE_SUPABASE_ANON_KEY`: Clave pública `anon`.
-  - En `src/lib/supabase.ts` existen valores por defecto preconfigurados para permitir ejecución inmediata sin bloqueos.
+  - `VITE_GEMINI_API_KEY` (Opcional): Clave para el modelo Gemini Flash en autocompletado de descripciones IA (con fallback automático a Pollinations AI y Wikipedia si no se define).
 - **Autenticación con Enlace Mágico (Magic Link)**:
   - Implementada mediante `supabase.auth.signInWithOtp({ email, options: { emailRedirectTo: window.location.origin } })`.
+  - `AuthModal.tsx` incluye aviso informativo sobre la carpeta de spam para mejorar la tasa de conversión de acceso.
   - `UserContext.tsx` escucha el ciclo de vida de la sesión con `onAuthStateChange`.
-  - La interfaz protege visualmente y a nivel de base de datos las acciones de **añadir platos** y **eliminar platos** requiriendo sesión iniciada. Los votos y la ruleta permanecen abiertos a todos los visitantes.
+  - Acciones de añadir, editar, borrar platos y gestionar favoritos requieren sesión iniciada. Los votos y la ruleta permanecen abiertos a todos los visitantes.
 
 ---
 
@@ -148,7 +172,7 @@ Este protocolo es de **cumplimiento estricto e inquebrantable** para cualquier d
 ### 1. Creación Obligatoria de Rama (`features/...`)
 - Cada vez que el usuario solicite una nueva funcionalidad, mejora, refactorización o cambio ("algo nuevo"), el agente **debe obligatoriamente crear y cambiar a una nueva rama de características** antes de modificar cualquier archivo de código.
 - La rama debe seguir estrictamente el formato de nomenclatura:  
-  `features/nombre-descriptivo-de-la-rama` (ej. `features/09-image-search`, `features/10-admin-filters`, `features/19-nuevo-ajuste`).
+  `features/nombre-descriptivo-de-la-rama` (ej. `features/sync-user-favorites`, `features/ai-short-description`, `features/update-docs-readme-agents`).
 - **Bajo ninguna circunstancia se debe desarrollar o realizar commits directamente sobre `main`**.
 
 ### 2. Desarrollo y Quality Gate Riguroso
