@@ -51,6 +51,10 @@ const CATEGORY_THEMES: Record<string, CategoryColorTone> = {
   postres: { primary: '#FCE7F3', secondary: '#FBCFE8' },
   postre: { primary: '#FCE7F3', secondary: '#FBCFE8' },
   dulces: { primary: '#FCE7F3', secondary: '#FBCFE8' },
+  // Desayuno y Brunch: miel dorada tostada, café y crema suave
+  desayuno: { primary: '#FED7AA', secondary: '#FDE68A' },
+  desayunos: { primary: '#FED7AA', secondary: '#FDE68A' },
+  brunch: { primary: '#FED7AA', secondary: '#FDE68A' },
   // Cocina Internacional
   mexicana: { primary: '#FECDD3', secondary: '#FDA4AF' },
   americana: { primary: '#FED7AA', secondary: '#FDBA74' },

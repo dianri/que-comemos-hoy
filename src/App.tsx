@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo, useCallback } from 'react';
+import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
 import {
   Plus,
   Dices,
@@ -31,36 +31,86 @@ import { UserProvider, useUser } from './context/UserContext';
 import { CategoryProvider, useCategories } from './context/CategoryContext';
 import { playConfettiPop } from './lib/sound';
 
+const CATEGORY_FILTER_STORAGE_KEY = 'que_comemos_selected_categories';
+
+/**
+ * Obtiene las categorías seleccionadas iniciales con migración limpia:
+ * Si una categoría es nueva en el sistema (ej. "Desayuno"), se activa por defecto.
+ */
+function getInitialSelectedCategories(allCategories: string[]): string[] {
+  try {
+    const raw = localStorage.getItem(CATEGORY_FILTER_STORAGE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) {
+        // Categorías que el usuario tenía guardadas y que siguen existiendo en el sistema
+        const valid = parsed.filter(
+          (c): c is string => typeof c === 'string' && allCategories.includes(c)
+        );
+        // Migración limpia: cualquier categoría nueva en la base de datos (ej. Desayuno) se activa por defecto
+        const newlyDiscovered = allCategories.filter((c) => !parsed.includes(c));
+        return [...valid, ...newlyDiscovered];
+      }
+    }
+  } catch (err) {
+    console.warn('Advertencia al leer categorías de localStorage:', err);
+  }
+  return [...allCategories];
+}
+
 function MainApp() {
   const [foods, setFoods] = useState<Food[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const { categories } = useCategories();
   const [searchQuery, setSearchQuery] = useState<string>('');
-  const [selectedCategories, setSelectedCategories] = useState<string[]>(() => [...categories]);
-  const [hasInitializedCategories, setHasInitializedCategories] = useState<boolean>(false);
+  const [selectedCategories, setSelectedCategories] = useState<string[]>(() =>
+    getInitialSelectedCategories(categories)
+  );
+  const prevCategoriesRef = useRef<string[]>(categories);
   const [sortBy, setSortBy] = useState<'votes' | 'recent' | 'name'>('votes');
   const [mainTab, setMainTab] = useState<MainTabFilter>('all');
 
-  // Inicializar con todas las categorías activas en cuanto categories esté disponible
+  // Sincronizar reactivamente cuando categories cambie (carga de Supabase, realtime o nuevas categorías)
   useEffect(() => {
-    if (categories.length > 0 && !hasInitializedCategories) {
-      setSelectedCategories([...categories]);
-      setHasInitializedCategories(true);
-    }
-  }, [categories, hasInitializedCategories]);
+    const prevCategories = prevCategoriesRef.current;
 
-  // Sincronizar si se añade o elimina una categoría en la base de datos
-  useEffect(() => {
-    if (hasInitializedCategories) {
-      setSelectedCategories((prev) => {
-        const prevAllSelected = categories.length > 0 && categories.every((c) => prev.includes(c));
-        if (prevAllSelected) {
+    const hasCategoryListChanged =
+      categories.length !== prevCategories.length ||
+      categories.some((c, i) => c !== prevCategories[i]);
+
+    if (hasCategoryListChanged) {
+      setSelectedCategories((prevSelected) => {
+        // ¿Tenía el usuario todas las categorías activas antes de la actualización?
+        const hadAllSelected =
+          prevCategories.length > 0 &&
+          prevCategories.every((c) => prevSelected.includes(c));
+
+        if (hadAllSelected) {
+          // Si estaban todas seleccionadas, activar todas incluyendo las nuevas (ej. Desayuno)
           return [...categories];
         }
-        return prev.filter((c) => categories.includes(c));
+
+        // Si tenía una selección específica:
+        // 1. Mantener las categorías seleccionadas que sigan existiendo
+        const validSelected = prevSelected.filter((c) => categories.includes(c));
+        // 2. Activar por defecto cualquier categoría nueva añadida al sistema
+        const newlyAdded = categories.filter((c) => !prevCategories.includes(c));
+
+        return [...validSelected, ...newlyAdded];
       });
+
+      prevCategoriesRef.current = categories;
     }
-  }, [categories, hasInitializedCategories]);
+  }, [categories]);
+
+  // Persistir la selección en localStorage para conservar los filtros tras recargar
+  useEffect(() => {
+    try {
+      localStorage.setItem(CATEGORY_FILTER_STORAGE_KEY, JSON.stringify(selectedCategories));
+    } catch {
+      // Ignorar restricciones en entornos aislados o cuotas excedidas
+    }
+  }, [selectedCategories]);
 
   // Comprobar si todas las categorías están actualmente activas
   const isAllSelected =

@@ -16,6 +16,7 @@ const DEFAULT_CATEGORIES: string[] = [
   'Japonesa',
   'Saludable',
   'Postres',
+  'Desayuno',
 ];
 
 interface CategoryContextType {
