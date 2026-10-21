@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { X, Sparkles, AlertCircle, Save, Check } from 'lucide-react';
+import { X, Sparkles, AlertCircle, Save, Check, Loader2 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useCategories } from '../context/CategoryContext';
 import { Food, getFoodCategories } from '../types';
 import { ImagePicker } from './ImagePicker';
 import { sanitizeText, safeImageUrl, SAFE_FALLBACK_IMAGE } from '../lib/sanitize';
+import { generateDishDescription } from '../lib/aiDescription';
+import { showToast } from '../lib/toast';
 
 interface EditFoodModalProps {
   isOpen: boolean;
@@ -25,7 +27,33 @@ export const EditFoodModal: React.FC<EditFoodModalProps> = ({
   const [selectedCategories, setSelectedCategories] = useState<string[]>(['General']);
   const [description, setDescription] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isGeneratingAi, setIsGeneratingAi] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  const handleGenerateAiDescription = async () => {
+    const trimmedName = name.trim();
+    if (!trimmedName) {
+      showToast('Escribe primero el nombre del plato', 'info');
+      return;
+    }
+
+    setIsGeneratingAi(true);
+    try {
+      const generated = await generateDishDescription(
+        trimmedName,
+        selectedCategories.length > 0 ? selectedCategories[0] : undefined
+      );
+      if (generated) {
+        setDescription(generated);
+        showToast('¡Descripción generada con éxito! ✨', 'success');
+      }
+    } catch (err: unknown) {
+      console.error('Error generating AI description:', err);
+      showToast('No se pudo generar la descripción. Inténtalo de nuevo.', 'error');
+    } finally {
+      setIsGeneratingAi(false);
+    }
+  };
 
   // Prellenar campos al cambiar el plato a editar
   useEffect(() => {
@@ -202,11 +230,32 @@ export const EditFoodModal: React.FC<EditFoodModalProps> = ({
           </div>
 
 
-          {/* Descripción opcional */}
+          {/* Descripción opcional con autocompletado por IA */}
           <div>
-            <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
-              Descripción corta (Opcional)
-            </label>
+            <div className="flex items-center justify-between mb-1.5">
+              <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider">
+                Descripción corta (Opcional)
+              </label>
+              <button
+                type="button"
+                onClick={handleGenerateAiDescription}
+                disabled={isGeneratingAi || !name.trim()}
+                title={!name.trim() ? 'Escribe primero el nombre del plato' : 'Generar sugerencia apetitosa con IA'}
+                className="inline-flex items-center space-x-1.5 text-[11px] font-bold px-2.5 py-1 rounded-lg text-amber-700 bg-amber-50 hover:bg-amber-100/90 border border-amber-200/80 transition-all disabled:opacity-40 disabled:cursor-not-allowed shadow-xs active:scale-95 cursor-pointer"
+              >
+                {isGeneratingAi ? (
+                  <>
+                    <Loader2 className="w-3.5 h-3.5 animate-spin text-amber-600" />
+                    <span>Generando...</span>
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="w-3.5 h-3.5 text-amber-500 fill-amber-400/40" />
+                    <span>Autocompletar con IA</span>
+                  </>
+                )}
+              </button>
+            </div>
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
