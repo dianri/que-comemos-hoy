@@ -99,9 +99,17 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               Haz clic en el enlace del correo electrónico para acceder automáticamente y desbloquear la gestión de platos.
             </p>
 
+            {/* Aviso informativo de spam en pantalla de confirmación */}
+            <div className="p-3 bg-amber-50/90 border border-amber-200/70 rounded-2xl flex items-start gap-2.5 text-left max-w-sm mx-auto shadow-xs">
+              <span className="text-base leading-none flex-shrink-0 select-none">💡</span>
+              <p className="text-xs text-amber-900/85 leading-relaxed font-medium">
+                <strong className="font-bold text-amber-950">¿No encuentras el correo?</strong> Revisa tu carpeta de <strong>spam o correo no deseado</strong>.
+              </p>
+            </div>
+
             <button
               onClick={handleClose}
-              className="w-full mt-2 py-3 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-bold text-sm shadow-md transition-all"
+              className="w-full mt-2 py-3 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-bold text-sm shadow-md transition-all cursor-pointer"
             >
               Entendido
             </button>
@@ -150,12 +158,20 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               <button
                 type="submit"
                 disabled={isLoading}
-                className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 hover:opacity-95 text-white font-bold text-sm shadow-lg shadow-orange-500/25 transition-all flex items-center justify-center space-x-2 disabled:opacity-50"
+                className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 hover:opacity-95 text-white font-bold text-sm shadow-lg shadow-orange-500/25 transition-all flex items-center justify-center space-x-2 disabled:opacity-50 cursor-pointer"
               >
                 <Send className="w-4 h-4" />
                 <span>{isLoading ? 'Enviando enlace...' : 'Enviar Enlace de Acceso'}</span>
               </button>
             </form>
+
+            {/* Aviso informativo de spam */}
+            <div className="p-3 bg-amber-50/90 border border-amber-200/70 rounded-2xl flex items-start gap-2.5 text-left shadow-xs">
+              <span className="text-base leading-none flex-shrink-0 select-none">💡</span>
+              <p className="text-xs text-amber-900/85 leading-relaxed font-medium">
+                <strong className="font-bold text-amber-950">¿No encuentras el correo?</strong> Echa un vistazo a tu carpeta de spam o correo no deseado.
+              </p>
+            </div>
 
             <div className="pt-2 border-t border-slate-100 text-center">
               <p className="text-[11px] text-slate-400">
