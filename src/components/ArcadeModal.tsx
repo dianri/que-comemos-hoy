@@ -9,6 +9,9 @@ import {
   Trophy,
   RefreshCw,
   Sparkles,
+  UserX,
+  LogIn,
+  CheckCircle2,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { supabase } from '../lib/supabase';
@@ -28,7 +31,7 @@ const GAME_WIDTH = 864;
 const GAME_HEIGHT = 790;
 
 export const ArcadeModal: React.FC<ArcadeModalProps> = ({ isOpen, onClose }) => {
-  const { userName, user } = useUser();
+  const { userName, user, isAuthenticated, openAuthModal } = useUser();
   const [activeTab, setActiveTab] = useState<'game' | 'ranking'>('game');
   const [isLoading, setIsLoading] = useState(true);
   const [iframeKey, setIframeKey] = useState(0);
@@ -45,6 +48,19 @@ export const ArcadeModal: React.FC<ArcadeModalProps> = ({ isOpen, onClose }) => 
 
   // Evitar duplicados por mensajes repetidos del iframe
   const lastScoreRef = useRef<{ score: number; time: number }>({ score: -1, time: 0 });
+
+  // Nombre del jugador con sufijo _invitado para no autenticados (previene suplantaciones)
+  const getPlayerSubmissionName = useCallback(() => {
+    const raw = (userName && userName.trim()) || (user?.email ? user.email.split('@')[0] : 'Gourmet');
+    if (isAuthenticated) {
+      // Usuario autenticado y verificado: nombre oficial sin sufijo _invitado
+      return raw.replace(/_invitado$/i, '').trim();
+    } else {
+      // Usuario invitado no registrado: sufijo obligatorio _invitado
+      const cleanRaw = raw.replace(/_invitado$/i, '').trim();
+      return `${cleanRaw || 'Invitado'}_invitado`;
+    }
+  }, [userName, user, isAuthenticated]);
 
   // Inicialización inteligente de escala según tamaño de ventana para evitar parpadeos
   const [scale, setScale] = useState(() => {
@@ -147,14 +163,12 @@ export const ArcadeModal: React.FC<ArcadeModalProps> = ({ isOpen, onClose }) => 
       }
       lastScoreRef.current = { score: rawScore, time: now };
 
-      const playerName =
-        (userName && userName.trim()) ||
-        (user?.email ? user.email.split('@')[0] : 'Anónimo');
+      const finalPlayerName = getPlayerSubmissionName();
 
       try {
         const { error } = await supabase.from('game_scores').insert({
           game_name: 'arkanoid',
-          user_name: playerName,
+          user_name: finalPlayerName,
           score: rawScore,
         });
 
@@ -173,7 +187,7 @@ export const ArcadeModal: React.FC<ArcadeModalProps> = ({ isOpen, onClose }) => 
 
         setScoreBanner({
           score: rawScore,
-          playerName,
+          playerName: finalPlayerName,
           timestamp: Date.now(),
         });
 
@@ -183,7 +197,7 @@ export const ArcadeModal: React.FC<ArcadeModalProps> = ({ isOpen, onClose }) => 
         console.error('Error al insertar score de Arkanoid:', err);
       }
     },
-    [userName, user, fetchLeaderboard]
+    [getPlayerSubmissionName, fetchLeaderboard]
   );
 
   useEffect(() => {
@@ -318,6 +332,26 @@ export const ArcadeModal: React.FC<ArcadeModalProps> = ({ isOpen, onClose }) => 
             </button>
           </div>
         </div>
+
+        {/* Banner de Aviso e Invitación al Registro para Jugadores Invitados */}
+        {!isAuthenticated && (
+          <div className="px-3 py-1.5 sm:px-4 sm:py-2 bg-gradient-to-r from-amber-950/70 via-zinc-900 to-amber-950/70 border-b border-amber-500/30 text-amber-200 text-xs font-mono flex items-center justify-between flex-shrink-0 animate-fade-in">
+            <div className="flex items-center space-x-2 min-w-0 pr-2">
+              <UserX className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+              <span className="truncate text-[11px] sm:text-xs">
+                Jugando como invitado (tus récords llevarán el sufijo <strong className="text-amber-300">_invitado</strong>).
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={() => openAuthModal('Inicia sesión para registrar tus récords con tu nombre oficial verificado.')}
+              className="shrink-0 px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-200 hover:text-white border border-amber-400/40 text-[10px] sm:text-xs font-bold flex items-center space-x-1 transition-all cursor-pointer shadow-xs active:scale-95"
+            >
+              <LogIn className="w-3 h-3" />
+              <span>Iniciar Sesión</span>
+            </button>
+          </div>
+        )}
 
         {/* Banner informativo de adaptabilidad para dispositivos móviles (solo en vista juego) */}
         {activeTab === 'game' && (
@@ -484,6 +518,20 @@ export const ArcadeModal: React.FC<ArcadeModalProps> = ({ isOpen, onClose }) => 
                     const isSecond = rank === 2;
                     const isThird = rank === 3;
 
+                    const trimmedItemName = item.user_name.trim();
+                    const isGuest = trimmedItemName.toLowerCase().endsWith('_invitado');
+                    const cleanDisplayName = isGuest
+                      ? trimmedItemName.replace(/_invitado$/i, '').trim()
+                      : trimmedItemName;
+
+                    // Comprobación si la puntuación pertenece al usuario actual
+                    const currentCleanName = (userName || '').replace(/_invitado$/i, '').trim().toLowerCase();
+                    const itemCleanName = cleanDisplayName.toLowerCase();
+                    const isCurrentUser =
+                      (isAuthenticated && !isGuest && itemCleanName === currentCleanName) ||
+                      (!isAuthenticated && isGuest && itemCleanName === currentCleanName) ||
+                      trimmedItemName.toLowerCase() === (userName || '').trim().toLowerCase();
+
                     return (
                       <div
                         key={item.id}
@@ -512,7 +560,7 @@ export const ArcadeModal: React.FC<ArcadeModalProps> = ({ isOpen, onClose }) => 
                           </div>
 
                           <div className="min-w-0">
-                            <div className="flex items-center space-x-1.5">
+                            <div className="flex items-center space-x-1.5 flex-wrap gap-y-1">
                               <p
                                 className={`text-xs sm:text-sm font-bold truncate ${
                                   isFirst
@@ -524,10 +572,36 @@ export const ArcadeModal: React.FC<ArcadeModalProps> = ({ isOpen, onClose }) => 
                                     : 'text-zinc-300'
                                 }`}
                               >
-                                {item.user_name}
+                                {cleanDisplayName}
+                                {isGuest && (
+                                  <span className="text-[10px] font-normal text-zinc-500 font-mono ml-0.5">
+                                    _invitado
+                                  </span>
+                                )}
                               </p>
-                              {userName && item.user_name.toLowerCase() === userName.toLowerCase() && (
-                                <span className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 uppercase">
+
+                              {/* Distintivo de autenticación: Verificado vs Invitado */}
+                              {!isGuest ? (
+                                <span
+                                  className="inline-flex items-center space-x-1 px-1.5 py-0.5 rounded text-[9px] font-bold bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 shrink-0 shadow-xs"
+                                  title="Usuario registrado y verificado"
+                                >
+                                  <CheckCircle2 className="w-2.5 h-2.5 text-emerald-400" />
+                                  <span>Verificado</span>
+                                </span>
+                              ) : (
+                                <span
+                                  className="inline-flex items-center space-x-1 px-1.5 py-0.5 rounded text-[9px] font-mono text-zinc-400 bg-zinc-800/80 border border-zinc-700/60 shrink-0"
+                                  title="Puntuación registrada en modo invitado"
+                                >
+                                  <UserX className="w-2.5 h-2.5 text-zinc-400" />
+                                  <span>Invitado</span>
+                                </span>
+                              )}
+
+                              {/* Distintivo 'Tú' */}
+                              {isCurrentUser && (
+                                <span className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 uppercase shrink-0">
                                   Tú
                                 </span>
                               )}
