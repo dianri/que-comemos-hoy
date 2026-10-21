@@ -170,7 +170,7 @@ function MainApp() {
 
   // Aísla una categoría seleccionándola de forma exclusiva
   const handleIsolateCategory = useCallback((cat: string) => {
-    // 1. Aislamiento exclusivo
+    // 1. Aislamiento exclusivo: deja activa únicamente la categoría seleccionada
     setSelectedCategories([cat]);
 
     // 2. Feedback háptico en móviles si el navegador lo soporta
@@ -181,9 +181,6 @@ function MainApp() {
         // Ignorar si no está permitido
       }
     }
-
-    // 3. Feedback visual con notificación Toast
-    showToast(`Filtro "${cat}" aislado 🎯`, 'info', 2200);
   }, []);
 
   const clearLongPressTimer = useCallback(() => {

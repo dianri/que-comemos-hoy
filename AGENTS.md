@@ -101,7 +101,7 @@ que-comemos-hoy/
 
 ### Barra de Filtros y Categorías (`App.tsx`)
 - **Drag-to-Scroll Horizontal:** Desplazamiento fluido con clic y arrastre en escritorio o swipe táctil en móvil.
-- **Aislamiento Exclusivo con Pulsación Prolongada (Long Press):** Mantener pulsado (~500ms) cualquier filtro de categoría en PC o móvil aísla exclusivamente dicho filtro (desmarcando todas las demás), con feedback háptico (`navigator.vibrate`), micro-animación visual y notificación Toast, distinguiendo arrastres o scroll táctil para evitar falsos positivos.
+- **Aislamiento Exclusivo con Pulsación Prolongada (Long Press):** Mantener pulsado (~500ms) cualquier filtro de categoría en PC o móvil aísla exclusivamente dicho filtro (desmarcando todas las demás) de forma silenciosa e inmediata, con feedback háptico (`navigator.vibrate`) y micro-animación visual, distinguiendo arrastres o scroll táctil para evitar falsos positivos.
 
 ### `PwaInstallBanner.tsx` (Banner de Instalación PWA)
 - Captura el evento nativo `beforeinstallprompt` y gestiona la instalación controlada de la aplicación sin banners invasivos.
