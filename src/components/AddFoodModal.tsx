@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { X, Plus, Sparkles, AlertCircle } from 'lucide-react';
+import { X, Plus, Sparkles, AlertCircle, Check } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useUser } from '../context/UserContext';
 import { useCategories } from '../context/CategoryContext';
-import { Category, Food } from '../types';
+import { Food } from '../types';
 import { ImagePicker } from './ImagePicker';
 import { sanitizeText, safeImageUrl, SAFE_FALLBACK_IMAGE } from '../lib/sanitize';
 
@@ -22,12 +22,23 @@ export const AddFoodModal: React.FC<AddFoodModalProps> = ({
   const { categories } = useCategories();
   const [name, setName] = useState('');
   const [imageUrl, setImageUrl] = useState('');
-  const [category, setCategory] = useState<Category>('General');
+  const [selectedCategories, setSelectedCategories] = useState<string[]>(['General']);
   const [description, setDescription] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   if (!isOpen) return null;
+
+  const handleToggleCategory = (cat: string) => {
+    setSelectedCategories((prev) => {
+      if (prev.includes(cat)) {
+        if (prev.length === 1) return prev; // Mantener al menos una categoría activa
+        return prev.filter((c) => c !== cat);
+      } else {
+        return [...prev, cat];
+      }
+    });
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -61,10 +72,14 @@ export const AddFoodModal: React.FC<AddFoodModalProps> = ({
       const creatorUid = user?.id || '';
       const creatorEmail = user?.email || '';
 
+      const finalCategories = selectedCategories.length > 0 ? selectedCategories : ['General'];
+      const primaryCategory = finalCategories[0] || 'General';
+
       const newRecord = {
         name: safeName,
         image_url: finalImage,
-        category,
+        category: primaryCategory,
+        categories: finalCategories,
         description: safeDescription,
         votes_count: 0,
         created_by: creatorUid,
@@ -85,7 +100,7 @@ export const AddFoodModal: React.FC<AddFoodModalProps> = ({
         setName('');
         setImageUrl('');
         setDescription('');
-        setCategory('General');
+        setSelectedCategories(['General']);
         onClose();
       }
     } catch (err: unknown) {
@@ -147,22 +162,36 @@ export const AddFoodModal: React.FC<AddFoodModalProps> = ({
             />
           </div>
 
-          {/* Categoría */}
+          {/* Categorías Múltiples */}
           <div>
-            <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
-              Categoría
-            </label>
-            <select
-              value={category}
-              onChange={(e) => setCategory(e.target.value as Category)}
-              className="w-full h-9 sm:h-10 px-3 py-1 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-orange-500/40 text-xs sm:text-sm font-medium bg-white"
-            >
-              {categories.map((cat) => (
-                <option key={cat} value={cat}>
-                  {cat}
-                </option>
-              ))}
-            </select>
+            <div className="flex items-center justify-between mb-1.5">
+              <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider">
+                Categorías ({selectedCategories.length})
+              </label>
+              <span className="text-[10px] text-slate-400 font-medium">
+                Selecciona una o varias
+              </span>
+            </div>
+            <div className="flex flex-wrap gap-1.5 p-2 bg-slate-50/80 border border-slate-200 rounded-xl max-h-32 overflow-y-auto">
+              {categories.map((cat) => {
+                const isSelected = selectedCategories.includes(cat);
+                return (
+                  <button
+                    type="button"
+                    key={cat}
+                    onClick={() => handleToggleCategory(cat)}
+                    className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all flex items-center space-x-1 cursor-pointer select-none active:scale-95 ${
+                      isSelected
+                        ? 'bg-orange-500 text-white shadow-xs'
+                        : 'bg-white hover:bg-slate-100 text-slate-600 border border-slate-200/90 hover:border-slate-300'
+                    }`}
+                  >
+                    {isSelected && <Check className="w-3 h-3 stroke-[2.5]" />}
+                    <span>{cat}</span>
+                  </button>
+                );
+              })}
+            </div>
           </div>
 
           {/* Selector de Imagen con Buscador y Pestañas */}

@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { X, Sparkles, AlertCircle, Save } from 'lucide-react';
+import { X, Sparkles, AlertCircle, Save, Check } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useCategories } from '../context/CategoryContext';
-import { Category, Food } from '../types';
+import { Food, getFoodCategories } from '../types';
 import { ImagePicker } from './ImagePicker';
 import { sanitizeText, safeImageUrl, SAFE_FALLBACK_IMAGE } from '../lib/sanitize';
 
@@ -22,7 +22,7 @@ export const EditFoodModal: React.FC<EditFoodModalProps> = ({
   const { categories } = useCategories();
   const [name, setName] = useState('');
   const [imageUrl, setImageUrl] = useState('');
-  const [category, setCategory] = useState<Category>('General');
+  const [selectedCategories, setSelectedCategories] = useState<string[]>(['General']);
   const [description, setDescription] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -32,13 +32,24 @@ export const EditFoodModal: React.FC<EditFoodModalProps> = ({
     if (food) {
       setName(food.name || '');
       setImageUrl(food.image_url || '');
-      setCategory((food.category as Category) || 'General');
+      setSelectedCategories(getFoodCategories(food));
       setDescription(food.description || '');
       setErrorMsg(null);
     }
   }, [food]);
 
   if (!isOpen || !food) return null;
+
+  const handleToggleCategory = (cat: string) => {
+    setSelectedCategories((prev) => {
+      if (prev.includes(cat)) {
+        if (prev.length === 1) return prev; // Mantener al menos una categoría seleccionada
+        return prev.filter((c) => c !== cat);
+      } else {
+        return [...prev, cat];
+      }
+    });
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -62,12 +73,16 @@ export const EditFoodModal: React.FC<EditFoodModalProps> = ({
       setIsSubmitting(true);
       setErrorMsg(null);
 
+      const finalCategories = selectedCategories.length > 0 ? selectedCategories : ['General'];
+      const primaryCategory = finalCategories[0] || 'General';
+
       const { data, error } = await supabase
         .from('foods')
         .update({
           name: safeName,
           image_url: finalImage,
-          category,
+          category: primaryCategory,
+          categories: finalCategories,
           description: safeDescription,
         })
         .eq('id', food.id)
@@ -81,7 +96,8 @@ export const EditFoodModal: React.FC<EditFoodModalProps> = ({
         ...food,
         name: safeName,
         image_url: finalImage,
-        category,
+        category: primaryCategory,
+        categories: finalCategories,
         description: safeDescription,
       };
 
@@ -148,22 +164,36 @@ export const EditFoodModal: React.FC<EditFoodModalProps> = ({
             />
           </div>
 
-          {/* Categoría */}
+          {/* Categorías Múltiples */}
           <div>
-            <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
-              Categoría
-            </label>
-            <select
-              value={category}
-              onChange={(e) => setCategory(e.target.value as Category)}
-              className="w-full h-9 sm:h-10 px-3 py-1 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-orange-500/40 text-xs sm:text-sm font-medium bg-white"
-            >
-              {categories.map((cat) => (
-                <option key={cat} value={cat}>
-                  {cat}
-                </option>
-              ))}
-            </select>
+            <div className="flex items-center justify-between mb-1.5">
+              <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider">
+                Categorías ({selectedCategories.length})
+              </label>
+              <span className="text-[10px] text-slate-400 font-medium">
+                Selecciona una o varias
+              </span>
+            </div>
+            <div className="flex flex-wrap gap-1.5 p-2 bg-slate-50/80 border border-slate-200 rounded-xl max-h-32 overflow-y-auto">
+              {categories.map((cat) => {
+                const isSelected = selectedCategories.includes(cat);
+                return (
+                  <button
+                    type="button"
+                    key={cat}
+                    onClick={() => handleToggleCategory(cat)}
+                    className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all flex items-center space-x-1 cursor-pointer select-none active:scale-95 ${
+                      isSelected
+                        ? 'bg-orange-500 text-white shadow-xs'
+                        : 'bg-white hover:bg-slate-100 text-slate-600 border border-slate-200/90 hover:border-slate-300'
+                    }`}
+                  >
+                    {isSelected && <Check className="w-3 h-3 stroke-[2.5]" />}
+                    <span>{cat}</span>
+                  </button>
+                );
+              })}
+            </div>
           </div>
 
           {/* Selector de Imagen con Buscador y Pestañas */}

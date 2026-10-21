@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Heart, Sparkles, Trash2, Star, Pencil, ChefHat, Share2, Check } from 'lucide-react';
-import { Food } from '../types';
+import { Food, getFoodCategories } from '../types';
 import { useUser } from '../context/UserContext';
 import { safeImageUrl } from '../lib/sanitize';
 import { shareFood } from '../lib/share';
@@ -27,6 +27,7 @@ const CATEGORY_COLORS: Record<string, string> = {
   Japonesa: 'bg-purple-100 text-purple-800 border-purple-200',
   Saludable: 'bg-teal-100 text-teal-800 border-teal-200',
   Postres: 'bg-pink-100 text-pink-800 border-pink-200',
+  Desayuno: 'bg-amber-100 text-amber-800 border-amber-200',
   General: 'bg-slate-100 text-slate-800 border-slate-200',
 };
 
@@ -65,7 +66,7 @@ export const FoodCard: React.FC<FoodCardProps> = ({
   const hasVoted = userVotes.has(food.id);
   const isFav = isFavorite(food.id);
   const canManage = canManageFood(food);
-  const categoryColor = CATEGORY_COLORS[food.category] || CATEGORY_COLORS.General;
+  const foodCategories = getFoodCategories(food);
 
   // Privacidad estricta: nunca mostrar emails en las tarjetas
   const getCreatorDisplayName = (): string => {
@@ -164,15 +165,29 @@ export const FoodCard: React.FC<FoodCardProps> = ({
           </div>
         )}
 
-        {/* Badge de Categoría y Autoría */}
-        <div className={`absolute left-2.5 z-10 flex items-center space-x-1 transition-all ${
+        {/* Badge de Categoría(s) y Autoría */}
+        <div className={`absolute left-2.5 z-10 flex flex-wrap items-center gap-1 transition-all max-w-[65%] ${
           isHighlighted ? 'top-8 sm:top-10' : 'top-2.5'
         }`}>
-          <span
-            className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold backdrop-blur-md shadow-sm border ${categoryColor}`}
-          >
-            {food.category || 'General'}
-          </span>
+          {foodCategories.slice(0, 2).map((cat) => {
+            const catColor = CATEGORY_COLORS[cat] || CATEGORY_COLORS.General;
+            return (
+              <span
+                key={cat}
+                className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] sm:text-[11px] font-semibold backdrop-blur-md shadow-sm border ${catColor}`}
+              >
+                {cat}
+              </span>
+            );
+          })}
+          {foodCategories.length > 2 && (
+            <span
+              className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-bold backdrop-blur-md shadow-sm bg-white/90 text-slate-600 border border-slate-200"
+              title={foodCategories.slice(2).join(', ')}
+            >
+              +{foodCategories.length - 2}
+            </span>
+          )}
           {canManage && (
             <span
               className={`inline-flex items-center px-1.5 py-0.5 rounded-full text-[9px] font-bold backdrop-blur-md shadow-sm text-white ${

@@ -12,7 +12,7 @@ import {
 } from 'lucide-react';
 import { useCategories } from '../context/CategoryContext';
 import { useUser } from '../context/UserContext';
-import { Food } from '../types';
+import { Food, getFoodCategories } from '../types';
 
 interface ManageCategoriesModalProps {
   isOpen: boolean;
@@ -41,11 +41,13 @@ export const ManageCategoriesModal: React.FC<ManageCategoriesModalProps> = ({
 
   if (!isOpen || !isSuperUser) return null;
 
-  // Conteo de platos por categoría
+  // Conteo de platos por categoría (soporta múltiples categorías por plato)
   const countFoodsInCategory = (catName: string): number => {
-    return foods.filter(
-      (f) => (f.category || 'General').toLowerCase() === catName.toLowerCase()
-    ).length;
+    const target = catName.toLowerCase();
+    return foods.filter((f) => {
+      const cats = getFoodCategories(f);
+      return cats.some((c) => c.toLowerCase() === target);
+    }).length;
   };
 
   const handleAddCategory = async (e: React.FormEvent) => {

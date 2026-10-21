@@ -15,7 +15,7 @@ import {
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { supabase } from './lib/supabase';
-import { Food, MainTabFilter } from './types';
+import { Food, MainTabFilter, getFoodCategories } from './types';
 import { Navbar } from './components/Navbar';
 import { FoodCard } from './components/FoodCard';
 import { RouletteModal } from './components/RouletteModal';
@@ -480,10 +480,11 @@ function MainApp() {
           if (!favorites.has(f.id)) return false;
         }
 
-        // 2. Filtro por categoría (selección múltiple)
+        // 2. Filtro por categoría (soporta múltiples categorías: coincide si al menos una está activa)
+        const foodCats = getFoodCategories(f);
         const matchesCategory = isAllSelected
           ? true
-          : selectedCategories.includes(f.category || 'General');
+          : foodCats.some((cat) => selectedCategories.includes(cat));
 
         // 3. Filtro por búsqueda
         const matchesSearch =
@@ -502,8 +503,16 @@ function MainApp() {
   }, [visibleFoods, mainTab, selectedCategories, isAllSelected, searchQuery, sortBy, user, favorites]);
 
   // Pool de platos para la ruleta (respeta filtros si hay elementos, o usa el total visible)
+  // Deduplicación estricta por ID para garantizar que cada plato se añade exactamente una vez
   const roulettePool = useMemo(() => {
-    return filteredFoods.length > 0 ? filteredFoods : visibleFoods;
+    const source = filteredFoods.length > 0 ? filteredFoods : visibleFoods;
+    const uniqueMap = new Map<string, Food>();
+    for (const food of source) {
+      if (!uniqueMap.has(food.id)) {
+        uniqueMap.set(food.id, food);
+      }
+    }
+    return Array.from(uniqueMap.values());
   }, [filteredFoods, visibleFoods]);
 
   // Elección rápida aleatoria directa (abre el Modal de Detalle de Receta)

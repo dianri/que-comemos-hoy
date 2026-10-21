@@ -1,4 +1,4 @@
-import { Food } from '../types';
+import { Food, getFoodCategories } from '../types';
 
 export interface ShareResult {
   success: boolean;
@@ -34,8 +34,9 @@ export const shareFood = async (
   const creator = creatorDisplayName ? ` · Creado por ${creatorDisplayName}` : '';
   const descriptionPart = food.description ? `\n📝 ${food.description}` : '';
 
+  const categoriesText = getFoodCategories(food).join(', ');
   const shareText =
-    `🍽️ *${food.name}* (${food.category || 'Tradicional'})${creator}\n` +
+    `🍽️ *${food.name}* (${categoriesText})${creator}\n` +
     `¡Mira qué plato más delicioso guardado en *Qué Comemos Hoy*!${descriptionPart}\n\n` +
     `👉 ¡Vota o gira la ruleta para decidir el menú de hoy!`;
 
