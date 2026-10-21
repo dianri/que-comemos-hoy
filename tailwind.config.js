@@ -30,14 +30,17 @@ export default {
           '50%': { opacity: '1', transform: 'scale(1.05)' },
         },
         'pulse-subtle': {
-          '0%, 100%': { transform: 'scale(1)', opacity: '0.92' },
-          '50%': { transform: 'scale(1.03)', opacity: '1', borderColor: 'rgba(255, 255, 255, 0.45)' },
+          '0%, 15%': { transform: 'scale(1)', opacity: '0.95', boxShadow: '0 0 0 0 rgba(255, 255, 255, 0)' },
+          '30%': { transform: 'scale(1.08)', opacity: '1', boxShadow: '0 0 14px 2px rgba(255, 255, 255, 0.65)', borderColor: 'rgba(255, 255, 255, 0.6)' },
+          '45%': { transform: 'scale(1.02)', opacity: '0.97', boxShadow: '0 0 4px rgba(255, 255, 255, 0.25)' },
+          '60%': { transform: 'scale(1.06)', opacity: '1', boxShadow: '0 0 10px 1px rgba(255, 255, 255, 0.45)', borderColor: 'rgba(255, 255, 255, 0.5)' },
+          '75%, 100%': { transform: 'scale(1)', opacity: '0.95', boxShadow: '0 0 0 0 rgba(255, 255, 255, 0)' },
         },
       },
       animation: {
         'bounce-subtle': 'bounce-subtle 2s ease-in-out infinite',
         'pulse-glow': 'pulse-glow 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
-        'pulse-subtle': 'pulse-subtle 3s ease-in-out infinite',
+        'pulse-subtle': 'pulse-subtle 2.6s ease-in-out infinite',
       }
     },
   },
