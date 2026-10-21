@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import {
   X,
   ExternalLink,
@@ -12,6 +12,8 @@ import {
   UserX,
   LogIn,
   CheckCircle2,
+  Star,
+  History,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { supabase } from '../lib/supabase';
@@ -40,11 +42,31 @@ export const ArcadeModal: React.FC<ArcadeModalProps> = ({ isOpen, onClose }) => 
   // Estado del ranking y puntuaciones
   const [leaderboard, setLeaderboard] = useState<GameScore[]>([]);
   const [isLoadingScores, setIsLoadingScores] = useState<boolean>(false);
+  const [rankingView, setRankingView] = useState<'best' | 'history'>('best');
   const [scoreBanner, setScoreBanner] = useState<{
     score: number;
     playerName: string;
     timestamp: number;
   } | null>(null);
+
+  // Filtrado memoizado de mejores récords únicos por jugador (High Scores)
+  const bestScores = useMemo(() => {
+    const seenUsers = new Set<string>();
+    const uniqueList: GameScore[] = [];
+
+    for (const item of leaderboard) {
+      const normalizedKey = item.user_name.trim().toLowerCase();
+      if (!seenUsers.has(normalizedKey)) {
+        seenUsers.add(normalizedKey);
+        uniqueList.push(item);
+      }
+    }
+
+    return uniqueList;
+  }, [leaderboard]);
+
+  // Lista activa según la vista seleccionada (Mejores Récords vs Historial de Partidas)
+  const displayedScores = rankingView === 'best' ? bestScores : leaderboard;
 
   // Estado para el modal de personalización de alias de invitados
   const [pendingScore, setPendingScore] = useState<number | null>(null);
@@ -522,12 +544,16 @@ export const ArcadeModal: React.FC<ArcadeModalProps> = ({ isOpen, onClose }) => 
                       </h4>
                       {leaderboard.length > 0 && (
                         <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-300 border border-amber-500/30">
-                          {leaderboard.length} récords
+                          {rankingView === 'best'
+                            ? `${bestScores.length} jugador${bestScores.length === 1 ? '' : 'es'}`
+                            : `${leaderboard.length} partida${leaderboard.length === 1 ? '' : 's'}`}
                         </span>
                       )}
                     </div>
                     <p className="text-[11px] text-zinc-400">
-                      Ranking global de todas las puntuaciones de la comunidad
+                      {rankingView === 'best'
+                        ? 'Puntuación máxima histórica de cada jugador'
+                        : 'Historial completo de todas las partidas jugadas en la comunidad'}
                     </p>
                   </div>
                 </div>
@@ -543,16 +569,53 @@ export const ArcadeModal: React.FC<ArcadeModalProps> = ({ isOpen, onClose }) => 
                 </button>
               </div>
 
+              {/* Selector de Doble Vista: Mejores Récords vs Historial */}
+              <div className="flex items-center justify-between p-1 bg-zinc-900/80 rounded-xl border border-zinc-800 text-xs font-mono">
+                <button
+                  type="button"
+                  onClick={() => setRankingView('best')}
+                  className={`flex-1 py-1.5 px-3 rounded-lg font-bold flex items-center justify-center space-x-1.5 transition-all cursor-pointer ${
+                    rankingView === 'best'
+                      ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40 shadow-xs'
+                      : 'text-zinc-400 hover:text-zinc-200'
+                  }`}
+                >
+                  <Star className="w-3.5 h-3.5 text-amber-400" />
+                  <span>⭐ Mejores Récords</span>
+                  {bestScores.length > 0 && (
+                    <span className="text-[10px] opacity-75 ml-1 font-normal">({bestScores.length})</span>
+                  )}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setRankingView('history')}
+                  className={`flex-1 py-1.5 px-3 rounded-lg font-bold flex items-center justify-center space-x-1.5 transition-all cursor-pointer ${
+                    rankingView === 'history'
+                      ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 shadow-xs'
+                      : 'text-zinc-400 hover:text-zinc-200'
+                  }`}
+                >
+                  <History className="w-3.5 h-3.5 text-cyan-400" />
+                  <span>📜 Historial</span>
+                  {leaderboard.length > 0 && (
+                    <span className="text-[10px] opacity-75 ml-1 font-normal">({leaderboard.length})</span>
+                  )}
+                </button>
+              </div>
+
               {/* Lista de Puntuaciones */}
               {isLoadingScores && leaderboard.length === 0 ? (
                 <div className="py-12 flex flex-col items-center justify-center text-zinc-500 space-y-2">
                   <RefreshCw className="w-6 h-6 animate-spin text-amber-400" />
                   <p className="text-xs">Cargando récords galácticos...</p>
                 </div>
-              ) : leaderboard.length === 0 ? (
+              ) : displayedScores.length === 0 ? (
                 <div className="py-12 px-4 rounded-2xl bg-zinc-900/50 border border-dashed border-zinc-800 text-center space-y-3">
                   <div className="text-4xl">🚀</div>
-                  <h5 className="text-sm font-bold text-white">¡Sé el primero en entrar al ranking!</h5>
+                  <h5 className="text-sm font-bold text-white">
+                    {rankingView === 'best' ? '¡Sé el primero en entrar al ranking!' : 'No hay partidas registradas'}
+                  </h5>
                   <p className="text-xs text-zinc-400 max-w-sm mx-auto">
                     Termina una partida en el minijuego de Arkanoid y tu puntuación aparecerá aquí automáticamente.
                   </p>
@@ -567,7 +630,7 @@ export const ArcadeModal: React.FC<ArcadeModalProps> = ({ isOpen, onClose }) => 
                 </div>
               ) : (
                 <div className="space-y-1.5">
-                  {leaderboard.map((item, index) => {
+                  {displayedScores.map((item, index) => {
                     const rank = index + 1;
                     const isFirst = rank === 1;
                     const isSecond = rank === 2;
