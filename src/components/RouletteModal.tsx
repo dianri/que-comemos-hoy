@@ -1,7 +1,7 @@
-import React, { useEffect, useRef, useState, useCallback } from 'react';
+import React, { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import confetti from 'canvas-confetti';
 import { X, Sparkles, Trophy, RotateCcw, Volume2, VolumeX } from 'lucide-react';
-import { Food } from '../types';
+import { Food, getFoodCategories } from '../types';
 import { playConfettiPop, playRouletteTick, isSoundMuted, setSoundMuted, getAudioContext } from '../lib/sound';
 
 interface RouletteModalProps {
@@ -107,11 +107,22 @@ export const RouletteModal: React.FC<RouletteModalProps> = ({
   const isSpinningRef = useRef(false);
   const hasAutoSpunRef = useRef(false);
 
+  // Deduplicación estricta por ID para garantizar que cada plato se añade exactamente una sola vez
+  const uniqueFoods = useMemo(() => {
+    const map = new Map<string, Food>();
+    for (const food of foods) {
+      if (!map.has(food.id)) {
+        map.set(food.id, food);
+      }
+    }
+    return Array.from(map.values());
+  }, [foods]);
+
   // Función de renderizado del Canvas con centrado perfecto del texto
   const drawWheel = useCallback(
     (angle: number) => {
       const canvas = canvasRef.current;
-      if (!canvas || foods.length === 0) return;
+      if (!canvas || uniqueFoods.length === 0) return;
       const ctx = canvas.getContext('2d');
       if (!ctx) return;
 
@@ -124,7 +135,7 @@ export const RouletteModal: React.FC<RouletteModalProps> = ({
 
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      const numSlices = foods.length;
+      const numSlices = uniqueFoods.length;
       const arc = (2 * Math.PI) / numSlices;
 
       // 1. Sombra exterior difusa cálida para dar profundidad y relieve a la ruleta
@@ -148,7 +159,8 @@ export const RouletteModal: React.FC<RouletteModalProps> = ({
         ctx.arc(centerX, centerY, radius, sliceStartAngle, sliceEndAngle);
         ctx.closePath();
 
-        ctx.fillStyle = getCategorySliceColor(foods[i].category, i);
+        const sliceCategory = getFoodCategories(uniqueFoods[i])[0];
+        ctx.fillStyle = getCategorySliceColor(sliceCategory, i);
         ctx.fill();
 
         // Borde separador limpio y elegante en blanco nítido
@@ -173,7 +185,7 @@ export const RouletteModal: React.FC<RouletteModalProps> = ({
 
         // Truncar con elipsis si el texto supera el espacio disponible
         const maxTextWidth = radius - innerRadius - 18;
-        const foodName = foods[i].name;
+        const foodName = uniqueFoods[i].name;
         let displayText = foodName;
 
         if (ctx.measureText(displayText).width > maxTextWidth) {
@@ -248,7 +260,7 @@ export const RouletteModal: React.FC<RouletteModalProps> = ({
       ctx.textBaseline = 'middle';
       ctx.fillText('🍽️', centerX, centerY);
     },
-    [foods]
+    [uniqueFoods]
   );
 
   // Inicializar canvas al abrir el modal o cambiar platos
@@ -293,7 +305,7 @@ export const RouletteModal: React.FC<RouletteModalProps> = ({
 
   // Lógica del Giro con Sincronización Matemática 100% Precisa con la Flecha Superior
   const spin = useCallback(() => {
-    if (isSpinningRef.current || foods.length === 0) return;
+    if (isSpinningRef.current || uniqueFoods.length === 0) return;
     // Bloquear inmediatamente mediante ref síncrono para evitar dobles disparos
     isSpinningRef.current = true;
     setIsSpinning(true);
@@ -302,12 +314,12 @@ export const RouletteModal: React.FC<RouletteModalProps> = ({
     // Desbloquear / activar AudioContext en el evento click del usuario
     getAudioContext();
 
-    const numSlices = foods.length;
+    const numSlices = uniqueFoods.length;
     const arc = (2 * Math.PI) / numSlices;
 
     // 1. Elegir de antemano el índice ganador aleatorio
     const winningIndex = Math.floor(Math.random() * numSlices);
-    const winningFood = foods[winningIndex];
+    const winningFood = uniqueFoods[winningIndex];
 
     // 2. La flecha fija está en las 12 en punto: ángulo -PI/2 (o 3*PI/2)
     const POINTER_ANGLE = 3 * Math.PI / 2;
@@ -389,7 +401,7 @@ export const RouletteModal: React.FC<RouletteModalProps> = ({
     };
 
     animationFrameRef.current = requestAnimationFrame(animate);
-  }, [foods, drawWheel]);
+  }, [uniqueFoods, drawWheel]);
 
   // Auto-giro de UN SOLO USO (One-Shot): solo se activa una vez al abrirse con autoSpin
   useEffect(() => {
@@ -456,7 +468,7 @@ export const RouletteModal: React.FC<RouletteModalProps> = ({
             ¿Qué comeremos hoy?
           </h2>
           <p className="text-[11px] sm:text-xs text-slate-500 truncate max-w-[260px] sm:max-w-xs mx-auto">
-            {subtitle || `${foods.length} platos en la ruleta. ¡Deja que el destino decida!`}
+            {subtitle || `${uniqueFoods.length} platos en la ruleta. ¡Deja que el destino decida!`}
           </p>
         </div>
 
@@ -499,7 +511,7 @@ export const RouletteModal: React.FC<RouletteModalProps> = ({
                     className="w-full h-full object-cover"
                   />
                   <span className="absolute bottom-1.5 left-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold bg-black/70 text-white backdrop-blur-sm">
-                    {winner.category}
+                    {getFoodCategories(winner).join(' • ')}
                   </span>
                 </div>
               )}
@@ -537,7 +549,7 @@ export const RouletteModal: React.FC<RouletteModalProps> = ({
           ) : (
             <button
               onClick={spin}
-              disabled={isSpinning || foods.length === 0}
+              disabled={isSpinning || uniqueFoods.length === 0}
               className={`w-full py-2.5 sm:py-3 px-5 rounded-xl font-black text-white text-xs sm:text-sm shadow-lg transition-all duration-200 flex items-center justify-center space-x-2 ${
                 isSpinning
                   ? 'bg-slate-400 cursor-not-allowed scale-98'

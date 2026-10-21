@@ -15,7 +15,7 @@ import {
   ExternalLink,
   ShoppingBag,
 } from 'lucide-react';
-import { Food } from '../types';
+import { Food, getFoodCategories } from '../types';
 import { useUser } from '../context/UserContext';
 import { shareFood } from '../lib/share';
 import { showToast } from '../lib/toast';
@@ -41,6 +41,7 @@ const CATEGORY_COLORS: Record<string, string> = {
   Japonesa: 'bg-purple-100 text-purple-800 border-purple-200',
   Saludable: 'bg-teal-100 text-teal-800 border-teal-200',
   Postres: 'bg-pink-100 text-pink-800 border-pink-200',
+  Desayuno: 'bg-amber-100 text-amber-800 border-amber-200',
   General: 'bg-slate-100 text-slate-800 border-slate-200',
 };
 
@@ -75,7 +76,7 @@ export const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
   const hasVoted = userVotes.has(food.id);
   const isFav = favorites.has(food.id);
   const canManage = canManageFood(food);
-  const categoryColor = CATEGORY_COLORS[food.category] || CATEGORY_COLORS.General;
+  const foodCategories = getFoodCategories(food);
 
   // Lógica de privacidad estricta: nunca mostrar emails
   const getCreatorDisplayName = (): string => {
@@ -199,13 +200,19 @@ export const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
           </button>
 
           {/* Badges superiores */}
-          <div className="absolute top-3 left-3 sm:top-4 sm:left-4 z-20 flex items-center space-x-1.5 sm:space-x-2">
-            <span
-              className={`inline-flex items-center px-2.5 py-0.5 sm:px-3 sm:py-1 rounded-full text-[11px] sm:text-xs font-bold backdrop-blur-md shadow-md border ${categoryColor}`}
-            >
-              <Tag className="w-3 h-3 mr-1" />
-              {food.category || 'General'}
-            </span>
+          <div className="absolute top-3 left-3 sm:top-4 sm:left-4 z-20 flex flex-wrap items-center gap-1.5 sm:gap-2 max-w-[80%]">
+            {foodCategories.map((cat) => {
+              const catColor = CATEGORY_COLORS[cat] || CATEGORY_COLORS.General;
+              return (
+                <span
+                  key={cat}
+                  className={`inline-flex items-center px-2.5 py-0.5 sm:px-3 sm:py-1 rounded-full text-[11px] sm:text-xs font-bold backdrop-blur-md shadow-md border ${catColor}`}
+                >
+                  <Tag className="w-3 h-3 mr-1" />
+                  {cat}
+                </span>
+              );
+            })}
 
             {canManage && (
               <span
@@ -356,10 +363,10 @@ export const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
           <div className="grid grid-cols-2 gap-3 pt-1">
             <div className="p-3 rounded-2xl bg-slate-50/80 border border-slate-100 space-y-0.5">
               <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                Categoría
+                {foodCategories.length > 1 ? 'Categorías' : 'Categoría'}
               </span>
               <p className="text-xs sm:text-sm font-extrabold text-slate-800">
-                {food.category || 'General'}
+                {foodCategories.join(', ')}
               </p>
             </div>
 
