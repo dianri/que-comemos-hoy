@@ -23,20 +23,42 @@ interface CategoryContextType {
   categories: string[];
   categoriesWithAll: string[];
   isLoadingCategories: boolean;
+  isReordering: boolean;
   refreshCategories: () => Promise<void>;
   addCategory: (name: string) => Promise<{ success: boolean; error?: string }>;
   deleteCategory: (
     name: string,
     onSuccessReassign?: () => void
   ) => Promise<{ success: boolean; error?: string }>;
+  reorderCategories: (newOrder: string[]) => Promise<{ success: boolean; error?: string }>;
+}
+
+const CATEGORY_ORDER_CACHE_KEY = 'que_comemos_categories_order';
+
+function getInitialCategories(): string[] {
+  try {
+    const raw = localStorage.getItem(CATEGORY_ORDER_CACHE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        const valid = parsed.filter((c): c is string => typeof c === 'string' && Boolean(c.trim()));
+        const missing = DEFAULT_CATEGORIES.filter((c) => !valid.includes(c));
+        return [...valid, ...missing];
+      }
+    }
+  } catch {
+    // Fallback
+  }
+  return DEFAULT_CATEGORIES;
 }
 
 const CategoryContext = createContext<CategoryContextType | undefined>(undefined);
 
 export const CategoryProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { isSuperUser } = useUser();
-  const [categories, setCategories] = useState<string[]>(DEFAULT_CATEGORIES);
+  const [categories, setCategories] = useState<string[]>(getInitialCategories);
   const [isLoadingCategories, setIsLoadingCategories] = useState<boolean>(true);
+  const [isReordering, setIsReordering] = useState<boolean>(false);
 
   // Consultar categorías desde Supabase
   const refreshCategories = useCallback(async () => {
@@ -58,6 +80,11 @@ export const CategoryProvider: React.FC<{ children: React.ReactNode }> = ({ chil
           names.unshift('General');
         }
         setCategories(names);
+        try {
+          localStorage.setItem(CATEGORY_ORDER_CACHE_KEY, JSON.stringify(names));
+        } catch {
+          // Ignorar restricciones locales
+        }
       }
     } catch (err) {
       console.error('Error al sincronizar categorías:', err);
@@ -174,6 +201,53 @@ export const CategoryProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     }
   };
 
+  // Reordenar categorías y persistir display_order en Supabase y localStorage
+  const reorderCategories = async (
+    newOrder: string[]
+  ): Promise<{ success: boolean; error?: string }> => {
+    if (!isSuperUser) {
+      return { success: false, error: 'Solo los superusuarios pueden reordenar categorías.' };
+    }
+
+    try {
+      setIsReordering(true);
+      // 1. Actualización optimista inmediata en la UI
+      setCategories(newOrder);
+
+      // 2. Persistir orden localmente
+      try {
+        localStorage.setItem(CATEGORY_ORDER_CACHE_KEY, JSON.stringify(newOrder));
+      } catch {
+        // Ignorar
+      }
+
+      // 3. Persistir en Supabase actualizando el display_order de cada categoría
+      const updates = newOrder.map((name, index) =>
+        supabase
+          .from('categories')
+          .update({ display_order: index })
+          .eq('name', name)
+      );
+
+      const results = await Promise.all(updates);
+      const failed = results.find((r) => r.error);
+      if (failed && failed.error) {
+        console.warn('Advertencia al guardar orden en Supabase:', failed.error.message);
+        return { success: false, error: failed.error.message };
+      }
+
+      return { success: true };
+    } catch (err: unknown) {
+      console.error('Error al reordenar categorías:', err);
+      return {
+        success: false,
+        error: err instanceof Error ? err.message : 'Error al guardar el nuevo orden.',
+      };
+    } finally {
+      setIsReordering(false);
+    }
+  };
+
   const categoriesWithAll = ['Todas', ...categories.filter((c) => c !== 'Todas')];
 
   return (
@@ -182,9 +256,11 @@ export const CategoryProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         categories,
         categoriesWithAll,
         isLoadingCategories,
+        isReordering,
         refreshCategories,
         addCategory,
         deleteCategory,
+        reorderCategories,
       }}
     >
       {children}
