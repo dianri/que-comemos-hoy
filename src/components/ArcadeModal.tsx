@@ -31,7 +31,7 @@ const GAME_WIDTH = 864;
 const GAME_HEIGHT = 790;
 
 export const ArcadeModal: React.FC<ArcadeModalProps> = ({ isOpen, onClose }) => {
-  const { userName, user, isAuthenticated, openAuthModal } = useUser();
+  const { userName, setUserName, user, isAuthenticated, openAuthModal } = useUser();
   const [activeTab, setActiveTab] = useState<'game' | 'ranking'>('game');
   const [isLoading, setIsLoading] = useState(true);
   const [iframeKey, setIframeKey] = useState(0);
@@ -46,21 +46,13 @@ export const ArcadeModal: React.FC<ArcadeModalProps> = ({ isOpen, onClose }) => 
     timestamp: number;
   } | null>(null);
 
+  // Estado para el modal de personalización de alias de invitados
+  const [pendingScore, setPendingScore] = useState<number | null>(null);
+  const [guestAliasInput, setGuestAliasInput] = useState<string>('');
+  const [isAliasModalOpen, setIsAliasModalOpen] = useState<boolean>(false);
+
   // Evitar duplicados por mensajes repetidos del iframe
   const lastScoreRef = useRef<{ score: number; time: number }>({ score: -1, time: 0 });
-
-  // Nombre del jugador con sufijo _invitado para no autenticados (previene suplantaciones)
-  const getPlayerSubmissionName = useCallback(() => {
-    const raw = (userName && userName.trim()) || (user?.email ? user.email.split('@')[0] : 'Gourmet');
-    if (isAuthenticated) {
-      // Usuario autenticado y verificado: nombre oficial sin sufijo _invitado
-      return raw.replace(/_invitado$/i, '').trim();
-    } else {
-      // Usuario invitado no registrado: sufijo obligatorio _invitado
-      const cleanRaw = raw.replace(/_invitado$/i, '').trim();
-      return `${cleanRaw || 'Invitado'}_invitado`;
-    }
-  }, [userName, user, isAuthenticated]);
 
   // Inicialización inteligente de escala según tamaño de ventana para evitar parpadeos
   const [scale, setScale] = useState(() => {
@@ -118,6 +110,66 @@ export const ArcadeModal: React.FC<ArcadeModalProps> = ({ isOpen, onClose }) => 
     }
   }, []);
 
+  // Guardar puntuación definitiva en Supabase con sufijo obligatorio para invitados
+  const saveFinalScore = useCallback(
+    async (scoreToSave: number, customAlias?: string) => {
+      let finalPlayerName = '';
+
+      if (isAuthenticated) {
+        const raw = (userName && userName.trim()) || (user?.email ? user.email.split('@')[0] : 'Gourmet');
+        finalPlayerName = raw.replace(/_invitado$/i, '').trim();
+      } else {
+        const chosen = (customAlias !== undefined ? customAlias : guestAliasInput).trim();
+        const rawBase = (chosen || userName || 'Invitado').replace(/_invitado$/i, '').trim();
+        const cleanBase = rawBase.slice(0, 24).trim() || 'Invitado';
+
+        // Aplicación obligatoria del sufijo _invitado para prevenir suplantaciones
+        finalPlayerName = `${cleanBase}_invitado`;
+
+        // Actualizar el nombre local del usuario para siguientes partidas
+        if (cleanBase && cleanBase !== 'Invitado' && setUserName) {
+          setUserName(cleanBase);
+        }
+      }
+
+      try {
+        const { error } = await supabase.from('game_scores').insert({
+          game_name: 'arkanoid',
+          user_name: finalPlayerName,
+          score: scoreToSave,
+        });
+
+        if (error) {
+          console.warn('Error al guardar puntuación de Arkanoid:', error.message);
+          return;
+        }
+
+        // Celebración festiva sonora y confeti
+        playConfettiPop();
+        confetti({
+          particleCount: 90,
+          spread: 70,
+          origin: { y: 0.5 },
+        });
+
+        setScoreBanner({
+          score: scoreToSave,
+          playerName: finalPlayerName,
+          timestamp: Date.now(),
+        });
+
+        // Refrescar tabla de récords
+        fetchLeaderboard();
+      } catch (err) {
+        console.error('Error al insertar score de Arkanoid:', err);
+      } finally {
+        setIsAliasModalOpen(false);
+        setPendingScore(null);
+      }
+    },
+    [isAuthenticated, userName, user, guestAliasInput, setUserName, fetchLeaderboard]
+  );
+
   // Suscripción Realtime a nuevas puntuaciones
   useEffect(() => {
     if (!isOpen) return;
@@ -163,42 +215,45 @@ export const ArcadeModal: React.FC<ArcadeModalProps> = ({ isOpen, onClose }) => 
       }
       lastScoreRef.current = { score: rawScore, time: now };
 
-      const finalPlayerName = getPlayerSubmissionName();
-
-      try {
-        const { error } = await supabase.from('game_scores').insert({
-          game_name: 'arkanoid',
-          user_name: finalPlayerName,
-          score: rawScore,
-        });
-
-        if (error) {
-          console.warn('Error al guardar puntuación de Arkanoid:', error.message);
-          return;
-        }
-
-        // Celebración festiva sonora y confeti
-        playConfettiPop();
-        confetti({
-          particleCount: 90,
-          spread: 70,
-          origin: { y: 0.5 },
-        });
-
-        setScoreBanner({
-          score: rawScore,
-          playerName: finalPlayerName,
-          timestamp: Date.now(),
-        });
-
-        // Refrescar tabla de récords
-        fetchLeaderboard();
-      } catch (err) {
-        console.error('Error al insertar score de Arkanoid:', err);
+      // Si el usuario está registrado/autenticado, registrar de inmediato con su cuenta verificada
+      if (isAuthenticated) {
+        saveFinalScore(rawScore);
+        return;
       }
+
+      // Si es un invitado no registrado, abrir prompt para personalizar alias antes de guardar
+      const currentDefault = (userName && userName.trim())
+        ? userName.replace(/_invitado$/i, '').trim()
+        : 'Gourmet';
+
+      setPendingScore(rawScore);
+      setGuestAliasInput(currentDefault);
+      setIsAliasModalOpen(true);
     },
-    [getPlayerSubmissionName, fetchLeaderboard]
+    [isAuthenticated, userName, saveFinalScore]
   );
+
+  const handleCloseAliasModal = () => {
+    if (pendingScore !== null) {
+      saveFinalScore(pendingScore, guestAliasInput);
+    } else {
+      setIsAliasModalOpen(false);
+    }
+  };
+
+  const handleSubmitAlias = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (pendingScore !== null) {
+      saveFinalScore(pendingScore, guestAliasInput);
+    }
+  };
+
+  const handleMainClose = () => {
+    if (isAliasModalOpen && pendingScore !== null) {
+      saveFinalScore(pendingScore, guestAliasInput);
+    }
+    onClose();
+  };
 
   useEffect(() => {
     if (!isOpen) return;
@@ -324,7 +379,7 @@ export const ArcadeModal: React.FC<ArcadeModalProps> = ({ isOpen, onClose }) => 
             {/* Botón cerrar */}
             <button
               type="button"
-              onClick={onClose}
+              onClick={handleMainClose}
               className="p-1.5 sm:p-2 rounded-xl text-zinc-400 hover:text-white hover:bg-rose-500/20 hover:border-rose-500/40 border border-transparent transition-colors cursor-pointer"
               title="Cerrar juego y volver"
             >
@@ -674,13 +729,133 @@ export const ArcadeModal: React.FC<ArcadeModalProps> = ({ isOpen, onClose }) => 
             </a>
             <button
               type="button"
-              onClick={onClose}
+              onClick={handleMainClose}
               className="px-4 py-1.5 rounded-xl bg-orange-600 hover:bg-orange-500 text-white font-bold text-[11px] transition-colors active:scale-95 shadow-md shadow-orange-600/30 cursor-pointer"
             >
               Volver a la carta
             </button>
           </div>
         </div>
+
+        {/* Modal Interactivo de Entrada de Alias para Invitados */}
+        {isAliasModalOpen && pendingScore !== null && (
+          <div
+            className="absolute inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/85 backdrop-blur-md animate-fade-in"
+            onKeyDown={(e) => {
+              if (e.key === 'Escape') {
+                e.stopPropagation();
+                handleCloseAliasModal();
+              }
+            }}
+          >
+            <div className="w-full max-w-md bg-zinc-900 border-2 border-cyan-500/50 rounded-2xl sm:rounded-3xl shadow-2xl p-5 sm:p-6 font-mono text-zinc-100 flex flex-col space-y-4 animate-scale-up">
+              {/* Cabecera del diálogo */}
+              <div className="flex items-center justify-between border-b border-zinc-800 pb-3">
+                <div className="flex items-center space-x-3">
+                  <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/40 text-amber-400 flex items-center justify-center shadow-lg shadow-amber-500/10 shrink-0">
+                    <Trophy className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm sm:text-base font-black uppercase text-white tracking-wider flex items-center space-x-1.5">
+                      <span>¡Partida Terminada!</span>
+                    </h3>
+                    <p className="text-xs text-amber-400 font-bold">
+                      {pendingScore.toLocaleString()} puntos conseguidos
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleCloseAliasModal}
+                  className="p-1.5 rounded-lg text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors cursor-pointer"
+                  title="Guardar con alias actual y cerrar"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              {/* Formulario de personalización de alias */}
+              <form onSubmit={handleSubmitAlias} className="space-y-4">
+                <div className="space-y-1">
+                  <label className="block text-xs font-bold text-zinc-200">
+                    Personaliza tu Alias de Piloto:
+                  </label>
+                  <p className="text-[11px] text-zinc-400">
+                    Introduce el nombre con el que quieres aparecer en el Salón de la Fama.
+                  </p>
+                </div>
+
+                <div>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-cyan-400">
+                      <Gamepad2 className="w-4 h-4" />
+                    </div>
+                    <input
+                      type="text"
+                      maxLength={20}
+                      autoFocus
+                      value={guestAliasInput}
+                      onChange={(e) => setGuestAliasInput(e.target.value)}
+                      placeholder="Ej. RetroGamer, Alex..."
+                      className="w-full pl-9 pr-3 py-2.5 rounded-xl bg-zinc-950 border border-cyan-500/40 text-white placeholder-zinc-500 font-mono text-sm focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 transition-all shadow-inner"
+                    />
+                  </div>
+                </div>
+
+                {/* Previsualización del alias en el ranking */}
+                <div className="p-3 rounded-xl bg-zinc-950/80 border border-zinc-800 space-y-1">
+                  <div className="flex items-center justify-between text-[11px] text-zinc-400">
+                    <span>Vista previa en el ranking:</span>
+                    <span className="text-[10px] text-zinc-500">Sufijo anti-suplantación</span>
+                  </div>
+                  <div className="flex items-center space-x-1.5 font-bold text-xs pt-0.5">
+                    <span className="text-amber-300">
+                      {(guestAliasInput.trim() || 'Invitado').replace(/_invitado$/i, '')}
+                    </span>
+                    <span className="text-zinc-500 font-mono text-[11px]">_invitado</span>
+                    <span className="inline-flex items-center space-x-0.5 px-1.5 py-0.5 rounded text-[9px] bg-zinc-800 text-zinc-400 border border-zinc-700 ml-1">
+                      <UserX className="w-2.5 h-2.5" />
+                      <span>Invitado</span>
+                    </span>
+                  </div>
+                </div>
+
+                {/* Aviso sobre cuentas verificadas */}
+                <div className="p-2.5 rounded-xl bg-amber-950/30 border border-amber-500/20 text-[11px] text-amber-200/90 flex items-center justify-between">
+                  <span className="truncate pr-2">¿Prefieres tu nombre verificado sin sufijo?</span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      handleCloseAliasModal();
+                      openAuthModal('Inicia sesión para registrar tus récords con tu nombre oficial verificado.');
+                    }}
+                    className="shrink-0 text-amber-300 hover:text-white underline font-bold cursor-pointer"
+                  >
+                    Iniciar Sesión
+                  </button>
+                </div>
+
+                {/* Botones de acción */}
+                <div className="flex items-center space-x-2.5 pt-1">
+                  <button
+                    type="button"
+                    onClick={handleCloseAliasModal}
+                    className="flex-1 py-2.5 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-300 font-bold text-xs transition-colors cursor-pointer"
+                  >
+                    Guardar tal cual
+                  </button>
+                  <button
+                    type="submit"
+                    className="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-black text-xs shadow-lg shadow-cyan-500/25 active:scale-95 transition-all flex items-center justify-center space-x-1.5 cursor-pointer"
+                  >
+                    <Trophy className="w-3.5 h-3.5 text-amber-300" />
+                    <span>Guardar Récord</span>
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
