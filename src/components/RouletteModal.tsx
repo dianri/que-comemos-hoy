@@ -14,21 +14,76 @@ interface RouletteModalProps {
   onAutoSpinHandled?: () => void;
 }
 
-// Gama cromática gastronómica cálida, profesional y apetecible (naranjas, corales, ámbar, melocotón y crema)
-const SLICE_COLORS = [
-  '#F97316', // Naranja cálido vibrante (brand-500)
-  '#FED7AA', // Crema melocotón suave
-  '#F59E0B', // Ámbar miel dorado
-  '#FEE2E2', // Crema coral suave
-  '#FB923C', // Melocotón tostado
-  '#FEF08A', // Crema vainilla dorada
-  '#EA580C', // Naranja fuego / terracota cálido
-  '#FFEDD5', // Crema dulce pastel
-  '#FBBF24', // Mostaza ámbar cálida
-  '#FDA4AF', // Coral melocotón suave
-  '#FDBA74', // Albaricoque tostado
-  '#FDE68A', // Azafrán suave
+// Paleta cromática gastronómica armonizada por categoría de plato
+// Tonos suaves, apetecibles y elegantes con alto contraste para texto oscuro (#1c1917)
+interface CategoryColorTone {
+  primary: string;
+  secondary: string;
+}
+
+const CATEGORY_THEMES: Record<string, CategoryColorTone> = {
+  // Carnes: tonos tierra, terracota suave y melocotón tostado
+  carnes: { primary: '#FED7AA', secondary: '#FDBA74' },
+  carne: { primary: '#FED7AA', secondary: '#FDBA74' },
+  // Pescados y Mariscos: tonos brisa marina, celeste y aguamarina pastel
+  pescados: { primary: '#BAE6FD', secondary: '#7DD3FC' },
+  pescado: { primary: '#BAE6FD', secondary: '#7DD3FC' },
+  mariscos: { primary: '#A5F3FC', secondary: '#67E8F9' },
+  marisco: { primary: '#A5F3FC', secondary: '#67E8F9' },
+  // Arroces: azafrán, maíz y dorado cálido
+  arroces: { primary: '#FDE68A', secondary: '#FCD34D' },
+  arroz: { primary: '#FDE68A', secondary: '#FCD34D' },
+  // Italiana / Pasta: pomodoro suave y crema toscana
+  italiana: { primary: '#FEE2E2', secondary: '#FECDD3' },
+  pasta: { primary: '#FEE2E2', secondary: '#FECDD3' },
+  // Sopas, Guisos y Legumbres: caldo dorado, miel y calabaza suave
+  sopas: { primary: '#FEF08A', secondary: '#FDE047' },
+  sopa: { primary: '#FEF08A', secondary: '#FDE047' },
+  guisos: { primary: '#FED7AA', secondary: '#FDBA74' },
+  legumbres: { primary: '#FDE68A', secondary: '#FCD34D' },
+  // Tradicional: crema rústica tostada y albaricoque
+  tradicional: { primary: '#FFEDD5', secondary: '#FED7AA' },
+  // Saludable, Verduras y Ensaladas: verde menta salvia y frescor huerta
+  saludable: { primary: '#BBF7D0', secondary: '#86EFAC' },
+  verduras: { primary: '#BBF7D0', secondary: '#86EFAC' },
+  ensaladas: { primary: '#BBF7D0', secondary: '#86EFAC' },
+  // Postres y Dulces: frambuesa pastel y fresa dulce suave
+  postres: { primary: '#FCE7F3', secondary: '#FBCFE8' },
+  postre: { primary: '#FCE7F3', secondary: '#FBCFE8' },
+  dulces: { primary: '#FCE7F3', secondary: '#FBCFE8' },
+  // Cocina Internacional
+  mexicana: { primary: '#FECDD3', secondary: '#FDA4AF' },
+  americana: { primary: '#FED7AA', secondary: '#FDBA74' },
+  japonesa: { primary: '#E2E8F0', secondary: '#CBD5E1' },
+  asiatica: { primary: '#E2E8F0', secondary: '#CBD5E1' },
+  // General / Neutro cálido
+  general: { primary: '#FFF7ED', secondary: '#FFEDD5' },
+};
+
+// Paleta armónica de reserva para categorías personalizadas o platos sin categoría
+const FALLBACK_PALETTE = [
+  '#FED7AA', // Melocotón tostado
+  '#BAE6FD', // Celeste brisa marina
+  '#FDE68A', // Azafrán dorado
+  '#BBF7D0', // Salvia menta suave
+  '#FEE2E2', // Crema pomodoro
+  '#FEF08A', // Caldo miel dorado
+  '#FCE7F3', // Frambuesa pastel
+  '#E2E8F0', // Perla zen
 ];
+
+export const getCategorySliceColor = (category?: string, index: number = 0): string => {
+  if (!category) {
+    return FALLBACK_PALETTE[index % FALLBACK_PALETTE.length];
+  }
+  const normalized = category.trim().toLowerCase();
+  const tones = CATEGORY_THEMES[normalized];
+  if (tones) {
+    // Alternar entre tono primario y secundario para platos contiguos de la misma categoría
+    return index % 2 === 0 ? tones.primary : tones.secondary;
+  }
+  return FALLBACK_PALETTE[index % FALLBACK_PALETTE.length];
+};
 
 export const RouletteModal: React.FC<RouletteModalProps> = ({
   isOpen,
@@ -89,7 +144,7 @@ export const RouletteModal: React.FC<RouletteModalProps> = ({
         ctx.arc(centerX, centerY, radius, sliceStartAngle, sliceEndAngle);
         ctx.closePath();
 
-        ctx.fillStyle = SLICE_COLORS[i % SLICE_COLORS.length];
+        ctx.fillStyle = getCategorySliceColor(foods[i].category, i);
         ctx.fill();
 
         // Borde separador limpio y elegante en blanco nítido
