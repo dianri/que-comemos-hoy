@@ -12,6 +12,7 @@ import {
   LayoutGrid,
   Check,
   ChevronDown,
+  SlidersHorizontal,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { supabase } from './lib/supabase';
@@ -812,18 +813,18 @@ function MainApp() {
             onMouseUp={handleCategoryMouseUpOrLeave}
             onMouseLeave={handleCategoryMouseUpOrLeave}
             onClickCapture={handleCategoryClickCapture}
-            className={`flex items-center space-x-1.5 overflow-x-auto pb-0.5 scrollbar-none select-none ${
+            className={`flex items-center space-x-1.5 overflow-x-auto px-1.5 py-1 scrollbar-none select-none ${
               isDragging ? 'cursor-grabbing [&_*]:cursor-grabbing' : 'cursor-grab'
             }`}
           >
-            {/* Botón "Todas" */}
+            {/* Botón de Control Global "Todas" */}
             <button
               type="button"
               onClick={handleToggleAll}
-              className={`px-3 py-1 rounded-full text-xs font-bold transition-all flex-shrink-0 shadow-sm cursor-pointer select-none ${
+              className={`px-3 py-1 rounded-full text-xs font-bold transition-all flex items-center space-x-1.5 flex-shrink-0 shadow-xs cursor-pointer select-none active:scale-95 ${
                 isAllSelected
-                  ? 'bg-orange-500 text-white shadow-orange-500/25 scale-105'
-                  : 'bg-white hover:bg-slate-100 text-slate-500 border border-slate-200/80 hover:text-slate-800'
+                  ? 'bg-slate-900 hover:bg-slate-800 text-white shadow-md shadow-slate-900/20 border border-slate-800 ring-1 ring-slate-900/10'
+                  : 'bg-white hover:bg-slate-100 text-slate-600 border border-slate-300 hover:text-slate-900 hover:border-slate-400'
               }`}
               title={
                 isAllSelected
@@ -831,8 +832,12 @@ function MainApp() {
                   : 'Seleccionar todas las categorías'
               }
             >
-              Todas
+              <SlidersHorizontal className={`w-3.5 h-3.5 ${isAllSelected ? 'text-amber-400' : 'text-slate-400'}`} />
+              <span>Todas</span>
             </button>
+
+            {/* Separador vertical sutil entre control global y filtros específicos */}
+            <div className="h-4 w-px bg-slate-200/90 mx-0.5 flex-shrink-0" />
 
             {/* Píldoras individuales */}
             {categories.map((cat) => {
