@@ -3,6 +3,7 @@ import { User } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
 import { Food, UserRole } from '../types';
 import { sanitizeText } from '../lib/sanitize';
+import { showToast } from '../lib/toast';
 
 interface UserContextType {
   userName: string;
@@ -62,25 +63,83 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Clave dinámica de favoritos según usuario autenticado o invitado
   const getFavStorageKey = useCallback((currentUser: User | null) => {
     return currentUser?.email
-      ? `que_comemos_favs_${currentUser.email}`
+      ? `que_comemos_favs_${currentUser.email.toLowerCase()}`
       : 'que_comemos_favs_guest';
   }, []);
 
-  // Cargar favoritos del almacenamiento local
-  const loadFavorites = useCallback((currentUser: User | null) => {
+  // Cargar favoritos tanto de la caché local como de Supabase
+  const loadFavorites = useCallback(async (currentUser: User | null) => {
+    if (!currentUser?.email) {
+      try {
+        const raw = localStorage.getItem('que_comemos_favs_guest');
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (Array.isArray(parsed)) {
+            setFavorites(new Set(parsed));
+            return;
+          }
+        }
+      } catch {}
+      setFavorites(new Set());
+      return;
+    }
+
+    const key = getFavStorageKey(currentUser);
+    const localFavs = new Set<string>();
+
+    // 1. Cargar instantáneamente de localStorage para evitar parpadeos visuales
     try {
-      const key = getFavStorageKey(currentUser);
       const raw = localStorage.getItem(key);
       if (raw) {
         const parsed = JSON.parse(raw);
         if (Array.isArray(parsed)) {
-          setFavorites(new Set(parsed));
-          return;
+          parsed.forEach((id: string) => localFavs.add(id));
+          setFavorites(new Set(localFavs));
         }
       }
-      setFavorites(new Set());
-    } catch {
-      setFavorites(new Set());
+    } catch (e) {
+      console.warn('Error leyendo favoritos locales:', e);
+    }
+
+    // 2. Consultar favoritos remotos en Supabase
+    try {
+      const { data, error } = await supabase
+        .from('user_favorites')
+        .select('food_id')
+        .or(`user_id.eq.${currentUser.id},user_email.eq.${currentUser.email.toLowerCase()}`);
+
+      if (error) {
+        console.warn('Advertencia al consultar favoritos de Supabase:', error.message);
+        return;
+      }
+
+      const remoteIds = new Set<string>((data || []).map((row: { food_id: string }) => row.food_id));
+
+      // 3. Migrar automáticamente favoritos locales antiguos que no estén aún en Supabase
+      const missingInRemote = Array.from(localFavs).filter((id) => !remoteIds.has(id));
+      if (missingInRemote.length > 0) {
+        const rowsToInsert = missingInRemote.map((foodId) => ({
+          user_id: currentUser.id,
+          user_email: currentUser.email!.toLowerCase(),
+          food_id: foodId,
+        }));
+
+        const { error: insertErr } = await supabase
+          .from('user_favorites')
+          .upsert(rowsToInsert, { onConflict: 'user_email,food_id' });
+
+        if (!insertErr) {
+          missingInRemote.forEach((id) => remoteIds.add(id));
+        }
+      }
+
+      // 4. Actualizar estado y caché local unificada
+      setFavorites(new Set(remoteIds));
+      try {
+        localStorage.setItem(key, JSON.stringify(Array.from(remoteIds)));
+      } catch {}
+    } catch (err) {
+      console.error('Error sincronizando favoritos remotos:', err);
     }
   }, [getFavStorageKey]);
 
@@ -117,28 +176,84 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, [user]);
 
-  // Alternar plato favorito (solo usuarios autenticados)
+  // Alternar plato favorito (sincronizado con Supabase y persistencia local)
   const toggleFavorite = (foodId: string): boolean => {
-    if (!user) {
+    if (!user || !user.email) {
       openAuthModal('Inicia sesión con tu correo para guardar tus platos favoritos.');
       return false;
     }
 
+    const userEmailLower = user.email.toLowerCase();
+    const key = getFavStorageKey(user);
+    const willBeFavorite = !favorites.has(foodId);
+
+    // 1. Actualización optimista inmediata en memoria y localStorage
     setFavorites((prev) => {
       const next = new Set(prev);
-      if (next.has(foodId)) {
-        next.delete(foodId);
-      } else {
+      if (willBeFavorite) {
         next.add(foodId);
+      } else {
+        next.delete(foodId);
       }
       try {
-        const key = getFavStorageKey(user);
         localStorage.setItem(key, JSON.stringify(Array.from(next)));
       } catch (err) {
-        console.error('Error al guardar favoritos:', err);
+        console.error('Error al guardar favoritos en localStorage:', err);
       }
       return next;
     });
+
+    // 2. Persistencia remota en Supabase
+    if (willBeFavorite) {
+      supabase
+        .from('user_favorites')
+        .upsert(
+          {
+            user_id: user.id,
+            user_email: userEmailLower,
+            food_id: foodId,
+          },
+          { onConflict: 'user_email,food_id' }
+        )
+        .then(({ error }) => {
+          if (error) {
+            console.error('Error al guardar favorito en Supabase:', error);
+            // Revertir cambio optimista
+            setFavorites((prev) => {
+              const reverted = new Set(prev);
+              reverted.delete(foodId);
+              try {
+                localStorage.setItem(key, JSON.stringify(Array.from(reverted)));
+              } catch {}
+              return reverted;
+            });
+            showToast('No se pudo guardar el favorito en la nube', 'error');
+          }
+        });
+    } else {
+      supabase
+        .from('user_favorites')
+        .delete()
+        .match({
+          user_email: userEmailLower,
+          food_id: foodId,
+        })
+        .then(({ error }) => {
+          if (error) {
+            console.error('Error al eliminar favorito de Supabase:', error);
+            // Revertir cambio optimista
+            setFavorites((prev) => {
+              const reverted = new Set(prev).add(foodId);
+              try {
+                localStorage.setItem(key, JSON.stringify(Array.from(reverted)));
+              } catch {}
+              return reverted;
+            });
+            showToast('No se pudo eliminar el favorito en la nube', 'error');
+          }
+        });
+    }
+
     return true;
   };
 
@@ -313,6 +428,60 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
       supabase.removeChannel(votesChannel);
     };
   }, [user, userName]);
+
+  // Suscripción Realtime a cambios en la tabla 'user_favorites' para sincronización multidispositivo
+  useEffect(() => {
+    if (!user || !user.email) return;
+
+    const userEmailLower = user.email.toLowerCase();
+    const favsChannel = supabase
+      .channel(`public:user_favorites_${user.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'user_favorites',
+        },
+        (payload) => {
+          const key = getFavStorageKey(user);
+          if (payload.eventType === 'INSERT') {
+            const newFav = payload.new as { food_id?: string; user_id?: string; user_email?: string };
+            if (
+              newFav?.food_id &&
+              (newFav.user_id === user.id || newFav.user_email?.toLowerCase() === userEmailLower)
+            ) {
+              setFavorites((prev) => {
+                if (prev.has(newFav.food_id!)) return prev;
+                const next = new Set(prev).add(newFav.food_id!);
+                try {
+                  localStorage.setItem(key, JSON.stringify(Array.from(next)));
+                } catch {}
+                return next;
+              });
+            }
+          } else if (payload.eventType === 'DELETE') {
+            const oldFav = payload.old as { food_id?: string; user_id?: string; user_email?: string };
+            if (oldFav?.food_id) {
+              setFavorites((prev) => {
+                if (!prev.has(oldFav.food_id!)) return prev;
+                const next = new Set(prev);
+                next.delete(oldFav.food_id!);
+                try {
+                  localStorage.setItem(key, JSON.stringify(Array.from(next)));
+                } catch {}
+                return next;
+              });
+            }
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(favsChannel);
+    };
+  }, [user, getFavStorageKey]);
 
   // Alternar voto (dar / quitar me gusta) - Sincronizado con Supabase y auth.uid()
   const toggleVote = async (

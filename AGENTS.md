@@ -96,11 +96,13 @@ que-comemos-hoy/
 - **`public.foods`**: `id`, `name`, `image_url`, `category`, `description`, `votes_count`, `created_by`, `user_id` (UUID), `user_email` (TEXT), `created_at`.
 - **`public.votes`**: `id`, `food_id` (FK cascade), `user_name`, `created_at`.
   - Restricción única: `CONSTRAINT unique_user_food_vote UNIQUE (food_id, user_name)`.
+- **`public.user_favorites`**: `id`, `user_id` (UUID FK cascade), `user_email` (TEXT), `food_id` (UUID FK cascade), `created_at`.
+  - Restricción única: `CONSTRAINT unique_user_food_favorite UNIQUE (user_email, food_id)`.
 - **`public.user_roles`**: `id`, `user_id` (UUID), `user_email` (TEXT UNIQUE), `role` ('root_admin' | 'superadmin' | 'user'), `created_at`, `updated_at`.
 
 ### Sistema de Visibilidad, Moderación y Favoritos
 - **Visibilidad del Feed:** El feed principal muestra exclusivamente recetas oficiales del sistema y recetas creadas por superusuarios. Las recetas añadidas por usuarios normales son visibles para su propio creador y para los superusuarios (para moderación), manteniéndose ocultas ante terceros y visitantes no registrados para prevenir spam.
-- **Favoritos:** Los favoritos persisten en `localStorage` asociados al email (`que_comemos_favs_<email>`).
+- **Favoritos Sincronizados:** Los favoritos se guardan y sincronizan en tiempo real directamente en la base de datos de Supabase (`public.user_favorites`) vinculados al usuario autenticado, permitiendo acceso multi-dispositivo inmediato (móvil, tablet, escritorio) con caché local optimista en `localStorage` (`que_comemos_favs_<email>`).
 - En la interfaz principal existen tres pestañas: **Todos los platos**, **Mis Platos** (solo los creados por el usuario activo) y **⭐ Favoritos**.
 - La Ruleta y la Elección Rápida respetan el filtro activo y las reglas de visibilidad, girando únicamente entre los platos visibles.
 
@@ -111,6 +113,8 @@ que-comemos-hoy/
   - **Modificación (`UPDATE`) y Eliminación (`DELETE`):**
     - **Superusuarios:** Permisos para editar y borrar cualquier plato.
     - **Propietarios:** Usuarios autenticados solo pueden editar o borrar los platos que ellos mismos hayan creado.
+- **`public.user_favorites`**:
+  - **Lectura, Inserción y Eliminación:** Protegidas por RLS. Exclusivas para el propio usuario autenticado (`user_id = auth.uid()` o `user_email = auth.jwt() ->> 'email'`) y superusuarios.
 - **`public.user_roles`**:
   - Lectura pública (`SELECT true`). Inserciones y modificaciones de rol exclusivamente a través de la función RPC con verificación de seguridad `set_user_role` reservada para el superusuario raíz.
 - **`public.votes`**:
@@ -121,6 +125,7 @@ que-comemos-hoy/
 
 ### Suscripción Realtime
 - En `App.tsx` se mantiene activa la suscripción al canal `public:foods_changes` escuchando eventos `INSERT`, `UPDATE` y `DELETE` para refrescar el feed instantáneamente en todos los clientes conectados.
+- En `UserContext.tsx` se mantienen suscripciones en tiempo real a los canales `public:user_votes_${user.id}` y `public:user_favorites_${user.id}` para reflejar cambios instantáneos entre pestañas y dispositivos.
 
 ---
 
