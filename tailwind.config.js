@@ -28,11 +28,16 @@ export default {
         'pulse-glow': {
           '0%, 100%': { opacity: '0.6', transform: 'scale(1)' },
           '50%': { opacity: '1', transform: 'scale(1.05)' },
-        }
+        },
+        'pulse-subtle': {
+          '0%, 100%': { transform: 'scale(1)', opacity: '0.92' },
+          '50%': { transform: 'scale(1.03)', opacity: '1', borderColor: 'rgba(255, 255, 255, 0.45)' },
+        },
       },
       animation: {
         'bounce-subtle': 'bounce-subtle 2s ease-in-out infinite',
         'pulse-glow': 'pulse-glow 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+        'pulse-subtle': 'pulse-subtle 3s ease-in-out infinite',
       }
     },
   },
