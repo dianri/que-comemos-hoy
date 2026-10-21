@@ -14,20 +14,20 @@ interface RouletteModalProps {
   onAutoSpinHandled?: () => void;
 }
 
-// Paleta viva con contraste óptimo para tipografía oscura
+// Gama cromática gastronómica cálida, profesional y apetecible (naranjas, corales, ámbar, melocotón y crema)
 const SLICE_COLORS = [
-  '#FDE047', // Amarillo brillante
-  '#FB923C', // Naranja suave
-  '#86EFAC', // Verde menta
-  '#93C5FD', // Azul cielo
-  '#F472B6', // Rosa vibrante
-  '#C084FC', // Violeta claro
-  '#67E8F9', // Cian pastel
-  '#FCA5A5', // Rojo coral suave
-  '#FBBF24', // Ámbar dorado
-  '#5EEAD4', // Turquesa
-  '#A7F3D0', // Esmeralda suave
-  '#DDD6FE', // Lavanda
+  '#F97316', // Naranja cálido vibrante (brand-500)
+  '#FED7AA', // Crema melocotón suave
+  '#F59E0B', // Ámbar miel dorado
+  '#FEE2E2', // Crema coral suave
+  '#FB923C', // Melocotón tostado
+  '#FEF08A', // Crema vainilla dorada
+  '#EA580C', // Naranja fuego / terracota cálido
+  '#FFEDD5', // Crema dulce pastel
+  '#FBBF24', // Mostaza ámbar cálida
+  '#FDA4AF', // Coral melocotón suave
+  '#FDBA74', // Albaricoque tostado
+  '#FDE68A', // Azafrán suave
 ];
 
 export const RouletteModal: React.FC<RouletteModalProps> = ({
@@ -68,12 +68,13 @@ export const RouletteModal: React.FC<RouletteModalProps> = ({
       const numSlices = foods.length;
       const arc = (2 * Math.PI) / numSlices;
 
-      // 1. Sombra exterior difusa para dar profundidad a la ruleta
+      // 1. Sombra exterior difusa cálida para dar profundidad y relieve a la ruleta
       ctx.save();
-      ctx.shadowColor = 'rgba(0, 0, 0, 0.15)';
-      ctx.shadowBlur = 12;
+      ctx.shadowColor = 'rgba(234, 88, 12, 0.16)';
+      ctx.shadowBlur = 18;
+      ctx.shadowOffsetY = 4;
       ctx.beginPath();
-      ctx.arc(centerX, centerY, radius + 2, 0, 2 * Math.PI);
+      ctx.arc(centerX, centerY, radius + 3, 0, 2 * Math.PI);
       ctx.fillStyle = '#ffffff';
       ctx.fill();
       ctx.restore();
@@ -91,9 +92,9 @@ export const RouletteModal: React.FC<RouletteModalProps> = ({
         ctx.fillStyle = SLICE_COLORS[i % SLICE_COLORS.length];
         ctx.fill();
 
-        // Borde fino separador entre sectores
-        ctx.lineWidth = 1.5;
-        ctx.strokeStyle = '#18181b';
+        // Borde separador limpio y elegante en blanco nítido
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = '#ffffff';
         ctx.stroke();
 
         // 3. Dibujar el texto del plato centrado en el segmento
@@ -107,8 +108,9 @@ export const RouletteModal: React.FC<RouletteModalProps> = ({
 
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        ctx.fillStyle = '#18181b'; // zinc-900 oscuro para máxima legibilidad
-        ctx.font = 'bold 12px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+        ctx.fillStyle = '#1c1917'; // stone-900 oscuro para máxima legibilidad y calidez
+        const fontSize = numSlices <= 6 ? 13 : numSlices <= 10 ? 12 : 11;
+        ctx.font = `bold ${fontSize}px "Plus Jakarta Sans", system-ui, -apple-system, sans-serif`;
 
         // Truncar con elipsis si el texto supera el espacio disponible
         const maxTextWidth = radius - innerRadius - 18;
@@ -126,34 +128,63 @@ export const RouletteModal: React.FC<RouletteModalProps> = ({
         ctx.restore();
       }
 
-      // 4. Borde exterior oscuro para definir la ruleta claramente contra el fondo blanco
+      // 4. Borde exterior elegante y limpio acorde al diseño de las tarjetas
+      ctx.save();
+      // Anillo blanco principal
       ctx.beginPath();
       ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
-      ctx.lineWidth = 3.5;
-      ctx.strokeStyle = '#18181b';
+      ctx.lineWidth = 4;
+      ctx.strokeStyle = '#ffffff';
       ctx.stroke();
+
+      // Aro exterior sutil melocotón/ámbar para enmarcar la ruleta
+      ctx.beginPath();
+      ctx.arc(centerX, centerY, radius + 2, 0, 2 * Math.PI);
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = '#fdba74';
+      ctx.stroke();
+      ctx.restore();
 
       // 5. Centro decorativo de la ruleta (eje)
       ctx.save();
-      ctx.shadowColor = 'rgba(0, 0, 0, 0.25)';
-      ctx.shadowBlur = 6;
+      ctx.shadowColor = 'rgba(234, 88, 12, 0.2)';
+      ctx.shadowBlur = 10;
+      ctx.shadowOffsetY = 2;
+
+      // Anillo exterior blanco con borde melocotón
       ctx.beginPath();
       ctx.arc(centerX, centerY, innerRadius, 0, 2 * Math.PI);
       ctx.fillStyle = '#ffffff';
       ctx.fill();
-      ctx.lineWidth = 3;
-      ctx.strokeStyle = '#18181b';
+      ctx.lineWidth = 2.5;
+      ctx.strokeStyle = '#fed7aa';
       ctx.stroke();
       ctx.restore();
 
+      // Núcleo interior con degradado radial cálido
+      const hubGradient = ctx.createRadialGradient(
+        centerX - 3,
+        centerY - 3,
+        2,
+        centerX,
+        centerY,
+        innerRadius - 7
+      );
+      hubGradient.addColorStop(0, '#fb923c');
+      hubGradient.addColorStop(1, '#ea580c');
+
       ctx.beginPath();
-      ctx.arc(centerX, centerY, innerRadius - 8, 0, 2 * Math.PI);
-      ctx.fillStyle = '#ea580c';
+      ctx.arc(centerX, centerY, innerRadius - 7, 0, 2 * Math.PI);
+      ctx.fillStyle = hubGradient;
       ctx.fill();
 
+      // Borde sutil blanco en el núcleo
+      ctx.lineWidth = 1.5;
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.6)';
+      ctx.stroke();
+
       // Icono de cubiertos en el centro
-      ctx.fillStyle = '#ffffff';
-      ctx.font = '16px system-ui';
+      ctx.font = '16px system-ui, -apple-system, sans-serif';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       ctx.fillText('🍽️', centerX, centerY);
@@ -287,12 +318,12 @@ export const RouletteModal: React.FC<RouletteModalProps> = ({
           // Efecto de sonido alegre "Pop de Confeti" sincronizado con la animación
           playConfettiPop();
 
-          // Explosión de confeti festivo
+          // Explosión de confeti festivo en gama cálida gastronómica
           confetti({
             particleCount: 130,
             spread: 90,
             origin: { y: 0.6 },
-            colors: ['#f97316', '#ef4444', '#10b981', '#3b82f6', '#f59e0b', '#ec4899'],
+            colors: ['#f97316', '#ea580c', '#fb923c', '#f59e0b', '#fbbf24', '#f43f5e', '#ffffff'],
           });
         }, 300);
       }
@@ -373,14 +404,17 @@ export const RouletteModal: React.FC<RouletteModalProps> = ({
         {/* Cuerpo con scroll interior para la ruleta y la tarjeta del ganador */}
         <div className="flex-1 overflow-y-auto px-3.5 py-2.5 sm:px-6 sm:py-3 flex flex-col items-center scrollbar-none">
           {/* Contenedor de la Ruleta y la Flecha Puntero Superior */}
-          <div className="relative my-1 flex items-center justify-center flex-shrink-0">
-            {/* Flecha Puntero Superior (12 en punto) Prominente y Definida */}
+          <div className="relative my-1 flex items-center justify-center flex-shrink-0 p-2 rounded-full bg-gradient-to-b from-orange-50/70 via-amber-50/30 to-transparent">
+            {/* Flecha Puntero Superior (12 en punto) Elegante, Cálida y Precisa */}
             <div className="absolute -top-3.5 z-20 flex flex-col items-center pointer-events-none drop-shadow-md">
               <div className="relative">
-                <div className="w-0 h-0 border-l-[16px] border-l-transparent border-r-[16px] border-r-transparent border-t-[26px] border-t-zinc-900" />
-                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-0 h-0 border-l-[13px] border-l-transparent border-r-[13px] border-r-transparent border-t-[22px] border-t-red-600" />
+                {/* Contorno exterior blanco nítido para máximo contraste */}
+                <div className="w-0 h-0 border-l-[15px] border-l-transparent border-r-[15px] border-r-transparent border-t-[25px] border-t-white" />
+                {/* Cuerpo cálido de la flecha acorde a la estética gastronómica */}
+                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-0 h-0 border-l-[12px] border-l-transparent border-r-[12px] border-r-transparent border-t-[21px] border-t-orange-600" />
               </div>
-              <div className="w-3.5 h-3.5 rounded-full bg-white border-2 border-zinc-900 shadow -mt-5 z-10" />
+              {/* Pivote superior enmarcado con relieve */}
+              <div className="w-3.5 h-3.5 rounded-full bg-white border-2 border-orange-600 shadow-xs -mt-5 z-10" />
             </div>
 
             {/* Canvas de la Ruleta */}
@@ -448,7 +482,7 @@ export const RouletteModal: React.FC<RouletteModalProps> = ({
               className={`w-full py-2.5 sm:py-3 px-5 rounded-xl font-black text-white text-xs sm:text-sm shadow-lg transition-all duration-200 flex items-center justify-center space-x-2 ${
                 isSpinning
                   ? 'bg-slate-400 cursor-not-allowed scale-98'
-                  : 'bg-gradient-to-r from-orange-500 via-amber-500 to-red-500 hover:opacity-95 active:scale-95 shadow-orange-500/30'
+                  : 'bg-gradient-to-r from-orange-500 via-amber-500 to-orange-600 hover:from-orange-600 hover:to-amber-600 active:scale-[0.98] shadow-md shadow-orange-500/25 border border-orange-400/30 cursor-pointer'
               }`}
             >
               <span>{isSpinning ? '¡Girando la Ruleta...!' : '🎯 ¡Girar la Ruleta!'}</span>
