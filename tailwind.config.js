@@ -40,7 +40,7 @@ export default {
       animation: {
         'bounce-subtle': 'bounce-subtle 2s ease-in-out infinite',
         'pulse-glow': 'pulse-glow 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
-        'pulse-subtle': 'pulse-subtle 2.6s ease-in-out infinite',
+        'pulse-subtle': 'pulse-subtle 2.6s ease-in-out 3',
       }
     },
   },
