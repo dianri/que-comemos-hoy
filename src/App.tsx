@@ -28,6 +28,7 @@ import { RecipeDetailModal } from './components/RecipeDetailModal';
 import { ArcadeModal } from './components/ArcadeModal';
 import { ManageCategoriesModal } from './components/ManageCategoriesModal';
 import { Toast } from './components/Toast';
+import { showToast } from './lib/toast';
 import { UserProvider, useUser } from './context/UserContext';
 import { CategoryProvider, useCategories } from './context/CategoryContext';
 import { playConfettiPop } from './lib/sound';
@@ -503,22 +504,29 @@ function MainApp() {
       });
   }, [visibleFoods, mainTab, selectedCategories, isAllSelected, searchQuery, sortBy, user, favorites]);
 
-  // Pool de platos para la ruleta (respeta filtros si hay elementos, o usa el total visible)
-  // Deduplicación estricta por ID para garantizar que cada plato se añade exactamente una vez
+  // Pool de platos para la ruleta y selección rápida:
+  // Alimentado EXCLUSIVAMENTE por los platos que cumplen con los filtros activos en pantalla
   const roulettePool = useMemo(() => {
-    const source = filteredFoods.length > 0 ? filteredFoods : visibleFoods;
     const uniqueMap = new Map<string, Food>();
-    for (const food of source) {
+    for (const food of filteredFoods) {
       if (!uniqueMap.has(food.id)) {
         uniqueMap.set(food.id, food);
       }
     }
     return Array.from(uniqueMap.values());
-  }, [filteredFoods, visibleFoods]);
+  }, [filteredFoods]);
 
   // Elección rápida aleatoria directa (abre el Modal de Detalle de Receta)
   const handleQuickPick = () => {
-    if (roulettePool.length === 0) return;
+    if (roulettePool.length === 0) {
+      showToast(
+        selectedCategories.length === 0
+          ? 'Selecciona al menos una categoría para usar la elección rápida.'
+          : 'No hay platos disponibles con los filtros activos para la elección rápida.',
+        'info'
+      );
+      return;
+    }
     const randomPick = roulettePool[Math.floor(Math.random() * roulettePool.length)];
 
     setHighlightedFoodId(randomPick.id);
@@ -538,6 +546,15 @@ function MainApp() {
 
   // Subtítulo contextual para la ruleta
   const rouletteSubtitle = useMemo(() => {
+    if (roulettePool.length === 0) {
+      if (selectedCategories.length === 0) {
+        return 'No hay categorías seleccionadas en los filtros';
+      }
+      if (searchQuery.trim()) {
+        return `No hay platos que coincidan con "${searchQuery}"`;
+      }
+      return 'No hay platos disponibles con los filtros actuales';
+    }
     if (mainTab === 'favorites') {
       return `Girando entre tus ${roulettePool.length} platos favoritos ⭐`;
     }
@@ -550,8 +567,11 @@ function MainApp() {
       }
       return `Girando entre ${roulettePool.length} platos de ${selectedCategories.length} categorías seleccionadas`;
     }
+    if (searchQuery.trim()) {
+      return `Girando entre ${roulettePool.length} platos filtrados por "${searchQuery}"`;
+    }
     return `${roulettePool.length} platos en la ruleta. ¡Deja que el destino decida!`;
-  }, [mainTab, isAllSelected, selectedCategories, roulettePool]);
+  }, [mainTab, isAllSelected, selectedCategories, searchQuery, roulettePool]);
 
   return (
     <div className="min-h-screen flex flex-col bg-slate-50 text-slate-800">
@@ -607,12 +627,22 @@ function MainApp() {
             <div className="mt-3 sm:mt-5 flex flex-wrap gap-2">
               <button
                 onClick={() => {
+                  if (roulettePool.length === 0) {
+                    showToast('No hay platos disponibles con los filtros activos para girar la ruleta.', 'info');
+                    setRouletteAutoSpin(false);
+                    setIsRouletteOpen(true);
+                    return;
+                  }
                   setRouletteAutoSpin(true);
                   setIsRouletteOpen(true);
                 }}
-                className="group relative px-4 py-2 sm:px-6 sm:py-3 rounded-xl bg-white text-orange-600 font-black text-sm shadow-lg hover:shadow-xl hover:scale-105 active:scale-95 transition-all flex items-center space-x-2"
+                className={`group relative px-4 py-2 sm:px-6 sm:py-3 rounded-xl font-black text-sm shadow-lg hover:shadow-xl active:scale-95 transition-all flex items-center space-x-2 ${
+                  roulettePool.length === 0
+                    ? 'bg-white/95 text-slate-600 hover:text-slate-800 cursor-pointer border border-white/40'
+                    : 'bg-white text-orange-600 hover:scale-105 cursor-pointer'
+                }`}
               >
-                <span className="text-base sm:text-xl">🎯</span>
+                <span className="text-base sm:text-xl">{roulettePool.length === 0 ? '🍽️' : '🎯'}</span>
                 <span>
                   {mainTab === 'favorites'
                     ? '¡Girar Favoritos!'
@@ -620,14 +650,25 @@ function MainApp() {
                     ? '¡Girar Mis Platos!'
                     : '¡Girar la Ruleta!'}
                 </span>
-                <span className="ml-1 text-[11px] px-1.5 py-0.5 rounded-full bg-orange-100 text-orange-700 font-bold">
+                <span
+                  className={`ml-1 text-[11px] px-1.5 py-0.5 rounded-full font-bold ${
+                    roulettePool.length === 0
+                      ? 'bg-slate-200 text-slate-600'
+                      : 'bg-orange-100 text-orange-700'
+                  }`}
+                >
                   {roulettePool.length}
                 </span>
               </button>
 
               <button
                 onClick={handleQuickPick}
-                className="px-3 py-2 sm:px-5 sm:py-3 rounded-xl bg-black/20 hover:bg-black/30 border border-white/30 text-white font-bold text-xs sm:text-sm backdrop-blur-md transition-all flex items-center space-x-2 active:scale-95"
+                className={`px-3 py-2 sm:px-5 sm:py-3 rounded-xl border text-white font-bold text-xs sm:text-sm backdrop-blur-md transition-all flex items-center space-x-2 active:scale-95 cursor-pointer ${
+                  roulettePool.length === 0
+                    ? 'bg-black/10 border-white/20 text-white/70 hover:bg-black/20'
+                    : 'bg-black/20 hover:bg-black/30 border-white/30'
+                }`}
+                title={roulettePool.length === 0 ? 'No hay platos disponibles con los filtros activos' : 'Elegir un plato al azar'}
               >
                 <Dices className="w-4 h-4" />
                 <span>Elección Rápida</span>

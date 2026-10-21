@@ -403,9 +403,9 @@ export const RouletteModal: React.FC<RouletteModalProps> = ({
     animationFrameRef.current = requestAnimationFrame(animate);
   }, [uniqueFoods, drawWheel]);
 
-  // Auto-giro de UN SOLO USO (One-Shot): solo se activa una vez al abrirse con autoSpin
+  // Auto-giro de UN SOLO USO (One-Shot): solo se activa una vez al abrirse con autoSpin si hay platos disponibles
   useEffect(() => {
-    if (isOpen && autoSpin && !hasAutoSpunRef.current && !isSpinningRef.current) {
+    if (isOpen && autoSpin && uniqueFoods.length > 0 && !hasAutoSpunRef.current && !isSpinningRef.current) {
       hasAutoSpunRef.current = true;
       onAutoSpinHandled?.();
       const timer = setTimeout(() => {
@@ -413,7 +413,7 @@ export const RouletteModal: React.FC<RouletteModalProps> = ({
       }, 100);
       return () => clearTimeout(timer);
     }
-  }, [isOpen, autoSpin, spin, onAutoSpinHandled]);
+  }, [isOpen, autoSpin, spin, onAutoSpinHandled, uniqueFoods.length]);
 
   // Manejador para volver a girar explícitamente al pulsar el botón "Volver a girar"
   const handleSpinAgain = useCallback(() => {
@@ -473,49 +473,67 @@ export const RouletteModal: React.FC<RouletteModalProps> = ({
         </div>
 
         {/* Cuerpo con scroll interior para la ruleta y la tarjeta del ganador */}
-        <div className="flex-1 overflow-y-auto px-3.5 py-2.5 sm:px-6 sm:py-3 flex flex-col items-center scrollbar-none">
-          {/* Contenedor de la Ruleta y la Flecha Puntero Superior */}
-          <div className="relative my-1 flex items-center justify-center flex-shrink-0 p-2 rounded-full bg-gradient-to-b from-orange-50/70 via-amber-50/30 to-transparent">
-            {/* Flecha Puntero Superior (12 en punto) Elegante, Cálida y Precisa */}
-            <div className="absolute -top-3.5 z-20 flex flex-col items-center pointer-events-none drop-shadow-md">
-              <div className="relative">
-                {/* Contorno exterior blanco nítido para máximo contraste */}
-                <div className="w-0 h-0 border-l-[15px] border-l-transparent border-r-[15px] border-r-transparent border-t-[25px] border-t-white" />
-                {/* Cuerpo cálido de la flecha acorde a la estética gastronómica */}
-                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-0 h-0 border-l-[12px] border-l-transparent border-r-[12px] border-r-transparent border-t-[21px] border-t-orange-600" />
+        <div className="flex-1 overflow-y-auto px-3.5 py-2.5 sm:px-6 sm:py-3 flex flex-col items-center justify-center scrollbar-none">
+          {uniqueFoods.length === 0 ? (
+            <div className="py-12 px-4 text-center max-w-sm mx-auto space-y-3 animate-fade-in my-auto">
+              <div className="w-16 h-16 mx-auto rounded-2xl bg-amber-100/90 border border-amber-200/80 text-amber-600 flex items-center justify-center text-3xl shadow-inner">
+                🍽️
               </div>
-              {/* Pivote superior enmarcado con relieve */}
-              <div className="w-3.5 h-3.5 rounded-full bg-white border-2 border-orange-600 shadow-xs -mt-5 z-10" />
+              <div className="space-y-1">
+                <h4 className="text-base sm:text-lg font-extrabold text-slate-800">
+                  Sin platos con los filtros activos
+                </h4>
+                <p className="text-xs text-slate-500 leading-relaxed font-medium">
+                  No hay recetas que cumplan con las categorías o la búsqueda seleccionada en este momento. Activa algún filtro en el menú para girar la ruleta.
+                </p>
+              </div>
             </div>
+          ) : (
+            <>
+              {/* Contenedor de la Ruleta y la Flecha Puntero Superior */}
+              <div className="relative my-1 flex items-center justify-center flex-shrink-0 p-2 rounded-full bg-gradient-to-b from-orange-50/70 via-amber-50/30 to-transparent">
+                {/* Flecha Puntero Superior (12 en punto) Elegante, Cálida y Precisa */}
+                <div className="absolute -top-3.5 z-20 flex flex-col items-center pointer-events-none drop-shadow-md">
+                  <div className="relative">
+                    {/* Contorno exterior blanco nítido para máximo contraste */}
+                    <div className="w-0 h-0 border-l-[15px] border-l-transparent border-r-[15px] border-r-transparent border-t-[25px] border-t-white" />
+                    {/* Cuerpo cálido de la flecha acorde a la estética gastronómica */}
+                    <div className="absolute top-0 left-1/2 -translate-x-1/2 w-0 h-0 border-l-[12px] border-l-transparent border-r-[12px] border-r-transparent border-t-[21px] border-t-orange-600" />
+                  </div>
+                  {/* Pivote superior enmarcado con relieve */}
+                  <div className="w-3.5 h-3.5 rounded-full bg-white border-2 border-orange-600 shadow-xs -mt-5 z-10" />
+                </div>
 
-            {/* Canvas de la Ruleta */}
-            <canvas ref={canvasRef} className="rounded-full select-none" />
-          </div>
-
-          {/* Tarjeta del Plato Ganador */}
-          {winner && (
-            <div className="mt-2.5 w-full bg-gradient-to-br from-amber-50 to-orange-50 border-2 border-orange-300 rounded-2xl p-3 text-center animate-bounce-subtle shadow-xs">
-              <div className="flex items-center justify-center space-x-1.5 text-amber-600 mb-0.5">
-                <Trophy className="w-4 h-4 text-amber-500 animate-pulse" />
-                <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider">¡Plato Seleccionado!</span>
+                {/* Canvas de la Ruleta */}
+                <canvas ref={canvasRef} className="rounded-full select-none" />
               </div>
-              <h3 className="text-base sm:text-xl font-black text-slate-900 mb-1 leading-snug">
-                🎉 ¡Hoy toca: {winner.name}!
-              </h3>
 
-              {winner.image_url && (
-                <div className="relative h-28 sm:h-36 w-full rounded-xl overflow-hidden shadow-xs my-1.5 border border-orange-200">
-                  <img
-                    src={winner.image_url}
-                    alt={winner.name}
-                    className="w-full h-full object-cover"
-                  />
-                  <span className="absolute bottom-1.5 left-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold bg-black/70 text-white backdrop-blur-sm">
-                    {getFoodCategories(winner).join(' • ')}
-                  </span>
+              {/* Tarjeta del Plato Ganador */}
+              {winner && (
+                <div className="mt-2.5 w-full bg-gradient-to-br from-amber-50 to-orange-50 border-2 border-orange-300 rounded-2xl p-3 text-center animate-bounce-subtle shadow-xs">
+                  <div className="flex items-center justify-center space-x-1.5 text-amber-600 mb-0.5">
+                    <Trophy className="w-4 h-4 text-amber-500 animate-pulse" />
+                    <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider">¡Plato Seleccionado!</span>
+                  </div>
+                  <h3 className="text-base sm:text-xl font-black text-slate-900 mb-1 leading-snug">
+                    🎉 ¡Hoy toca: {winner.name}!
+                  </h3>
+
+                  {winner.image_url && (
+                    <div className="relative h-28 sm:h-36 w-full rounded-xl overflow-hidden shadow-xs my-1.5 border border-orange-200">
+                      <img
+                        src={winner.image_url}
+                        alt={winner.name}
+                        className="w-full h-full object-cover"
+                      />
+                      <span className="absolute bottom-1.5 left-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold bg-black/70 text-white backdrop-blur-sm">
+                        {getFoodCategories(winner).join(' • ')}
+                      </span>
+                    </div>
+                  )}
                 </div>
               )}
-            </div>
+            </>
           )}
         </div>
 
@@ -546,10 +564,17 @@ export const RouletteModal: React.FC<RouletteModalProps> = ({
                 <span>¡A cocinar! 😋</span>
               </button>
             </div>
+          ) : uniqueFoods.length === 0 ? (
+            <button
+              disabled
+              className="w-full py-2.5 sm:py-3 px-5 rounded-xl font-bold text-slate-400 text-xs sm:text-sm bg-slate-100 border border-slate-200 cursor-not-allowed flex items-center justify-center space-x-2"
+            >
+              <span>Sin platos disponibles con los filtros actuales</span>
+            </button>
           ) : (
             <button
               onClick={spin}
-              disabled={isSpinning || uniqueFoods.length === 0}
+              disabled={isSpinning}
               className={`w-full py-2.5 sm:py-3 px-5 rounded-xl font-black text-white text-xs sm:text-sm shadow-lg transition-all duration-200 flex items-center justify-center space-x-2 ${
                 isSpinning
                   ? 'bg-slate-400 cursor-not-allowed scale-98'
