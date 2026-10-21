@@ -1,0 +1,20 @@
+{
+  "name": "¿Qué comemos hoy?",
+  "short_name": "Qué comemos",
+  "description": "Decide qué comer hoy mediante una ruleta interactiva y vota tus platos favoritos en tiempo real.",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#fff7ed",
+  "theme_color": "#f97316",
+  "lang": "es",
+  "categories": ["food", "lifestyle"],
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "192x192 512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

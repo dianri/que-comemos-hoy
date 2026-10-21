@@ -37,6 +37,7 @@ que-comemos-hoy/
 │   │   ├── ManageCategoriesModal.tsx # Gestión y reordenación personalizada de filtros
 │   │   ├── ArcadeModal.tsx     # Minijuego arcade integrado con puntuaciones
 │   │   ├── ImagePicker.tsx     # Selector de fotos y buscador directo en Google Images
+│   │   ├── PwaInstallBanner.tsx # Banner flotante de instalación PWA con soporte iOS
 │   │   └── Toast.tsx           # Notificaciones emergentes ligeras y reactivas
 │   ├── context/
 │   │   ├── UserContext.tsx     # Estado global de usuario, roles, votos y favoritos Supabase
@@ -101,6 +102,13 @@ que-comemos-hoy/
 ### Barra de Filtros y Categorías (`App.tsx`)
 - **Drag-to-Scroll Horizontal:** Desplazamiento fluido con clic y arrastre en escritorio o swipe táctil en móvil.
 - **Aislamiento Exclusivo con Pulsación Prolongada (Long Press):** Mantener pulsado (~500ms) cualquier filtro de categoría en PC o móvil aísla exclusivamente dicho filtro (desmarcando todas las demás), con feedback háptico (`navigator.vibrate`), micro-animación visual y notificación Toast, distinguiendo arrastres o scroll táctil para evitar falsos positivos.
+
+### `PwaInstallBanner.tsx` (Banner de Instalación PWA)
+- Captura el evento nativo `beforeinstallprompt` y gestiona la instalación controlada de la aplicación sin banners invasivos.
+- Detección de modo `standalone`: si la aplicación ya se ejecuta instalada, el banner permanece oculto automáticamente.
+- Soporte para iOS Safari mediante modal de guía interactiva ("Compartir > Añadir a pantalla de inicio").
+- Persistencia de desestimación en `localStorage` (`que_comemos_pwa_dismissed`) para no molestar repetidamente al usuario si pulsa "Ahora no" o cierra el aviso.
+- Escucha del evento `appinstalled` para confirmar la instalación con notificación Toast festiva.
 
 ### `AdminUsersModal.tsx` (Panel de Administración de Usuarios)
 - Panel reservado exclusivamente para superusuarios con conteo y métricas en tiempo real.

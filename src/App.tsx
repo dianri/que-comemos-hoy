@@ -27,6 +27,7 @@ import { AdminUsersModal } from './components/AdminUsersModal';
 import { RecipeDetailModal } from './components/RecipeDetailModal';
 import { ArcadeModal } from './components/ArcadeModal';
 import { ManageCategoriesModal } from './components/ManageCategoriesModal';
+import { PwaInstallBanner } from './components/PwaInstallBanner';
 import { Toast } from './components/Toast';
 import { showToast } from './lib/toast';
 import { UserProvider, useUser } from './context/UserContext';
@@ -1219,6 +1220,7 @@ function MainApp() {
         onFoodsReassigned={fetchFoods}
       />
 
+      <PwaInstallBanner />
       <Toast />
     </div>
   );

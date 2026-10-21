@@ -37,7 +37,11 @@ Alojada en **Vercel** y respaldada por **Supabase (PostgreSQL + Realtime)**.
 - **Panel de Administración de Usuarios:** Métricas en tiempo real, gestión de roles y eliminación de cuentas.
 - **Moderación Automática:** Los visitantes ven platos oficiales o de superusuarios; los usuarios ven adicionalmente sus propias creaciones.
 
-### 6. 🎮 Minijuego Arcade Integrado
+### 6. 📱 Experiencia PWA e Instalación Móvil/Escritorio
+- **Web App Progresiva (PWA):** Manifiesto web, iconos adaptativos y Service Worker con estrategia de caché offline.
+- **Banner de Instalación No Invasivo:** Aviso elegante que captura el evento `beforeinstallprompt` para instalar la app como nativa, con guía interactiva para usuarios de iOS Safari y memoria de desestimación.
+
+### 7. 🎮 Minijuego Arcade Integrado
 - Minijuego recreativo integrado para amenizar la espera mientras se decide la comida, con tabla de mejores puntuaciones en tiempo real (`public.game_scores`).
 
 ---
