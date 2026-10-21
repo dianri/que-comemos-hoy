@@ -104,6 +104,7 @@ function MainApp() {
   const [isRouletteOpen, setIsRouletteOpen] = useState(false);
   const [rouletteAutoSpin, setRouletteAutoSpin] = useState(false);
   const [isArcadeOpen, setIsArcadeOpen] = useState(false);
+  const [isArcadePulsing, setIsArcadePulsing] = useState(true);
   const [isManageCategoriesOpen, setIsManageCategoriesOpen] = useState(false);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [editingFood, setEditingFood] = useState<Food | null>(null);
@@ -458,9 +459,12 @@ function MainApp() {
           <button
             type="button"
             onClick={() => setIsArcadeOpen(true)}
+            onAnimationEnd={() => setIsArcadePulsing(false)}
             title="Jugar al Arkanoid"
             aria-label="Jugar al Arkanoid"
-            className="absolute top-3 right-3 sm:top-4 sm:right-4 z-20 group flex items-center gap-1.5 px-2.5 py-1.5 sm:px-3 sm:py-1.5 rounded-full bg-white/15 hover:bg-white/25 active:bg-white/30 backdrop-blur-md border border-white/25 hover:border-white/40 shadow-xs hover:shadow-md transition-all duration-300 cursor-pointer text-white animate-pulse-subtle hover:animate-none"
+            className={`absolute top-3 right-3 sm:top-4 sm:right-4 z-20 group flex items-center gap-1.5 px-2.5 py-1.5 sm:px-3 sm:py-1.5 rounded-full bg-white/15 hover:bg-white/25 active:bg-white/30 backdrop-blur-md border border-white/25 hover:border-white/40 shadow-xs hover:shadow-md transition-all duration-300 cursor-pointer text-white ${
+              isArcadePulsing ? 'animate-pulse-subtle hover:animate-none' : ''
+            }`}
           >
             <svg
               className="w-4 h-4 sm:w-4.5 sm:h-4.5 text-amber-200 group-hover:text-amber-100 group-hover:-translate-y-0.5 group-hover:scale-110 transition-transform duration-150 drop-shadow-xs"
