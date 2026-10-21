@@ -11,6 +11,7 @@ import {
   ChefHat,
   LayoutGrid,
   Check,
+  ChevronDown,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { supabase } from './lib/supabase';
@@ -672,23 +673,26 @@ function MainApp() {
             </div>
 
             {/* Ordenación */}
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center gap-2">
               <span className="text-xs text-slate-500 font-medium hidden sm:inline flex-shrink-0">
                 Ordenar:
               </span>
-              <select
-                value={sortBy}
-                onChange={(e) => setSortBy(e.target.value as 'votes' | 'recent' | 'name')}
-                className="px-3 py-2 rounded-xl bg-white border border-slate-200 text-xs font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-orange-500/30 shadow-sm cursor-pointer"
-              >
-                <option value="votes">🔥 Más votados</option>
-                <option value="recent">✨ Más recientes</option>
-                <option value="name">🔤 Nombre A-Z</option>
-              </select>
+              <div className="relative flex items-center justify-between">
+                <select
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value as 'votes' | 'recent' | 'name')}
+                  className="appearance-none pl-3.5 pr-8 py-2 rounded-xl bg-white border border-slate-200 text-xs font-semibold text-slate-700 hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-orange-500/30 shadow-sm cursor-pointer transition-all"
+                >
+                  <option value="votes">🔥 Más votados</option>
+                  <option value="recent">✨ Más recientes</option>
+                  <option value="name">🔤 Nombre A-Z</option>
+                </select>
+                <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-2.5 pointer-events-none" />
+              </div>
 
               <button
                 onClick={fetchFoods}
-                className="p-2 rounded-xl bg-white border border-slate-200 text-slate-500 hover:text-orange-600 hover:border-orange-200 transition-all shadow-sm"
+                className="p-2 rounded-xl bg-white border border-slate-200 text-slate-500 hover:text-orange-600 hover:border-orange-200 transition-all shadow-sm flex items-center justify-center flex-shrink-0"
                 title="Refrescar lista"
               >
                 <RefreshCw className="w-4 h-4" />
