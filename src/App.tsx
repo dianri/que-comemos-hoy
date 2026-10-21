@@ -138,11 +138,13 @@ function MainApp() {
     const walk = (x - startXRef.current) * 1.5;
     if (Math.abs(walk) > 4) {
       hasDraggedRef.current = true;
+      clearLongPressTimer();
     }
     categoryScrollRef.current.scrollLeft = scrollLeftRef.current - walk;
   };
 
   const handleCategoryMouseUpOrLeave = () => {
+    clearLongPressTimer();
     if (!isDraggingRef.current) return;
     isDraggingRef.current = false;
     setIsDragging(false);
@@ -157,6 +159,124 @@ function MainApp() {
       e.stopPropagation();
       e.preventDefault();
     }
+  };
+
+  // Estados y referencias para pulsación sostenida (Long Press) y aislamiento exclusivo de filtros
+  const longPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const longPressTriggeredRef = useRef(false);
+  const longPressStartPosRef = useRef<{ x: number; y: number } | null>(null);
+  const [activeLongPressCategory, setActiveLongPressCategory] = useState<string | null>(null);
+
+  // Aísla una categoría seleccionándola de forma exclusiva
+  const handleIsolateCategory = useCallback((cat: string) => {
+    // 1. Aislamiento exclusivo
+    setSelectedCategories([cat]);
+
+    // 2. Feedback háptico en móviles si el navegador lo soporta
+    if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
+      try {
+        navigator.vibrate(50);
+      } catch {
+        // Ignorar si no está permitido
+      }
+    }
+
+    // 3. Feedback visual con notificación Toast
+    showToast(`Filtro "${cat}" aislado 🎯`, 'info', 2200);
+  }, []);
+
+  const clearLongPressTimer = useCallback(() => {
+    if (longPressTimerRef.current) {
+      clearTimeout(longPressTimerRef.current);
+      longPressTimerRef.current = null;
+    }
+    setActiveLongPressCategory(null);
+  }, []);
+
+  // Limpiar temporizador al desmontar el componente
+  useEffect(() => {
+    return () => {
+      if (longPressTimerRef.current) {
+        clearTimeout(longPressTimerRef.current);
+      }
+    };
+  }, []);
+
+  // Controladores táctiles para móvil
+  const handleCategoryTouchStart = (cat: string, e: React.TouchEvent) => {
+    clearLongPressTimer();
+    longPressTriggeredRef.current = false;
+    const touch = e.touches[0];
+    longPressStartPosRef.current = { x: touch.clientX, y: touch.clientY };
+    setActiveLongPressCategory(cat);
+
+    longPressTimerRef.current = setTimeout(() => {
+      longPressTriggeredRef.current = true;
+      handleIsolateCategory(cat);
+      setActiveLongPressCategory(null);
+    }, 500);
+  };
+
+  const handleCategoryTouchMove = (e: React.TouchEvent) => {
+    if (!longPressTimerRef.current || !longPressStartPosRef.current) return;
+    const touch = e.touches[0];
+    const dx = Math.abs(touch.clientX - longPressStartPosRef.current.x);
+    const dy = Math.abs(touch.clientY - longPressStartPosRef.current.y);
+    // Si el usuario mueve el dedo más de 8px (scroll táctil), cancelar la pulsación prolongada
+    if (dx > 8 || dy > 8) {
+      clearLongPressTimer();
+    }
+  };
+
+  const handleCategoryTouchEnd = () => {
+    clearLongPressTimer();
+    if (longPressTriggeredRef.current) {
+      setTimeout(() => {
+        longPressTriggeredRef.current = false;
+      }, 100);
+    }
+  };
+
+  // Controladores de ratón para escritorio (PC)
+  const handleCategoryButtonMouseDown = (cat: string, e: React.MouseEvent) => {
+    if (e.button !== 0) return; // Solo clic izquierdo
+    clearLongPressTimer();
+    longPressTriggeredRef.current = false;
+    longPressStartPosRef.current = { x: e.clientX, y: e.clientY };
+    setActiveLongPressCategory(cat);
+
+    longPressTimerRef.current = setTimeout(() => {
+      longPressTriggeredRef.current = true;
+      handleIsolateCategory(cat);
+      setActiveLongPressCategory(null);
+    }, 500);
+  };
+
+  const handleCategoryButtonMouseMove = (e: React.MouseEvent) => {
+    if (!longPressTimerRef.current || !longPressStartPosRef.current) return;
+    const dx = Math.abs(e.clientX - longPressStartPosRef.current.x);
+    const dy = Math.abs(e.clientY - longPressStartPosRef.current.y);
+    if (dx > 8 || dy > 8) {
+      clearLongPressTimer();
+    }
+  };
+
+  const handleCategoryButtonMouseUp = () => {
+    clearLongPressTimer();
+    if (longPressTriggeredRef.current) {
+      setTimeout(() => {
+        longPressTriggeredRef.current = false;
+      }, 100);
+    }
+  };
+
+  // Clic en categoría: descarta el evento si se acaba de disparar una pulsación prolongada o arrastre
+  const handleCategoryClick = (cat: string) => {
+    if (longPressTriggeredRef.current || hasDraggedRef.current) {
+      longPressTriggeredRef.current = false;
+      return;
+    }
+    handleToggleCategory(cat);
   };
 
   // Comprobar si todas las categorías están actualmente activas
@@ -880,24 +1000,31 @@ function MainApp() {
             {/* Separador vertical sutil entre control global y filtros específicos */}
             <div className="h-4 w-px bg-slate-200/90 mx-0.5 flex-shrink-0" />
 
-            {/* Píldoras individuales */}
+            {/* Píldoras individuales con soporte de clic y pulsación prolongada (Long Press) para aislar */}
             {categories.map((cat) => {
               const isSelected = selectedCategories.includes(cat);
+              const isPressing = activeLongPressCategory === cat;
               return (
                 <button
                   type="button"
                   key={cat}
-                  onClick={() => handleToggleCategory(cat)}
-                  className={`px-3 py-1 rounded-full text-xs font-bold transition-all flex-shrink-0 shadow-xs cursor-pointer select-none ${
-                    isSelected
+                  onClick={() => handleCategoryClick(cat)}
+                  onMouseDown={(e) => handleCategoryButtonMouseDown(cat, e)}
+                  onMouseMove={handleCategoryButtonMouseMove}
+                  onMouseUp={handleCategoryButtonMouseUp}
+                  onTouchStart={(e) => handleCategoryTouchStart(cat, e)}
+                  onTouchMove={handleCategoryTouchMove}
+                  onTouchEnd={handleCategoryTouchEnd}
+                  onTouchCancel={clearLongPressTimer}
+                  onContextMenu={(e) => e.preventDefault()}
+                  className={`px-3 py-1 rounded-full text-xs font-bold transition-all flex-shrink-0 shadow-xs cursor-pointer select-none touch-manipulation ${
+                    isPressing
+                      ? 'scale-95 ring-2 ring-orange-400 bg-orange-100 text-orange-900'
+                      : isSelected
                       ? 'bg-orange-500 text-white shadow-orange-500/20 scale-[1.02]'
                       : 'bg-slate-100/90 hover:bg-slate-200 text-slate-400 border border-slate-200/70 hover:text-slate-600'
                   }`}
-                  title={
-                    isSelected
-                      ? `Desactivar filtro "${cat}"`
-                      : `Activar filtro "${cat}"`
-                  }
+                  title={`${isSelected ? 'Desactivar' : 'Activar'} "${cat}" · Mantén pulsado para aislar`}
                 >
                   {cat}
                 </button>

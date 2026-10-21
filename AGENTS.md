@@ -98,6 +98,10 @@ que-comemos-hoy/
 - Panel accesible para superusuarios para crear nuevas categorías, eliminarlas o **reordenarlas personalmente** (subir/bajar).
 - El orden establecido se persiste en la base de datos de Supabase (`public.categories.display_order`) y se refleja en tiempo real en todos los clientes.
 
+### Barra de Filtros y Categorías (`App.tsx`)
+- **Drag-to-Scroll Horizontal:** Desplazamiento fluido con clic y arrastre en escritorio o swipe táctil en móvil.
+- **Aislamiento Exclusivo con Pulsación Prolongada (Long Press):** Mantener pulsado (~500ms) cualquier filtro de categoría en PC o móvil aísla exclusivamente dicho filtro (desmarcando todas las demás), con feedback háptico (`navigator.vibrate`), micro-animación visual y notificación Toast, distinguiendo arrastres o scroll táctil para evitar falsos positivos.
+
 ### `AdminUsersModal.tsx` (Panel de Administración de Usuarios)
 - Panel reservado exclusivamente para superusuarios con conteo y métricas en tiempo real.
 - **Superusuario Raíz (`dianrie@hotmail.com`):** Inmutable, con privilegios exclusivos para ascender a otros usuarios a superusuarios o degradarlos a usuarios normales (`set_user_role`).
