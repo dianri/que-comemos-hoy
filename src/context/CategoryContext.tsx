@@ -5,6 +5,9 @@ import { sanitizeText } from '../lib/sanitize';
 
 const DEFAULT_CATEGORIES: string[] = [
   'General',
+  'Cenas',
+  'Desayuno',
+  'De la Mamá',
   'Tradicional',
   'Carnes',
   'Pescados',
@@ -16,7 +19,6 @@ const DEFAULT_CATEGORIES: string[] = [
   'Japonesa',
   'Saludable',
   'Postres',
-  'Desayuno',
 ];
 
 interface CategoryContextType {

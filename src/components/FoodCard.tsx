@@ -16,6 +16,8 @@ interface FoodCardProps {
 }
 
 const CATEGORY_COLORS: Record<string, string> = {
+  'De la Mamá': 'bg-rose-100 text-rose-800 border-rose-300 font-bold',
+  Cenas: 'bg-violet-100 text-violet-800 border-violet-200',
   Tradicional: 'bg-orange-100 text-orange-800 border-orange-200',
   Carnes: 'bg-rose-100 text-rose-800 border-rose-200',
   Pescados: 'bg-cyan-100 text-cyan-800 border-cyan-200',

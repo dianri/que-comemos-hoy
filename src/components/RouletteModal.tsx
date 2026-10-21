@@ -43,6 +43,12 @@ const CATEGORY_THEMES: Record<string, CategoryColorTone> = {
   legumbres: { primary: '#FDE68A', secondary: '#FCD34D' },
   // Tradicional: crema rústica tostada y albaricoque
   tradicional: { primary: '#FFEDD5', secondary: '#FED7AA' },
+  // De la Mamá: tonos tiernos rosa pastel, melocotón y crema hogareña
+  'de la mamá': { primary: '#FECDD3', secondary: '#FEE2E2' },
+  'de la mama': { primary: '#FECDD3', secondary: '#FEE2E2' },
+  // Cenas: tonos lavanda suave y violeta crepuscular
+  cenas: { primary: '#E9D5FF', secondary: '#F3E8FF' },
+  cena: { primary: '#E9D5FF', secondary: '#F3E8FF' },
   // Saludable, Verduras y Ensaladas: verde menta salvia y frescor huerta
   saludable: { primary: '#BBF7D0', secondary: '#86EFAC' },
   verduras: { primary: '#BBF7D0', secondary: '#86EFAC' },

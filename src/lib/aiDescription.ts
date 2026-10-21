@@ -100,6 +100,15 @@ function generateGastronomicTemplate(dishName: string, category?: string): strin
       `Comienza el día con energía gracias a este apetitoso ${name}, elaborado con ingredientes frescos y equilibrados.`,
       `Opción perfecta para el desayuno o merienda, deliciosa, reconfortante y llena de vitalidad.`
     ],
+    mamá: [
+      `Auténtica receta casera de ${name} con ese inconfundible toque de la mamá, preparada con el máximo cariño y sabor reconfortante.`,
+      `El plato de ${name} de toda la vida, cocinado a fuego lento con ingredientes de primera y ese sabor que sabe a hogar.`,
+      `Inolvidable elaboración casera de ${name} al estilo de la mamá, tierna, jugosa y llena de tradición familiar.`
+    ],
+    mama: [
+      `Auténtica receta casera de ${name} con ese inconfundible toque de la mamá, preparada con el máximo cariño y sabor reconfortante.`,
+      `El plato de ${name} de toda la vida, cocinado a fuego lento con ingredientes de primera y ese sabor que sabe a hogar.`
+    ],
     pizza: [
       `Masa crujiente y esponjosa horneada al punto, con queso fundido y una combinación sabrosa de ingredientes frescos.`,
       `Auténtica receta al horno con una base ligera, salsa de tomate sazonada y un aroma irresistible.`
