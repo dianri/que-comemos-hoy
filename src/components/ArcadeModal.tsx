@@ -1,11 +1,9 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import {
   X,
-  ExternalLink,
   Gamepad2,
   RotateCcw,
   Smartphone,
-  Maximize2,
   Trophy,
   RefreshCw,
   Sparkles,
@@ -387,17 +385,6 @@ export const ArcadeModal: React.FC<ArcadeModalProps> = ({ isOpen, onClose }) => 
               </button>
             )}
 
-            {/* Enlace para abrir en pestaña nueva a pantalla completa */}
-            <a
-              href={ARKANOID_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="p-1.5 sm:p-2 rounded-xl text-zinc-400 hover:text-cyan-400 hover:bg-zinc-800 transition-colors"
-              title="Abrir a pantalla completa en una nueva pestaña"
-            >
-              <ExternalLink className="w-4 h-4" />
-            </a>
-
             {/* Botón cerrar */}
             <button
               type="button"
@@ -432,21 +419,9 @@ export const ArcadeModal: React.FC<ArcadeModalProps> = ({ isOpen, onClose }) => 
 
         {/* Banner informativo de adaptabilidad para dispositivos móviles (solo en vista juego) */}
         {activeTab === 'game' && (
-          <div className="sm:hidden px-2.5 py-1.5 bg-gradient-to-r from-cyan-950/70 via-zinc-900 to-cyan-950/70 border-b border-cyan-800/30 text-[10.5px] font-mono text-cyan-200 flex items-center justify-between flex-shrink-0">
-            <div className="flex items-center space-x-1.5 truncate pr-2">
-              <Smartphone className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
-              <span className="truncate">Gira el móvil en horizontal para mayor comodidad</span>
-            </div>
-            <a
-              href={ARKANOID_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="shrink-0 px-2 py-0.5 rounded bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-200 border border-cyan-400/40 text-[9.5px] font-bold flex items-center space-x-1 transition-colors"
-              title="Abrir juego a pantalla completa"
-            >
-              <Maximize2 className="w-2.5 h-2.5" />
-              <span>Pantalla Completa</span>
-            </a>
+          <div className="sm:hidden px-3 py-1.5 bg-gradient-to-r from-cyan-950/70 via-zinc-900 to-cyan-950/70 border-b border-cyan-800/30 text-[10.5px] font-mono text-cyan-200 flex items-center space-x-1.5 flex-shrink-0">
+            <Smartphone className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
+            <span className="truncate">Gira el móvil en horizontal para mayor comodidad</span>
           </div>
         )}
 
@@ -781,15 +756,6 @@ export const ArcadeModal: React.FC<ArcadeModalProps> = ({ isOpen, onClose }) => 
               : '🏆 Las puntuaciones se guardan y actualizan automáticamente en tiempo real'}
           </span>
           <div className="flex items-center space-x-2 w-full sm:w-auto justify-end">
-            <a
-              href={ARKANOID_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="px-3 py-1.5 rounded-xl text-[11px] font-bold text-cyan-400 bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/30 transition-colors flex items-center space-x-1"
-            >
-              <ExternalLink className="w-3 h-3" />
-              <span>Pantalla Completa</span>
-            </a>
             <button
               type="button"
               onClick={handleMainClose}
