@@ -197,6 +197,9 @@ export const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
     window.open(`https://www.ubereats.com/search?q=${query}`, '_blank', 'noopener,noreferrer');
   };
 
+  // Determinar si existen múltiples acciones secundarias (Modificar + Elección rápida)
+  const hasMultipleSecondaryActions = Boolean(canManage && onEdit && handleQuickPick);
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-2.5 sm:p-4 bg-black/65 backdrop-blur-md animate-fade-in">
       <div className="relative w-full max-w-xl bg-white rounded-2xl sm:rounded-3xl shadow-2xl border border-slate-100 overflow-hidden flex flex-col max-h-[92vh] animate-scale-up">
@@ -597,43 +600,55 @@ export const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
           )}
         </div>
 
-        {/* Pie de acciones */}
-        <div className="p-3.5 sm:p-4 sm:px-6 bg-slate-50 border-t border-slate-100 flex items-center justify-between gap-2 flex-shrink-0">
-          <div className="flex items-center space-x-2 flex-wrap gap-1.5">
-            {canManage && onEdit && (
-              <button
-                type="button"
-                onClick={() => {
-                  onClose();
-                  onEdit(food);
-                }}
-                className="flex items-center space-x-1.5 px-3 py-2 rounded-xl border border-slate-200 text-slate-600 hover:text-orange-600 hover:bg-white text-xs font-bold transition-all shadow-xs active:scale-95 cursor-pointer"
+        {/* Pie de acciones responsivo */}
+        <div className="p-3 sm:p-4 sm:px-6 bg-slate-50 border-t border-slate-100 flex-shrink-0">
+          <div className="flex flex-wrap sm:flex-nowrap items-center justify-between gap-2 sm:gap-3">
+            {/* Acciones secundarias (Modificar y/o Elección rápida) */}
+            {(Boolean(canManage && onEdit) || Boolean(handleQuickPick)) && (
+              <div
+                className={`flex items-center gap-2 ${
+                  hasMultipleSecondaryActions ? 'w-full sm:w-auto' : 'flex-1 sm:flex-initial'
+                }`}
               >
-                <Pencil className="w-3.5 h-3.5" />
-                <span>Modificar</span>
-              </button>
+                {canManage && onEdit && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onClose();
+                      onEdit(food);
+                    }}
+                    className="flex-1 sm:flex-initial inline-flex items-center justify-center space-x-1.5 px-3 py-2.5 sm:py-2 rounded-xl border border-slate-200 bg-white text-slate-600 hover:text-orange-600 hover:bg-slate-50 text-xs font-bold transition-all shadow-xs active:scale-95 cursor-pointer"
+                  >
+                    <Pencil className="w-3.5 h-3.5 flex-shrink-0" />
+                    <span className="truncate">Modificar</span>
+                  </button>
+                )}
+
+                {handleQuickPick && (
+                  <button
+                    type="button"
+                    onClick={handleQuickPick}
+                    className="flex-1 sm:flex-initial inline-flex items-center justify-center space-x-1.5 px-3.5 py-2.5 sm:py-2 rounded-xl border border-orange-300 bg-orange-50/80 hover:bg-orange-100 text-orange-700 font-bold text-xs transition-all shadow-xs active:scale-95 cursor-pointer"
+                    title="Elegir otro plato al azar con elección rápida"
+                  >
+                    <Dices className="w-4 h-4 text-orange-600 flex-shrink-0" />
+                    <span className="truncate">Elección rápida</span>
+                  </button>
+                )}
+              </div>
             )}
 
-            {handleQuickPick && (
-              <button
-                type="button"
-                onClick={handleQuickPick}
-                className="flex items-center space-x-1.5 px-3.5 py-2 rounded-xl border border-orange-300 bg-orange-50/70 hover:bg-orange-100 text-orange-700 font-bold text-xs transition-all shadow-xs active:scale-95 cursor-pointer"
-                title="Elegir otro plato al azar con elección rápida"
-              >
-                <Dices className="w-4 h-4 text-orange-600" />
-                <span>Elección rápida</span>
-              </button>
-            )}
+            {/* Botón principal de cierre */}
+            <button
+              type="button"
+              onClick={onClose}
+              className={`${
+                hasMultipleSecondaryActions ? 'w-full sm:w-auto' : 'flex-1 sm:flex-initial sm:px-6'
+              } px-5 py-2.5 sm:py-2 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-bold text-xs shadow-md shadow-orange-500/20 transition-all active:scale-95 cursor-pointer text-center`}
+            >
+              Cerrar
+            </button>
           </div>
-
-          <button
-            type="button"
-            onClick={onClose}
-            className="px-5 py-2 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-bold text-xs shadow-md shadow-orange-500/20 transition-all active:scale-95 cursor-pointer"
-          >
-            Cerrar
-          </button>
         </div>
       </div>
     </div>
