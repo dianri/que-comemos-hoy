@@ -4,6 +4,11 @@ export const VAPID_PUBLIC_KEY =
   import.meta.env.VITE_VAPID_PUBLIC_KEY ||
   'BAOyoa5CuFQERDh9Cssf3SNjra0PLYT95ewEQ48sOfWBKNKdo2mQEup925BlZP1RR4NpHNUSGeTqJ6we5tACr2o';
 
+export const APP_BASE_URL =
+  typeof window !== 'undefined' && window.location.origin && !window.location.origin.includes('localhost')
+    ? window.location.origin
+    : 'https://quecomemoshoy.dianrie.com';
+
 /**
  * Convierte una clave VAPID pública codificada en Base64URL a un Uint8Array requerido por el PushManager del navegador.
  */
@@ -228,9 +233,9 @@ export async function triggerPushNotification(payload: {
         creator_name: payload.creatorName || payload.userEmail || 'Un usuario',
         title: '🛎️ Nuevo plato pendiente de revisión',
         body: `«${payload.foodName}» espera aprobación para la carta general.`,
-        icon: '/icon-192.png',
-        badge: '/badge-96.png',
-        url: '/?openModeration=true',
+        icon: `${APP_BASE_URL}/icon-192.png`,
+        badge: `${APP_BASE_URL}/badge-96.png`,
+        url: `${APP_BASE_URL}/?openModeration=true`,
       }),
     });
   } catch (err) {
@@ -268,9 +273,9 @@ export async function triggerApprovalPushNotification(payload: {
         target_user_email: payload.userEmail || payload.createdBy,
         title: '¡Plato aprobado! 🎉',
         body: `Tu receta «${payload.foodName}» ya forma parte de la carta general.`,
-        icon: '/icon-192.png',
-        badge: '/badge-96.png',
-        url: `/?food=${payload.foodId}`,
+        icon: `${APP_BASE_URL}/icon-192.png`,
+        badge: `${APP_BASE_URL}/badge-96.png`,
+        url: `${APP_BASE_URL}/?food=${payload.foodId}`,
       }),
     });
   } catch (err) {

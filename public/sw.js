@@ -2,7 +2,9 @@
  * Service Worker para "¿Qué comemos hoy?" PWA
  */
 
-const CACHE_NAME = 'que-comemos-hoy-v3';
+const CACHE_NAME = 'que-comemos-hoy-v4';
+const DEFAULT_ORIGIN = 'https://quecomemoshoy.dianrie.com';
+
 const ASSETS_TO_CACHE = [
   '/',
   '/index.html',
@@ -14,26 +16,58 @@ const ASSETS_TO_CACHE = [
   '/badge.png'
 ];
 
-// Instalación: pre-cache de activos esenciales
+/**
+ * Convierte cualquier ruta relativa en una URL absoluta utilizando el origen de la app.
+ */
+function toAbsoluteUrl(urlPath, fallbackPath) {
+  const path = (urlPath || fallbackPath || '').trim();
+  if (!path) return '';
+  if (path.startsWith('http://') || path.startsWith('https://')) {
+    return path;
+  }
+  const base =
+    typeof self !== 'undefined' && self.location && self.location.origin && !self.location.origin.includes('localhost')
+      ? self.location.origin
+      : DEFAULT_ORIGIN;
+  try {
+    return new URL(path, base).href;
+  } catch {
+    return `${DEFAULT_ORIGIN}${path.startsWith('/') ? '' : '/'}${path}`;
+  }
+}
+
+// Instalación: pre-cache de activos esenciales y activación inmediata forzada
 self.addEventListener('install', (event) => {
+  self.skipWaiting();
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(ASSETS_TO_CACHE);
-    }).then(() => self.skipWaiting())
+    caches
+      .open(CACHE_NAME)
+      .then((cache) => cache.addAll(ASSETS_TO_CACHE))
+      .then(() => self.skipWaiting())
   );
 });
 
-// Activación: purga de cachés antiguas
+// Activación: purga inmediata de cachés antiguas y control de clientes
 self.addEventListener('activate', (event) => {
   event.waitUntil(
-    caches.keys().then((cacheNames) => {
-      return Promise.all(
-        cacheNames
-          .filter((name) => name !== CACHE_NAME)
-          .map((name) => caches.delete(name))
-      );
-    }).then(() => self.clients.claim())
+    caches
+      .keys()
+      .then((cacheNames) => {
+        return Promise.all(
+          cacheNames
+            .filter((name) => name !== CACHE_NAME)
+            .map((name) => caches.delete(name))
+        );
+      })
+      .then(() => self.clients.claim())
   );
+});
+
+// Mensaje para forzar skipWaiting desde clientes si se detecta nueva versión
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
 });
 
 // Estrategia Network-First con fallback a cache para peticiones de navegación y assets
@@ -79,11 +113,11 @@ self.addEventListener('push', (event) => {
   let data = {
     title: '🛎️ Aviso en ¿Qué comemos hoy?',
     body: 'Hay una novedad en la carta.',
-    icon: '/icon-192.png',
-    badge: '/badge-96.png',
-    url: '/',
+    icon: `${DEFAULT_ORIGIN}/icon-192.png`,
+    badge: `${DEFAULT_ORIGIN}/badge-96.png`,
+    url: `${DEFAULT_ORIGIN}/`,
     data: {
-      url: '/',
+      url: `${DEFAULT_ORIGIN}/`,
     },
   };
 
@@ -96,22 +130,26 @@ self.addEventListener('push', (event) => {
     }
   }
 
-  const targetUrl = (data.data && data.data.url) || data.url || '/';
+  const rawUrl = (data.data && data.data.url) || data.url || '/';
+  const targetUrl = toAbsoluteUrl(rawUrl, '/');
+  const iconUrl = toAbsoluteUrl(data.icon, '/icon-192.png');
+  const badgeUrl = toAbsoluteUrl(data.badge, '/badge-96.png');
+
   const notificationType =
     (data.data && data.data.type) ||
     (targetUrl.includes('openModeration') ? 'dish_pending_review' : 'dish_approved');
 
   const options = {
     body: data.body,
-    icon: data.icon || '/icon-192.png',
-    badge: data.badge || '/badge-96.png',
+    icon: iconUrl,
+    badge: badgeUrl,
     data: {
       ...(data.data || {}),
       url: targetUrl,
       type: notificationType,
     },
     vibrate: [200, 100, 200],
-    tag: `${notificationType}-${Date.now()}`,
+    tag: `quecomemos-v4-${notificationType}-${Date.now()}`,
     renotify: true,
   };
 
@@ -122,7 +160,8 @@ self.addEventListener('push', (event) => {
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
 
-  const targetUrl = (event.notification.data && event.notification.data.url) || '/';
+  const rawUrl = (event.notification.data && event.notification.data.url) || '/';
+  const targetUrl = toAbsoluteUrl(rawUrl, '/');
 
   event.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
