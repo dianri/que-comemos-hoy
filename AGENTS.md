@@ -178,7 +178,7 @@ que-comemos-hoy/
 
 ### Edge Functions y Notificaciones Web Push
 - **`send-push-notification`**: Edge Function en Supabase ejecutada en Deno con biblioteca `web-push` y firmas VAPID (RFC 8292). Filtra los suscriptores activos que son superusuarios (`root_admin` / `superadmin`), despacha notificaciones nativas push al dispositivo, y purga automáticamente suscripciones inválidas o dadas de baja (HTTP 404 / 410).
-- **Service Worker (`public/sw.js`)**: Gestiona eventos nativos `push` y `notificationclick`, despertando la aplicación e interactuando con la ruta `/?openModeration=true` para desplegar directamente el panel de aprobación.
+- **Service Worker (`public/sw.js`)**: Gestiona eventos nativos `push` y `notificationclick`, despertando la aplicación e interactuando con la ruta `/?openModeration=true` para desplegar directamente el panel de aprobación. Configura `badge: '/badge-96.png'` (PNG monocromo con canal alfa transparente para la barra de estado y cabecera de agrupación en Android) e `icon: '/icon-192.png'` (raster PNG de alta definición) para garantizar la presencia de la identidad corporativa en las notificaciones del sistema.
 
 ### Suscripciones Realtime Activas
 - `public:foods_changes`: En `App.tsx` para reflejar adiciones, modificaciones y borrados de platos al instante.

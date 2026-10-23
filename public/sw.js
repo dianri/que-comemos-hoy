@@ -2,12 +2,16 @@
  * Service Worker para "¿Qué comemos hoy?" PWA
  */
 
-const CACHE_NAME = 'que-comemos-hoy-v1';
+const CACHE_NAME = 'que-comemos-hoy-v2';
 const ASSETS_TO_CACHE = [
   '/',
   '/index.html',
   '/manifest.json',
-  '/icon.svg'
+  '/icon.svg',
+  '/icon-192.png',
+  '/icon-512.png',
+  '/badge-96.png',
+  '/badge.png'
 ];
 
 // Instalación: pre-cache de activos esenciales
@@ -75,8 +79,8 @@ self.addEventListener('push', (event) => {
   let data = {
     title: '🛎️ Nuevo plato para moderar',
     body: 'Hay una nueva propuesta de plato pendiente de revisión en ¿Qué comemos hoy?.',
-    icon: '/icon.svg',
-    badge: '/icon.svg',
+    icon: '/icon-192.png',
+    badge: '/badge-96.png',
     url: '/?openModeration=true',
     data: {
       url: '/?openModeration=true',
@@ -94,8 +98,8 @@ self.addEventListener('push', (event) => {
 
   const options = {
     body: data.body,
-    icon: data.icon || '/icon.svg',
-    badge: data.badge || '/icon.svg',
+    icon: data.icon || '/icon-192.png',
+    badge: data.badge || '/badge-96.png',
     data: data.data || { url: data.url || '/?openModeration=true' },
     vibrate: [200, 100, 200],
     tag: 'dish-moderation-' + Date.now(),

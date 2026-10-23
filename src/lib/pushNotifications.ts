@@ -202,6 +202,8 @@ export async function triggerPushNotification(payload: {
         creator_name: payload.creatorName || payload.userEmail || 'Un usuario',
         title: '🛎️ Nuevo plato pendiente de revisión',
         body: `«${payload.foodName}» espera aprobación para la carta general.`,
+        icon: '/icon-192.png',
+        badge: '/badge-96.png',
         url: '/?openModeration=true',
       }),
     });
