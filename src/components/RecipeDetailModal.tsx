@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   X,
   Heart,
@@ -8,7 +8,7 @@ import {
   Utensils,
   Award,
   Tag,
-  RotateCcw,
+  Dices,
   Share2,
   Check,
   BookOpen,
@@ -33,6 +33,7 @@ interface RecipeDetailModalProps {
   onClose: () => void;
   onEdit?: (food: Food) => void;
   onSpinAgain?: () => void;
+  onQuickPick?: () => void;
   onOptimisticVote?: (foodId: string, delta: number) => void;
   onToggleGlobal?: (food: Food) => void;
   onRequestGlobal?: (food: Food) => Promise<void> | void;
@@ -65,6 +66,7 @@ export const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
   onClose,
   onEdit,
   onSpinAgain,
+  onQuickPick,
   onOptimisticVote,
   onToggleGlobal,
   onRequestGlobal,
@@ -86,10 +88,16 @@ export const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
   const [isRequestingGlobal, setIsRequestingGlobal] = useState(false);
   const [localApprovalStatus, setLocalApprovalStatus] = useState<string | undefined>(undefined);
 
-  // Sincronizar estado local de aprobación cuando cambia el plato o se abre el modal
+  const contentRef = useRef<HTMLDivElement>(null);
+  const handleQuickPick = onQuickPick || onSpinAgain;
+
+  // Sincronizar estado local de aprobación y restaurar scroll arriba cuando cambia el plato
   useEffect(() => {
     if (food) {
       setLocalApprovalStatus(food.approval_status);
+    }
+    if (contentRef.current) {
+      contentRef.current.scrollTop = 0;
     }
   }, [food?.id, food?.approval_status, isOpen]);
 
@@ -347,7 +355,7 @@ export const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
         </div>
 
         {/* Contenido del Modal */}
-        <div className="flex-1 overflow-y-auto p-3.5 sm:p-6 space-y-3.5 sm:space-y-5">
+        <div ref={contentRef} className="flex-1 overflow-y-auto p-3.5 sm:p-6 space-y-3.5 sm:space-y-5">
           {/* Barra de interacción rápida (Popularidad, Compartir, Favorito, Votar) */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 sm:p-3.5 bg-orange-50/70 border border-orange-200/60 rounded-2xl">
             <div className="flex items-center space-x-2.5">
@@ -601,78 +609,35 @@ export const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
           <div className="flex items-center space-x-2 flex-wrap gap-1.5">
             {canManage && onEdit && (
               <button
+                type="button"
                 onClick={() => {
                   onClose();
                   onEdit(food);
                 }}
-                className="flex items-center space-x-1.5 px-3 py-2 rounded-xl border border-slate-200 text-slate-600 hover:text-orange-600 hover:bg-white text-xs font-bold transition-all shadow-xs"
+                className="flex items-center space-x-1.5 px-3 py-2 rounded-xl border border-slate-200 text-slate-600 hover:text-orange-600 hover:bg-white text-xs font-bold transition-all shadow-xs active:scale-95 cursor-pointer"
               >
                 <Pencil className="w-3.5 h-3.5" />
                 <span className="hidden sm:inline">Modificar</span>
               </button>
             )}
 
-            {!isSuperUser && isFoodOwner && food.is_global && (
-              <span className="inline-flex items-center space-x-1 px-3 py-2 rounded-xl bg-emerald-50 text-emerald-800 text-xs font-bold border border-emerald-200">
-                <Globe className="w-3.5 h-3.5 text-emerald-600" />
-                <span className="hidden sm:inline">Público en carta</span>
-                <span className="sm:hidden">Público</span>
-              </span>
-            )}
-
-            {!isSuperUser && isFoodOwner && !food.is_global && (
+            {handleQuickPick && (
               <button
                 type="button"
-                onClick={handleRequestGlobal}
-                disabled={isPending || isRequestingGlobal}
-                className={`flex items-center space-x-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-all shadow-xs ${
-                  isPending
-                    ? 'bg-amber-100 text-amber-800 border border-amber-300/60 cursor-default opacity-85'
-                    : 'bg-orange-50 hover:bg-orange-100 text-orange-700 border border-orange-200 active:scale-95 cursor-pointer'
-                }`}
-                title={
-                  isPending
-                    ? 'Solicitud pendiente de aprobación'
-                    : 'Solicitar inclusión en el General'
-                }
+                onClick={handleQuickPick}
+                className="flex items-center space-x-1.5 px-3.5 py-2 rounded-xl border border-orange-300 bg-orange-50/70 hover:bg-orange-100 text-orange-700 font-bold text-xs transition-all shadow-xs active:scale-95 cursor-pointer"
+                title="Elegir otro plato al azar con elección rápida"
               >
-                {isRequestingGlobal ? (
-                  <>
-                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                    <span>Enviando...</span>
-                  </>
-                ) : isPending ? (
-                  <>
-                    <Clock className="w-3.5 h-3.5 text-amber-700" />
-                    <span>En revisión</span>
-                  </>
-                ) : (
-                  <>
-                    <Send className="w-3.5 h-3.5" />
-                    <span>Enviar a moderación</span>
-                  </>
-                )}
-              </button>
-            )}
-
-            {onSpinAgain && (
-              <button
-                onClick={() => {
-                  onClose();
-                  onSpinAgain();
-                }}
-                className="flex items-center space-x-1.5 px-3.5 py-2 rounded-xl border-2 border-orange-300 bg-white text-orange-700 hover:bg-orange-50 font-bold text-xs transition-all shadow-xs active:scale-95"
-                title="Lanzar la ruleta de nuevo"
-              >
-                <RotateCcw className="w-3.5 h-3.5 text-orange-600" />
-                <span>Volver a girar</span>
+                <Dices className="w-4 h-4 text-orange-600" />
+                <span>Elección rápida</span>
               </button>
             )}
           </div>
 
           <button
+            type="button"
             onClick={onClose}
-            className="px-5 py-2 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-bold text-xs shadow-md shadow-orange-500/20 transition-all active:scale-95"
+            className="px-5 py-2 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-bold text-xs shadow-md shadow-orange-500/20 transition-all active:scale-95 cursor-pointer"
           >
             Cerrar
           </button>

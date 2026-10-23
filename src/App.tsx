@@ -864,7 +864,12 @@ function MainApp() {
       );
       return;
     }
-    const randomPick = roulettePool[Math.floor(Math.random() * roulettePool.length)];
+    const pool =
+      roulettePool.length > 1 && selectedRecipe
+        ? roulettePool.filter((f) => f.id !== selectedRecipe.id)
+        : roulettePool;
+    const finalPool = pool.length > 0 ? pool : roulettePool;
+    const randomPick = finalPool[Math.floor(Math.random() * finalPool.length)];
 
     setHighlightedFoodId(randomPick.id);
     setSelectedRecipe(randomPick);
@@ -1436,11 +1441,7 @@ function MainApp() {
           setSelectedRecipe(null);
           setEditingFood(food);
         }}
-        onSpinAgain={() => {
-          setSelectedRecipe(null);
-          setRouletteAutoSpin(true);
-          setIsRouletteOpen(true);
-        }}
+        onQuickPick={handleQuickPick}
         onOptimisticVote={handleOptimisticVote}
         onToggleGlobal={(food) => {
           handleToggleFoodGlobal(food);
