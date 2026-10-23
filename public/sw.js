@@ -69,3 +69,64 @@ self.addEventListener('fetch', (event) => {
       })
   );
 });
+
+// Gestión de Notificaciones Push Web para Moderación y Administradores
+self.addEventListener('push', (event) => {
+  let data = {
+    title: '🛎️ Nuevo plato para moderar',
+    body: 'Hay una nueva propuesta de plato pendiente de revisión en ¿Qué comemos hoy?.',
+    icon: '/icon.svg',
+    badge: '/icon.svg',
+    url: '/?openModeration=true',
+    data: {
+      url: '/?openModeration=true',
+    },
+  };
+
+  if (event.data) {
+    try {
+      const payload = event.data.json();
+      data = { ...data, ...payload };
+    } catch {
+      data.body = event.data.text() || data.body;
+    }
+  }
+
+  const options = {
+    body: data.body,
+    icon: data.icon || '/icon.svg',
+    badge: data.badge || '/icon.svg',
+    data: data.data || { url: data.url || '/?openModeration=true' },
+    vibrate: [200, 100, 200],
+    tag: 'dish-moderation-' + Date.now(),
+    renotify: true,
+  };
+
+  event.waitUntil(self.registration.showNotification(data.title, options));
+});
+
+// Evento de clic en la notificación nativa: enfocar la app y abrir el panel de moderación
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+
+  const targetUrl = (event.notification.data && event.notification.data.url) || '/?openModeration=true';
+
+  event.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
+      // Si ya hay una pestaña abierta de la aplicación, enfocarla y navegar a la ruta
+      for (const client of clientList) {
+        if ('focus' in client) {
+          client.focus();
+          if ('navigate' in client) {
+            return client.navigate(targetUrl);
+          }
+          return;
+        }
+      }
+      // Si no hay ninguna ventana abierta, abrir una nueva
+      if (clients.openWindow) {
+        return clients.openWindow(targetUrl);
+      }
+    })
+  );
+});

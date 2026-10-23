@@ -13,10 +13,19 @@ import {
   RefreshCw,
   CheckCircle2,
   User as UserIcon,
+  Bell,
+  BellRing,
+  Loader2,
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useUser } from '../context/UserContext';
 import { AdminUserItem, UserRole } from '../types';
+import {
+  isPushSupported,
+  isSubscribedToPush,
+  subscribeUserToPush,
+  unsubscribeUserFromPush,
+} from '../lib/pushNotifications';
 
 interface AdminUsersModalProps {
   isOpen: boolean;
@@ -41,6 +50,41 @@ export const AdminUsersModal: React.FC<AdminUsersModalProps> = ({
 
   // Estado para confirmación de borrado
   const [userToDelete, setUserToDelete] = useState<AdminUserItem | null>(null);
+
+  // Estado para notificaciones Push
+  const [isPushActive, setIsPushActive] = useState<boolean>(false);
+  const [isPushLoading, setIsPushLoading] = useState<boolean>(false);
+  const pushAvailable = isPushSupported();
+
+  useEffect(() => {
+    if (isOpen && pushAvailable) {
+      isSubscribedToPush().then(setIsPushActive);
+    }
+  }, [isOpen, pushAvailable]);
+
+  const handleTogglePush = async () => {
+    if (!user) return;
+    setIsPushLoading(true);
+    try {
+      if (isPushActive) {
+        const res = await unsubscribeUserFromPush(user.id);
+        if (res.success) {
+          setIsPushActive(false);
+          setSuccessMsg('Notificaciones push desactivadas.');
+        }
+      } else {
+        const res = await subscribeUserToPush(user.id, user.email || '');
+        if (res.success) {
+          setIsPushActive(true);
+          setSuccessMsg('¡Notificaciones push activadas con éxito! 🔔');
+        } else {
+          setErrorMsg(res.message || 'Error al activar notificaciones push.');
+        }
+      }
+    } finally {
+      setIsPushLoading(false);
+    }
+  };
 
   // Cargar lista de usuarios desde la función RPC de Supabase
   const fetchUsers = async () => {
@@ -198,6 +242,58 @@ export const AdminUsersModal: React.FC<AdminUsersModalProps> = ({
               <p className="text-base sm:text-xl font-black text-slate-700">{regularUsersCount}</p>
             </div>
           </div>
+
+          {/* Tarjeta de configuración de Notificaciones Push Web */}
+          {pushAvailable && user && (
+            <div className="mt-3 p-3 bg-white/90 backdrop-blur-sm rounded-2xl border border-purple-200/80 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+              <div className="flex items-center space-x-2.5 min-w-0">
+                <div
+                  className={`w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 ${
+                    isPushActive ? 'bg-emerald-100 text-emerald-700' : 'bg-purple-100 text-purple-700'
+                  }`}
+                >
+                  {isPushActive ? <BellRing className="w-4 h-4" /> : <Bell className="w-4 h-4" />}
+                </div>
+                <div className="min-w-0">
+                  <p className="font-extrabold text-xs text-slate-800 leading-tight">
+                    {isPushActive
+                      ? 'Alertas Push activas en este dispositivo'
+                      : 'Alertas Push de moderación'}
+                  </p>
+                  <p className="text-[11px] text-slate-500 leading-tight truncate">
+                    {isPushActive
+                      ? 'Recibirás avisos instantáneos cuando se soliciten platos para el General.'
+                      : 'Activa los avisos para enterarte en tiempo real de nuevas solicitudes.'}
+                  </p>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={handleTogglePush}
+                disabled={isPushLoading}
+                className={`px-3 py-1.5 rounded-xl font-bold text-xs transition-all shadow-xs flex items-center justify-center space-x-1.5 flex-shrink-0 cursor-pointer ${
+                  isPushActive
+                    ? 'bg-slate-100 hover:bg-red-50 text-slate-600 hover:text-red-600 border border-slate-200 active:scale-95'
+                    : 'bg-purple-600 hover:bg-purple-700 text-white shadow-purple-600/20 active:scale-95'
+                }`}
+              >
+                {isPushLoading ? (
+                  <>
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    <span>Cargando...</span>
+                  </>
+                ) : isPushActive ? (
+                  <span>Desactivar avisos</span>
+                ) : (
+                  <>
+                    <Bell className="w-3.5 h-3.5" />
+                    <span>Activar en este dispositivo</span>
+                  </>
+                )}
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Notificaciones de error o éxito */}

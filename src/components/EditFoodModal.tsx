@@ -8,6 +8,7 @@ import { ImagePicker } from './ImagePicker';
 import { sanitizeText, safeImageUrl, SAFE_FALLBACK_IMAGE } from '../lib/sanitize';
 import { generateDishDescription } from '../lib/aiDescription';
 import { showToast } from '../lib/toast';
+import { triggerPushNotification } from '../lib/pushNotifications';
 
 interface EditFoodModalProps {
   isOpen: boolean;
@@ -154,6 +155,12 @@ export const EditFoodModal: React.FC<EditFoodModalProps> = ({
 
       if (!isSuperUser && requestGlobal && food.approval_status !== 'pending') {
         showToast('¡Solicitud enviada a los moderadores para el General! ⏳', 'info');
+        triggerPushNotification({
+          foodId: food.id,
+          foodName: safeName,
+          userEmail: food.user_email,
+          creatorName: food.user_email,
+        });
       } else {
         showToast('¡Plato actualizado con éxito! 🍽️', 'success');
       }

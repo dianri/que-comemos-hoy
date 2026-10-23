@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   X,
   Bell,
@@ -10,9 +10,18 @@ import {
   CheckCircle2,
   Loader2,
   Calendar,
+  BellRing,
 } from 'lucide-react';
 import { Food, getFoodCategories, getFoodCreatorDisplayName } from '../types';
 import { safeImageUrl, SAFE_FALLBACK_IMAGE } from '../lib/sanitize';
+import { useUser } from '../context/UserContext';
+import {
+  isPushSupported,
+  isSubscribedToPush,
+  subscribeUserToPush,
+  unsubscribeUserFromPush,
+} from '../lib/pushNotifications';
+import { showToast } from '../lib/toast';
 
 interface DishModerationModalProps {
   isOpen: boolean;
@@ -31,8 +40,42 @@ export const DishModerationModal: React.FC<DishModerationModalProps> = ({
   onRejectFood,
   onSelectFood,
 }) => {
+  const { user } = useUser();
   const [searchQuery, setSearchQuery] = useState('');
   const [processingId, setProcessingId] = useState<string | null>(null);
+  const [isSubscribed, setIsSubscribed] = useState(false);
+  const [isSubscribing, setIsSubscribing] = useState(false);
+  const pushAvailable = isPushSupported();
+
+  useEffect(() => {
+    if (isOpen && pushAvailable) {
+      isSubscribedToPush().then(setIsSubscribed);
+    }
+  }, [isOpen, pushAvailable]);
+
+  const handleTogglePush = async () => {
+    if (!user) return;
+    setIsSubscribing(true);
+    try {
+      if (isSubscribed) {
+        const res = await unsubscribeUserFromPush(user.id);
+        if (res.success) {
+          setIsSubscribed(false);
+          showToast(res.message || 'Notificaciones push desactivadas.', 'info');
+        }
+      } else {
+        const res = await subscribeUserToPush(user.id, user.email || '');
+        if (res.success) {
+          setIsSubscribed(true);
+          showToast(res.message || '¡Notificaciones push activadas! 🔔', 'success');
+        } else {
+          showToast(res.message || 'No se pudo activar las notificaciones.', 'error');
+        }
+      }
+    } finally {
+      setIsSubscribing(false);
+    }
+  };
 
   if (!isOpen) return null;
 
@@ -110,6 +153,60 @@ export const DishModerationModal: React.FC<DishModerationModalProps> = ({
             <X className="w-5 h-5" />
           </button>
         </div>
+
+        {/* Banner de Notificaciones Push Web para Moderadores */}
+        {pushAvailable && user && (
+          <div className="px-4 py-2.5 sm:px-6 bg-gradient-to-r from-amber-50/90 to-orange-50/80 border-b border-amber-200/70 flex items-center justify-between gap-2 text-xs flex-shrink-0">
+            <div className="flex items-center space-x-2.5 min-w-0">
+              <div
+                className={`w-7 h-7 rounded-xl flex items-center justify-center flex-shrink-0 ${
+                  isSubscribed
+                    ? 'bg-emerald-100 text-emerald-700'
+                    : 'bg-amber-100 text-amber-700 animate-pulse'
+                }`}
+              >
+                <BellRing className="w-3.5 h-3.5" />
+              </div>
+              <div className="min-w-0">
+                <p className="font-extrabold text-slate-800 leading-tight">
+                  {isSubscribed
+                    ? 'Avisos Push activos en este dispositivo'
+                    : 'Alertas Push de nuevos platos'}
+                </p>
+                <p className="text-[11px] text-slate-500 leading-tight truncate">
+                  {isSubscribed
+                    ? 'Recibirás avisos instantáneos cuando la comunidad proponga platos.'
+                    : 'Entérate al instante en tu móvil o PC de solicitudes pendientes.'}
+                </p>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={handleTogglePush}
+              disabled={isSubscribing}
+              className={`px-3 py-1.5 rounded-xl font-bold text-xs transition-all shadow-xs flex items-center space-x-1.5 flex-shrink-0 cursor-pointer ${
+                isSubscribed
+                  ? 'bg-white hover:bg-red-50 text-slate-600 hover:text-red-600 border border-slate-200 active:scale-95'
+                  : 'bg-orange-500 hover:bg-orange-600 text-white shadow-orange-500/20 active:scale-95'
+              }`}
+            >
+              {isSubscribing ? (
+                <>
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  <span>Cargando...</span>
+                </>
+              ) : isSubscribed ? (
+                <span>Desactivar</span>
+              ) : (
+                <>
+                  <Bell className="w-3 h-3" />
+                  <span>Activar avisos</span>
+                </>
+              )}
+            </button>
+          </div>
+        )}
 
         {/* Buscador interno si hay más de 2 platos */}
         {pendingFoods.length > 2 && (

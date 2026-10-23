@@ -143,6 +143,7 @@ que-comemos-hoy/
 - **`public.categories`**: `id`, `name`, `emoji`, `display_order` (INT), `created_at`.
 - **`public.user_roles`**: `id`, `user_id` (UUID), `user_email` (TEXT UNIQUE), `role` ('root_admin' | 'superadmin' | 'user'), `created_at`, `updated_at`.
 - **`public.game_scores`**: `id`, `user_name`, `score`, `created_at`.
+- **`public.push_subscriptions`**: `id`, `user_id` (UUID FK cascade), `user_email` (TEXT), `endpoint` (TEXT UNIQUE), `subscription` (JSONB), `created_at`, `updated_at`.
 
 ### Sistema de Visibilidad, Moderación y Gestión Global
 - **Visibilidad del Feed y Control Global (`is_global` y `approval_status`):** La pantalla principal comunitaria muestra exclusivamente recetas marcadas como públicas globales (`is_global = true`). Los platos subidos por superusuarios ya no aparecen automáticamente en la carta principal por defecto; requieren ser activados explícitamente como globales. Las recetas privadas o en borrador son visibles únicamente para su propio creador y para superusuarios (para moderación y revisión).
@@ -167,10 +168,17 @@ que-comemos-hoy/
   - Lectura pública (`SELECT true`). Inserciones y modificaciones de rol exclusivamente a través de la función RPC con verificación de seguridad `set_user_role` reservada para el superusuario raíz.
 - **`public.votes`**:
   - Lectura libre (`true`), inserción y eliminación protegidas para usuarios autenticados.
+- **`public.push_subscriptions`**:
+  - Lectura, inserción, actualización y borrado protegidas por RLS. Cada usuario gestiona exclusivamente sus suscripciones (`user_id = auth.uid()`), y los superusuarios disponen de acceso de lectura para despacho de notificaciones (`is_superadmin()`).
 
 ### Triggers y Funciones en PostgreSQL
 - `update_food_votes_count()`: Recalcula automáticamente `foods.votes_count` ante operaciones `INSERT` o `DELETE` en la tabla `votes`.
 - `is_superadmin(check_email)`: Determina de forma segura y centralizada los privilegios administrativos en funciones y políticas RLS.
+- `notify_pending_dish_push()`: Disparador en `foods` ante `INSERT` o `UPDATE` hacia `approval_status = 'pending'`, despachando petición asíncrona mediante `pg_net` hacia la Edge Function `send-push-notification`.
+
+### Edge Functions y Notificaciones Web Push
+- **`send-push-notification`**: Edge Function en Supabase ejecutada en Deno con biblioteca `web-push` y firmas VAPID (RFC 8292). Filtra los suscriptores activos que son superusuarios (`root_admin` / `superadmin`), despacha notificaciones nativas push al dispositivo, y purga automáticamente suscripciones inválidas o dadas de baja (HTTP 404 / 410).
+- **Service Worker (`public/sw.js`)**: Gestiona eventos nativos `push` y `notificationclick`, despertando la aplicación e interactuando con la ruta `/?openModeration=true` para desplegar directamente el panel de aprobación.
 
 ### Suscripciones Realtime Activas
 - `public:foods_changes`: En `App.tsx` para reflejar adiciones, modificaciones y borrados de platos al instante.

@@ -12,6 +12,7 @@ import {
   Bell,
 } from 'lucide-react';
 import { useUser } from '../context/UserContext';
+import { isPushSupported, subscribeUserToPush } from '../lib/pushNotifications';
 
 interface NavbarProps {
   totalFoods: number;
@@ -44,6 +45,18 @@ export const Navbar: React.FC<NavbarProps> = ({
     if (inputName.trim()) {
       setUserName(inputName.trim());
       setIsEditing(false);
+    }
+  };
+
+  const handleBellClick = async () => {
+    onOpenModerationModal?.();
+    // Si el superusuario pulsa por primera vez la campana y no ha configurado notificaciones push, solicitar permiso amablemente
+    if (isSuperUser && isPushSupported() && Notification.permission === 'default' && user) {
+      try {
+        await subscribeUserToPush(user.id, user.email || '');
+      } catch (err) {
+        console.warn('Aviso suscripción inicial push:', err);
+      }
     }
   };
 
@@ -114,7 +127,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               {/* Botón de Moderación con Campana y Contador de Notificaciones (Exclusivo Superusuarios) */}
               {isSuperUser && (
                 <button
-                  onClick={onOpenModerationModal}
+                  onClick={handleBellClick}
                   className={`relative h-7 w-7 min-[380px]:h-8 min-[380px]:w-8 sm:h-9 sm:w-9 rounded-lg sm:rounded-xl transition-all active:scale-95 cursor-pointer flex items-center justify-center flex-shrink-0 ${
                     pendingApprovalsCount > 0
                       ? 'bg-amber-500 hover:bg-amber-600 text-white shadow-md shadow-amber-500/25 ring-2 ring-amber-300'

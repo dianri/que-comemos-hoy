@@ -8,6 +8,7 @@ import { ImagePicker } from './ImagePicker';
 import { sanitizeText, safeImageUrl, SAFE_FALLBACK_IMAGE } from '../lib/sanitize';
 import { generateDishDescription } from '../lib/aiDescription';
 import { showToast } from '../lib/toast';
+import { triggerPushNotification } from '../lib/pushNotifications';
 
 interface AddFoodModalProps {
   isOpen: boolean;
@@ -138,6 +139,12 @@ export const AddFoodModal: React.FC<AddFoodModalProps> = ({
         onFoodAdded(data as Food);
         if (!isSuperUser && requestGlobal) {
           showToast('¡Plato añadido! Solicitud enviada a moderación para el General ⏳', 'info');
+          triggerPushNotification({
+            foodId: data.id,
+            foodName: safeName,
+            userEmail: creatorEmail,
+            creatorName: creatorEmail,
+          });
         } else {
           showToast('¡Plato añadido a la carta con éxito! 🍽️', 'success');
         }

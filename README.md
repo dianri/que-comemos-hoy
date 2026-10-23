@@ -38,6 +38,7 @@ Alojada en **Vercel** y respaldada por **Supabase (PostgreSQL + Realtime)**.
 - **Roles y Jerarquía:** Superusuario Raíz (`dianrie@hotmail.com`), Superusuarios Delegados y Usuarios Estándar.
 - **Panel de Administración de Usuarios:** Métricas en tiempo real, gestión de roles y eliminación de cuentas.
 - **Campana de Moderación y Flujo de Aprobación:** Campana con badge en tiempo real para superusuarios que abre el panel `DishModerationModal` para aprobar o rechazar solicitudes de platos comunitarios (`approval_status`).
+- **🔔 Notificaciones Web Push para Administradores:** Integración completa de Web Push API con claves VAPID, Service Worker en segundo plano, triggers en PostgreSQL y Edge Function (`send-push-notification`). Permite a los superusuarios recibir alertas nativas instantáneas en sus dispositivos móviles y escritorio al proponerse nuevos platos, abriendo directamente la bandeja de moderación.
 - **Gestión Global de Platos (`is_global`):** Los platos nuevos creados por superusuarios no se publican automáticamente en la pantalla general comunitaria por defecto. Cuentan con un interruptor ("Mostrar en la pantalla principal para todos") en los formularios de creación/edición y un botón de acción rápida con icono de globo terráqueo (`Globe`) en las tarjetas y vista de receta para alternar al instante entre estado público o privado/borrador.
 - **Moderación Comunitaria:** Visitantes y usuarios estándar ven exclusivamente recetas globales oficiales en el feed principal, pudiendo solicitar la inclusión de sus platos mediante el interruptor *"Solicitar inclusión en el General"*.
 
@@ -67,6 +68,7 @@ Alojada en **Vercel** y respaldada por **Supabase (PostgreSQL + Realtime)**.
 - **`public.categories`**: Categorías culinarias con soporte de orden personalizado (`display_order`).
 - **`public.user_roles`**: Asignación de roles de seguridad (`root_admin`, `superadmin`, `user`).
 - **`public.game_scores`**: Registro de puntuaciones del minijuego arcade.
+- **`public.push_subscriptions`**: Suscripciones Web Push de administradores para alertas en segundo plano.
 
 ---
 
