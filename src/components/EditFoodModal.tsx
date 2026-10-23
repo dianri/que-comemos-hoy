@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Sparkles, AlertCircle, Save, Check, Loader2, Globe } from 'lucide-react';
+import { X, Sparkles, AlertCircle, Save, Check, Loader2, Globe, Send, Clock } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useUser } from '../context/UserContext';
 import { useCategories } from '../context/CategoryContext';
@@ -29,6 +29,7 @@ export const EditFoodModal: React.FC<EditFoodModalProps> = ({
   const [selectedCategories, setSelectedCategories] = useState<string[]>(['General']);
   const [description, setDescription] = useState('');
   const [isGlobal, setIsGlobal] = useState(false);
+  const [requestGlobal, setRequestGlobal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isGeneratingAi, setIsGeneratingAi] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -66,6 +67,7 @@ export const EditFoodModal: React.FC<EditFoodModalProps> = ({
       setSelectedCategories(getFoodCategories(food));
       setDescription(food.description || '');
       setIsGlobal(Boolean(food.is_global));
+      setRequestGlobal(food.approval_status === 'pending');
       setErrorMsg(null);
     }
   }, [food]);
@@ -116,8 +118,17 @@ export const EditFoodModal: React.FC<EditFoodModalProps> = ({
         description: safeDescription,
       };
 
+      let newApprovalStatus = food.approval_status;
+
       if (isSuperUser) {
         updatePayload.is_global = isGlobal;
+        if (isGlobal) {
+          updatePayload.approval_status = 'approved';
+          newApprovalStatus = 'approved';
+        }
+      } else if (!food.is_global) {
+        newApprovalStatus = requestGlobal ? 'pending' : 'approved';
+        updatePayload.approval_status = newApprovalStatus;
       }
 
       const { data, error } = await supabase
@@ -137,8 +148,15 @@ export const EditFoodModal: React.FC<EditFoodModalProps> = ({
         category: primaryCategory,
         categories: finalCategories,
         description: safeDescription,
+        approval_status: newApprovalStatus,
         ...(isSuperUser ? { is_global: isGlobal } : {}),
       };
+
+      if (!isSuperUser && requestGlobal && food.approval_status !== 'pending') {
+        showToast('¡Solicitud enviada a los moderadores para el General! ⏳', 'info');
+      } else {
+        showToast('¡Plato actualizado con éxito! 🍽️', 'success');
+      }
 
       onFoodUpdated(updatedFoodRecord);
       onClose();
@@ -311,6 +329,53 @@ export const EditFoodModal: React.FC<EditFoodModalProps> = ({
                   aria-hidden="true"
                   className={`pointer-events-none inline-block h-4 sm:h-5 w-4 sm:w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
                     isGlobal ? 'translate-x-4 sm:translate-x-5' : 'translate-x-0'
+                  }`}
+                />
+              </button>
+            </div>
+          )}
+
+          {/* Opción para Usuarios Regulares: Solicitar inclusión en el General */}
+          {!isSuperUser && !food.is_global && (
+            <div className="p-2.5 sm:p-3 bg-orange-50/70 border border-orange-200/80 rounded-xl flex items-center justify-between gap-3">
+              <div className="flex items-center space-x-2.5 min-w-0">
+                <div
+                  className={`p-1.5 rounded-lg flex-shrink-0 transition-colors ${
+                    requestGlobal ? 'bg-orange-500 text-white' : 'bg-slate-200 text-slate-500'
+                  }`}
+                >
+                  {food.approval_status === 'pending' ? (
+                    <Clock className="w-4 h-4" />
+                  ) : (
+                    <Send className="w-4 h-4" />
+                  )}
+                </div>
+                <div className="min-w-0">
+                  <p className="text-xs font-bold text-slate-800 leading-tight">
+                    Solicitar inclusión en el General
+                  </p>
+                  <p className="text-[10px] text-slate-500 leading-tight mt-0.5">
+                    {food.approval_status === 'pending'
+                      ? 'Tu plato está actualmente en revisión por los moderadores.'
+                      : requestGlobal
+                      ? 'Se enviará una solicitud a los moderadores para que aparezca en la carta pública.'
+                      : 'El plato se mantiene privado. Puedes solicitar su publicación cuando quieras.'}
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                role="switch"
+                aria-checked={requestGlobal}
+                onClick={() => setRequestGlobal(!requestGlobal)}
+                className={`relative inline-flex h-5 sm:h-6 w-9 sm:w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                  requestGlobal ? 'bg-orange-500' : 'bg-slate-300'
+                }`}
+              >
+                <span
+                  aria-hidden="true"
+                  className={`pointer-events-none inline-block h-4 sm:h-5 w-4 sm:w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                    requestGlobal ? 'translate-x-4 sm:translate-x-5' : 'translate-x-0'
                   }`}
                 />
               </button>

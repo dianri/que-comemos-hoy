@@ -171,6 +171,14 @@ export const FoodCard: React.FC<FoodCardProps> = ({
               {isSuperUser ? '👑 Admin' : 'Tu receta'}
             </span>
           )}
+          {!isSuperUser && canManage && food.approval_status === 'pending' && (
+            <span
+              className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[9px] font-bold backdrop-blur-md shadow-sm bg-amber-500/95 text-white border border-amber-300/40"
+              title="Solicitud enviada a los moderadores para aparecer en el General"
+            >
+              ⏳ En revisión
+            </span>
+          )}
           {isSuperUser && (
             <button
               type="button"

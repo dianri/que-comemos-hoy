@@ -195,6 +195,12 @@ export const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
               </span>
             )}
 
+            {!isSuperUser && canManage && food.approval_status === 'pending' && (
+              <span className="inline-flex items-center px-2.5 py-0.5 sm:px-3 sm:py-1 rounded-full text-[11px] sm:text-xs font-bold backdrop-blur-md shadow-md bg-amber-500/95 text-white border border-amber-300/40">
+                ⏳ Solicitud en revisión
+              </span>
+            )}
+
             {isSuperUser && (
               <button
                 type="button"

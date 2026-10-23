@@ -11,6 +11,7 @@ export interface Food {
   user_email?: string;
   created_at?: string;
   is_global?: boolean;
+  approval_status?: 'pending' | 'approved' | 'rejected';
 }
 
 /**

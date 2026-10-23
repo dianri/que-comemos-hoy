@@ -26,6 +26,7 @@ import { EditFoodModal } from './components/EditFoodModal';
 import { AuthModal } from './components/AuthModal';
 import { AdminUsersModal } from './components/AdminUsersModal';
 import { RecipeDetailModal } from './components/RecipeDetailModal';
+import { DishModerationModal } from './components/DishModerationModal';
 import { ArcadeModal } from './components/ArcadeModal';
 import { ManageCategoriesModal } from './components/ManageCategoriesModal';
 import { PwaInstallBanner } from './components/PwaInstallBanner';
@@ -326,6 +327,7 @@ function MainApp() {
   const [editingFood, setEditingFood] = useState<Food | null>(null);
   const [selectedRecipe, setSelectedRecipe] = useState<Food | null>(null);
   const [highlightedFoodId, setHighlightedFoodId] = useState<string | null>(null);
+  const [isModerationModalOpen, setIsModerationModalOpen] = useState(false);
 
   // Apertura protegida del modal de añadir plato
   const handleOpenAddFood = () => {
@@ -690,6 +692,71 @@ function MainApp() {
     }
   };
 
+  // Platos pendientes de moderación para la carta general
+  const pendingFoods = useMemo(() => {
+    return foods.filter((f) => f.approval_status === 'pending');
+  }, [foods]);
+
+  // Aprobar plato de la comunidad para la carta general
+  const handleApproveFood = async (food: Food) => {
+    if (!isSuperUser) return;
+
+    setFoods((prev) =>
+      prev.map((f) =>
+        f.id === food.id
+          ? { ...f, is_global: true, approval_status: 'approved' }
+          : f
+      )
+    );
+
+    try {
+      const { error } = await supabase
+        .from('foods')
+        .update({ is_global: true, approval_status: 'approved' })
+        .eq('id', food.id);
+
+      if (error) throw error;
+
+      showToast(`¡"${food.name}" aprobado y publicado en el General! 🌐🎉`, 'success');
+    } catch (err) {
+      console.error('Error al aprobar plato:', err);
+      setFoods((prev) =>
+        prev.map((f) => (f.id === food.id ? food : f))
+      );
+      showToast('Error al aprobar el plato en Supabase.', 'error');
+    }
+  };
+
+  // Rechazar solicitud de plato de la comunidad (permanece privado para su creador)
+  const handleRejectFood = async (food: Food) => {
+    if (!isSuperUser) return;
+
+    setFoods((prev) =>
+      prev.map((f) =>
+        f.id === food.id
+          ? { ...f, is_global: false, approval_status: 'rejected' }
+          : f
+      )
+    );
+
+    try {
+      const { error } = await supabase
+        .from('foods')
+        .update({ is_global: false, approval_status: 'rejected' })
+        .eq('id', food.id);
+
+      if (error) throw error;
+
+      showToast(`Solicitud de "${food.name}" rechazada (permanece como privado) 🔒`, 'info');
+    } catch (err) {
+      console.error('Error al rechazar plato:', err);
+      setFoods((prev) =>
+        prev.map((f) => (f.id === food.id ? food : f))
+      );
+      showToast('Error al rechazar el plato en Supabase.', 'error');
+    }
+  };
+
   // Elección rápida aleatoria directa (abre el Modal de Detalle de Receta)
   const handleQuickPick = () => {
     if (roulettePool.length === 0) {
@@ -753,7 +820,11 @@ function MainApp() {
   return (
     <div className="min-h-screen flex flex-col bg-slate-50 text-slate-800">
       {/* Barra de Navegación */}
-      <Navbar totalFoods={visibleFoods.length} />
+      <Navbar
+        totalFoods={visibleFoods.length}
+        pendingApprovalsCount={pendingFoods.length}
+        onOpenModerationModal={() => setIsModerationModalOpen(true)}
+      />
 
       <main className="flex-1 max-w-6xl w-full mx-auto px-3 sm:px-6 py-3 sm:py-6 space-y-4 sm:space-y-6">
         {/* Banner Hero Central — compacto en móvil */}
@@ -1305,6 +1376,15 @@ function MainApp() {
         isOpen={isAuthModalOpen}
         onClose={closeAuthModal}
         description={authModalReason}
+      />
+
+      <DishModerationModal
+        isOpen={isModerationModalOpen}
+        onClose={() => setIsModerationModalOpen(false)}
+        pendingFoods={pendingFoods}
+        onApproveFood={handleApproveFood}
+        onRejectFood={handleRejectFood}
+        onSelectFood={(food) => setSelectedRecipe(food)}
       />
 
       <AdminUsersModal

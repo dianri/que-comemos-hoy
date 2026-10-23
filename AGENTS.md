@@ -34,6 +34,7 @@ que-comemos-hoy/
 │   │   ├── EditFoodModal.tsx   # Modal para editar platos con autocompletado IA
 │   │   ├── AuthModal.tsx       # Modal de inicio de sesión Magic Link con aviso de spam
 │   │   ├── AdminUsersModal.tsx # Panel de administración de usuarios y roles
+│   │   ├── DishModerationModal.tsx # Panel de moderación y aprobación de solicitudes de platos
 │   │   ├── ManageCategoriesModal.tsx # Gestión y reordenación personalizada de filtros
 │   │   ├── ArcadeModal.tsx     # Minijuego arcade integrado con puntuaciones
 │   │   ├── ImagePicker.tsx     # Selector de fotos y buscador directo en Google Images
@@ -117,12 +118,17 @@ que-comemos-hoy/
 - **Superusuarios Delegados:** Pueden eliminar usuarios del sistema (`delete_user_admin`), pero no pueden alterar roles ni eliminar al superusuario raíz.
 - Lista completa de usuarios con búsqueda dinámica, estados de sesión y acciones protegidas con modal de confirmación.
 
+### `DishModerationModal.tsx` (Panel de Moderación y Aprobación de Platos)
+- Panel accesible para superusuarios desde el icono de campana de notificaciones en la barra de navegación superior.
+- **Campana con Contador en Tiempo Real:** Muestra un badge numérico en rojo con la cantidad exacta de solicitudes pendientes (`approval_status = 'pending'`).
+- Permite revisar los platos propuestos por la comunidad para el General, con acciones directas de **Aprobar** (`is_global = true`, `approval_status = 'approved'`) y **Rechazar** (`is_global = false`, `approval_status = 'rejected'`), sincronizadas en tiempo real con Supabase y confirmación visual instantánea.
+
 ---
 
 ## 5. Base de Datos, Triggers y Realtime
 
 ### Tablas Principales
-- **`public.foods`**: `id`, `name`, `image_url`, `category`, `categories` (TEXT[]), `description`, `votes_count`, `created_by`, `user_id` (UUID), `user_email` (TEXT), `is_global` (BOOLEAN DEFAULT false), `created_at`.
+- **`public.foods`**: `id`, `name`, `image_url`, `category`, `categories` (TEXT[]), `description`, `votes_count`, `created_by`, `user_id` (UUID), `user_email` (TEXT), `is_global` (BOOLEAN DEFAULT false), `approval_status` (TEXT DEFAULT 'approved'), `created_at`.
 - **`public.votes`**: `id`, `food_id` (FK cascade), `user_name`, `user_id` (UUID), `created_at`.
   - Restricción única: `CONSTRAINT unique_user_food_vote UNIQUE (food_id, user_name)`.
 - **`public.user_favorites`**: `id`, `user_id` (UUID FK cascade), `user_email` (TEXT), `food_id` (UUID FK cascade), `created_at`.
@@ -132,7 +138,8 @@ que-comemos-hoy/
 - **`public.game_scores`**: `id`, `user_name`, `score`, `created_at`.
 
 ### Sistema de Visibilidad, Moderación y Gestión Global
-- **Visibilidad del Feed y Control Global (`is_global`):** La pantalla principal comunitaria muestra exclusivamente recetas marcadas como públicas globales (`is_global = true`). Los platos subidos por superusuarios ya no aparecen automáticamente en la carta principal por defecto; requieren ser activados explícitamente como globales. Las recetas privadas o en borrador son visibles únicamente para su propio creador y para superusuarios (para moderación y revisión).
+- **Visibilidad del Feed y Control Global (`is_global` y `approval_status`):** La pantalla principal comunitaria muestra exclusivamente recetas marcadas como públicas globales (`is_global = true`). Los platos subidos por superusuarios ya no aparecen automáticamente en la carta principal por defecto; requieren ser activados explícitamente como globales. Las recetas privadas o en borrador son visibles únicamente para su propio creador y para superusuarios (para moderación y revisión).
+- **Flujo de Solicitud de Inclusión en el General:** Los usuarios regulares disponen de un interruptor ("Solicitar inclusión en el General") en `AddFoodModal` y `EditFoodModal`. Al activarlo, el plato se registra en estado pendiente de revisión (`approval_status = 'pending'`). Los superusuarios reciben una notificación en tiempo real en la campana de la cabecera y pueden aprobar o rechazar la propuesta desde `DishModerationModal`.
 - **Control en Formularios y Acción Rápida en Tarjetas:** Superusuarios cuentan con un interruptor ("Mostrar en la pantalla principal para todos") en `AddFoodModal` y `EditFoodModal`, además de un botón de acción rápida con icono de globo terráqueo (`Globe`) en las tarjetas `FoodCard` y en `RecipeDetailModal` para alternar al instante el estado público/privado con feedback visual y notificación Toast inmediata.
 - **Favoritos Sincronizados en Supabase:** Los favoritos se guardan directamente en `public.user_favorites` asociados a la cuenta del usuario autenticado, asegurando disponibilidad multi-dispositivo inmediata (móvil, tablet, ordenador) con sincronización bidireccional Realtime y caché local optimista en `localStorage` (`que_comemos_favs_<email>`).
 - En la interfaz principal existen las pestañas estándar: **Todos los platos**, **Mis Platos** (los creados por el usuario activo) y **⭐ Favoritos**, junto a la pestaña exclusiva **Platos de otros** (👥) visible únicamente para superusuarios para moderar y explorar las recetas aportadas por el resto de la comunidad.

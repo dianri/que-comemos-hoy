@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Plus, Sparkles, AlertCircle, Check, Loader2, Globe } from 'lucide-react';
+import { X, Plus, Sparkles, AlertCircle, Check, Loader2, Globe, Send } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useUser } from '../context/UserContext';
 import { useCategories } from '../context/CategoryContext';
@@ -27,6 +27,7 @@ export const AddFoodModal: React.FC<AddFoodModalProps> = ({
   const [selectedCategories, setSelectedCategories] = useState<string[]>(['General']);
   const [description, setDescription] = useState('');
   const [isGlobal, setIsGlobal] = useState(false);
+  const [requestGlobal, setRequestGlobal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isGeneratingAi, setIsGeneratingAi] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -104,6 +105,13 @@ export const AddFoodModal: React.FC<AddFoodModalProps> = ({
       const finalCategories = selectedCategories.length > 0 ? selectedCategories : ['General'];
       const primaryCategory = finalCategories[0] || 'General';
 
+      const isRecordGlobal = isSuperUser ? isGlobal : false;
+      const approvalStatus = isSuperUser
+        ? 'approved'
+        : requestGlobal
+        ? 'pending'
+        : 'approved';
+
       const newRecord = {
         name: safeName,
         image_url: finalImage,
@@ -114,7 +122,8 @@ export const AddFoodModal: React.FC<AddFoodModalProps> = ({
         created_by: creatorUid,
         user_id: user?.id,
         user_email: creatorEmail,
-        is_global: isSuperUser ? isGlobal : false,
+        is_global: isRecordGlobal,
+        approval_status: approvalStatus,
       };
 
       const { data, error } = await supabase
@@ -127,11 +136,17 @@ export const AddFoodModal: React.FC<AddFoodModalProps> = ({
 
       if (data) {
         onFoodAdded(data as Food);
+        if (!isSuperUser && requestGlobal) {
+          showToast('¡Plato añadido! Solicitud enviada a moderación para el General ⏳', 'info');
+        } else {
+          showToast('¡Plato añadido a la carta con éxito! 🍽️', 'success');
+        }
         setName('');
         setImageUrl('');
         setDescription('');
         setSelectedCategories(['General']);
         setIsGlobal(false);
+        setRequestGlobal(false);
         onClose();
       }
     } catch (err: unknown) {
@@ -301,6 +316,47 @@ export const AddFoodModal: React.FC<AddFoodModalProps> = ({
                   aria-hidden="true"
                   className={`pointer-events-none inline-block h-4 sm:h-5 w-4 sm:w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
                     isGlobal ? 'translate-x-4 sm:translate-x-5' : 'translate-x-0'
+                  }`}
+                />
+              </button>
+            </div>
+          )}
+
+          {/* Opción para Usuarios Regulares: Solicitar inclusión en el General */}
+          {!isSuperUser && (
+            <div className="p-2.5 sm:p-3 bg-orange-50/70 border border-orange-200/80 rounded-xl flex items-center justify-between gap-3">
+              <div className="flex items-center space-x-2.5 min-w-0">
+                <div
+                  className={`p-1.5 rounded-lg flex-shrink-0 transition-colors ${
+                    requestGlobal ? 'bg-orange-500 text-white' : 'bg-slate-200 text-slate-500'
+                  }`}
+                >
+                  <Send className="w-4 h-4" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-xs font-bold text-slate-800 leading-tight">
+                    Solicitar inclusión en el General
+                  </p>
+                  <p className="text-[10px] text-slate-500 leading-tight mt-0.5">
+                    {requestGlobal
+                      ? 'Se enviará una solicitud a los moderadores para que aparezca en la carta pública comunitaria.'
+                      : 'El plato se guardará en tus platos privados. Podrás solicitarlo más adelante.'}
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                role="switch"
+                aria-checked={requestGlobal}
+                onClick={() => setRequestGlobal(!requestGlobal)}
+                className={`relative inline-flex h-5 sm:h-6 w-9 sm:w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                  requestGlobal ? 'bg-orange-500' : 'bg-slate-300'
+                }`}
+              >
+                <span
+                  aria-hidden="true"
+                  className={`pointer-events-none inline-block h-4 sm:h-5 w-4 sm:w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                    requestGlobal ? 'translate-x-4 sm:translate-x-5' : 'translate-x-0'
                   }`}
                 />
               </button>

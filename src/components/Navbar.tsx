@@ -9,14 +9,21 @@ import {
   ShieldCheck,
   Crown,
   Users,
+  Bell,
 } from 'lucide-react';
 import { useUser } from '../context/UserContext';
 
 interface NavbarProps {
   totalFoods: number;
+  pendingApprovalsCount?: number;
+  onOpenModerationModal?: () => void;
 }
 
-export const Navbar: React.FC<NavbarProps> = ({ totalFoods }) => {
+export const Navbar: React.FC<NavbarProps> = ({
+  totalFoods,
+  pendingApprovalsCount = 0,
+  onOpenModerationModal,
+}) => {
   const {
     userName,
     setUserName,
@@ -102,6 +109,30 @@ export const Navbar: React.FC<NavbarProps> = ({ totalFoods }) => {
           {/* Estado de Supabase Auth */}
           {isAuthenticated ? (
             <div className="flex items-center space-x-1.5 pl-1 border-l border-slate-200">
+              {/* Botón de Moderación con Campana y Contador de Notificaciones (Exclusivo Superusuarios) */}
+              {isSuperUser && (
+                <button
+                  onClick={onOpenModerationModal}
+                  className={`relative p-2 rounded-xl transition-all active:scale-95 cursor-pointer flex items-center justify-center ${
+                    pendingApprovalsCount > 0
+                      ? 'bg-amber-500 hover:bg-amber-600 text-white shadow-md shadow-amber-500/25 ring-2 ring-amber-300'
+                      : 'bg-white hover:bg-slate-100 text-slate-600 border border-slate-200'
+                  }`}
+                  title={
+                    pendingApprovalsCount > 0
+                      ? `${pendingApprovalsCount} ${pendingApprovalsCount === 1 ? 'solicitud pendiente' : 'solicitudes pendientes'} de aprobación de platos`
+                      : 'Bandeja de moderación de platos'
+                  }
+                >
+                  <Bell className="w-3.5 h-3.5" />
+                  {pendingApprovalsCount > 0 && (
+                    <span className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] px-1 bg-red-500 text-white text-[10px] font-black rounded-full flex items-center justify-center ring-2 ring-white shadow-sm animate-pulse">
+                      {pendingApprovalsCount > 99 ? '99+' : pendingApprovalsCount}
+                    </span>
+                  )}
+                </button>
+              )}
+
               {/* Botón de Panel de Administración para Superusuarios */}
               {isSuperUser && (
                 <button
