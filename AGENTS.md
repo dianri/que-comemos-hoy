@@ -68,6 +68,10 @@ que-comemos-hoy/
 
 ## 4. Reglas de Componentes Críticos
 
+### `Navbar.tsx` (Barra Superior y Navegación)
+- **Diseño Responsivo y Distribución Compacta:** El contenedor superior (`header`) mantiene alineación vertical perfectamente centrada y proporciones touch-friendly en móvil y escritorio.
+- **Protección contra Desbordamientos:** El título y el nombre de usuario truncan suavemente con `truncate` según el ancho de pantalla disponible. Los controles y botones de acción (campana de moderación, administración y salida) adoptan dimensiones uniformes y compactas en móvil (`h-7 min-[380px]:h-8 sm:h-9`), garantizando un margen de respiro holgado a la derecha de la pantalla y evitando cualquier desbordamiento horizontal.
+
 ### `RouletteModal.tsx` (La Ruleta)
 - La ruleta se dibuja dinámicamente en un elemento HTML5 Canvas compatible con pantallas Retina (escala 2x).
 - **Gajos Coloreados por Categoría:** Cada porción de la ruleta adopta un color distintivo según su categoría culinaria (tonos tierra para carnes, azulados/marinos para pescados, dorados/ámbar para arroces/pastas, etc.), evitando la monotonía visual.

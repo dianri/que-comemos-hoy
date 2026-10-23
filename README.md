@@ -33,6 +33,7 @@ Alojada en **Vercel** y respaldada por **Supabase (PostgreSQL + Realtime)**.
 - **Solicitud Directa de Inclusión en el General:** Los creadores pueden enviar a moderación sus recetas privadas directamente desde el modal de detalle con un clic en *"Solicitar inclusión en el General"*, con actualización visual instantánea a estado pendiente de aprobación evitando duplicados.
 
 ### 5. 👥 Autenticación sin Contraseña, Moderación y Gestión Global
+- **Barra Superior Compacta y Responsiva:** Cabecera optimizada con márgenes equilibrados, alineación vertical centrada de controles y truncado inteligente para pantallas móviles estrechas, garantizando espacio de respiro y cero desbordamientos.
 - **Enlace Mágico (Magic Link):** Inicio de sesión seguro vía correo sin necesidad de recordar contraseñas, con aviso informativo sobre la carpeta de spam para agilizar el acceso.
 - **Roles y Jerarquía:** Superusuario Raíz (`dianrie@hotmail.com`), Superusuarios Delegados y Usuarios Estándar.
 - **Panel de Administración de Usuarios:** Métricas en tiempo real, gestión de roles y eliminación de cuentas.
