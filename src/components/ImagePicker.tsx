@@ -11,7 +11,7 @@ import {
   RefreshCw,
   Globe,
 } from 'lucide-react';
-import { isSafeImageUrl } from '../lib/sanitize';
+import { isPhotoImageUrl, isSafeImageUrl } from '../lib/sanitize';
 import { FOOD_IMAGES_CATALOG, FoodImageItem } from '../constants/foodImages';
 
 export type { FoodImageItem };
@@ -42,13 +42,217 @@ interface PhotoResult {
 // Caché en memoria para evitar llamadas redundantes a la API
 const searchCache = new Map<string, PhotoResult[]>();
 
-// Palabras no deseadas en títulos de fotos de Wikimedia Commons
+/**
+ * Diccionario de mapeo culinario español -> inglés para optimizar búsquedas
+ * en fuentes internacionales (Wikipedia EN, Unsplash, TheMealDB), obteniendo
+ * fotografías gastronómicas de alta calidad y evitando resultados institucionales o no culinarios.
+ */
+const CULINARY_TRANSLATION_MAP: Record<string, string> = {
+  // Cremas y Sopas
+  'crema de calabacin': 'zucchini cream soup',
+  'crema de calabaza': 'pumpkin cream soup',
+  'crema de verduras': 'vegetable cream soup',
+  'crema de puerros': 'vichyssoise leek soup',
+  'crema de champinones': 'mushroom cream soup',
+  'crema de esparragos': 'asparagus cream soup',
+  'crema de zanahoria': 'carrot cream soup',
+  'sopa de ajo': 'castilian garlic soup',
+  'sopa de fideos': 'chicken noodle soup',
+  'sopa de cebolla': 'french onion soup',
+  'sopa castellana': 'castilian garlic soup with egg',
+  'gazpacho': 'gazpacho cold soup bowl',
+  'gazpacho andaluz': 'andalusian gazpacho',
+  'salmorejo': 'salmorejo cordobes cold soup',
+  'ajoblanco': 'ajoblanco cold almond soup',
+  'vichyssoise': 'vichyssoise cold leek soup',
+  'caldo de pollo': 'chicken broth soup',
+  'caldo de verduras': 'vegetable broth',
+
+  // Legumbres y Guisos
+  'lentejas': 'lentil soup stew',
+  'lentejas con chorizo': 'spanish lentil stew with chorizo',
+  'lentejas estofadas': 'spanish lentil stew',
+  'cocido': 'spanish cocido chickpea stew',
+  'cocido madrileno': 'cocido madrileno chickpea stew',
+  'fabada': 'asturian fabada bean stew',
+  'fabada asturiana': 'fabada asturiana bean stew',
+  'garbanzos': 'chickpea stew',
+  'garbanzos con espinacas': 'chickpeas with spinach',
+  'judias pintas': 'red bean stew',
+  'alubias': 'white bean stew',
+  'potaje': 'spanish vegetable bean stew',
+  'potaje de vigilia': 'chickpea cod spinach stew',
+
+  // Arroces y Pastas
+  'paella': 'spanish paella dish',
+  'paella valenciana': 'traditional valencian paella',
+  'paella de marisco': 'seafood paella dish',
+  'arroz negro': 'black rice with squid ink',
+  'arroz con pollo': 'chicken and rice dish',
+  'arroz caldoso': 'spanish broth rice seafood',
+  'arroz a banda': 'arroz a banda seafood rice',
+  'fideua': 'fideua seafood noodle dish',
+  'risotto': 'creamy mushroom risotto',
+  'risotto de setas': 'mushroom risotto',
+  'espaguetis carbonara': 'spaghetti carbonara pasta',
+  'carbonara': 'pasta carbonara',
+  'espaguetis bolonesa': 'spaghetti bolognese pasta',
+  'bolonesa': 'pasta bolognese meat sauce',
+  'lasana': 'baked meat lasagna',
+  'lasana de carne': 'traditional beef lasagna',
+  'lasana de verduras': 'vegetable lasagna',
+  'macarrones con tomate': 'macaroni pasta with tomato sauce',
+  'canelones': 'baked cannelloni pasta',
+  'gnocchis': 'potato gnocchi dish',
+  'pasta al pesto': 'pesto pasta dish',
+
+  // Carnes
+  'albondigas': 'meatballs in tomato sauce',
+  'albondigas en salsa': 'spanish meatballs in sauce',
+  'pechuga de pollo': 'grilled chicken breast',
+  'pollo asado': 'roasted chicken with potatoes',
+  'pollo al curry': 'chicken curry with rice',
+  'pollo al horno': 'baked roast chicken',
+  'pollo al ajillo': 'garlic chicken dish',
+  'solomillo': 'tenderloin beef steak',
+  'solomillo al pedro ximenez': 'beef tenderloin in wine sauce',
+  'entrecot': 'grilled ribeye beef steak',
+  'hamburguesa': 'gourmet burger with fries',
+  'lomo': 'pork tenderloin steak',
+  'costillas': 'barbecue pork ribs',
+  'carrilleras': 'braised pork cheeks beef cheeks',
+  'rabo de toro': 'oxtail stew traditional dish',
+  'croquetas': 'spanish creamy croquettes',
+  'croquetas de jamon': 'spanish ham croquettes',
+  'san jacobo': 'cordon bleu breaded cutlet',
+  'cachopo': 'asturian cachopo breaded beef',
+
+  // Pescados y Mariscos
+  'salmon': 'grilled salmon fillet with vegetables',
+  'salmon a la plancha': 'pan seared salmon fillet',
+  'salmon al horno': 'baked salmon fillet',
+  'merluza': 'hake fish fillet dish',
+  'merluza a la romana': 'fried hake fish',
+  'merluza en salsa verde': 'hake in green parsley sauce',
+  'bacalao': 'cod fish fillet dish',
+  'bacalao al pil pil': 'cod fish pil pil',
+  'lubina': 'baked sea bass fish',
+  'dorada': 'baked sea bream fish',
+  'atun': 'grilled tuna steak',
+  'pulpo': 'galician style octopus',
+  'pulpo a la gallega': 'pulpo a la gallega octopus',
+  'calamares': 'fried calamari squid rings',
+  'calamares en su tinta': 'squid in black ink sauce',
+  'gambas al ajillo': 'garlic shrimp tapas',
+
+  // Huevos y Tortillas
+  'tortilla de patatas': 'spanish potato omelette',
+  'tortilla espanola': 'spanish potato omelette',
+  'tortilla francesa': 'rolled french omelette',
+  'huevos rotos': 'broken fried eggs with french fries and ham',
+  'huevos fritos con patatas': 'fried eggs with french fries',
+  'huevos rellenos': 'deviled eggs with tuna',
+
+  // Verduras y Ensaladas
+  'ensalada': 'fresh green salad bowl',
+  'ensalada mixta': 'mediterranean salad',
+  'ensalada cesar': 'caesar salad with chicken',
+  'ensaladilla rusa': 'spanish potato salad ensaladilla rusa',
+  'pisto': 'spanish pisto manchego vegetable stew',
+  'escalivada': 'catalan escalivada roasted vegetables',
+  'esparragos': 'grilled green asparagus',
+  'judias verdes': 'green beans with potatoes and olive oil',
+  'alcachofas': 'baked artichokes with ham',
+  'berenjenas rellenas': 'stuffed baked eggplants',
+
+  // Internacionales
+  'pizza': 'artisan italian pizza',
+  'sushi': 'assorted sushi roll plate',
+  'ramen': 'japanese ramen noodle soup bowl',
+  'tacos': 'mexican street tacos',
+  'fajitas': 'sizzling chicken fajitas',
+  'burrito': 'mexican burrito wrap',
+  'ceviche': 'fresh fish ceviche bowl',
+  'guacamole': 'fresh guacamole with tortilla chips',
+  'hummus': 'creamy hummus bowl with pita',
+  'falafel': 'crispy falafel with tahini',
+  'pad thai': 'traditional pad thai noodle plate',
+
+  // Postres
+  'tarta de queso': 'baked cheesecake slice',
+  'cheesecake': 'creamy cheesecake slice',
+  'tarta de manzana': 'apple pie tart slice',
+  'tiramisu': 'italian tiramisu dessert',
+  'brownie': 'chocolate brownie with vanilla ice cream',
+  'flan': 'caramel flan custard dessert',
+  'arroz con leche': 'spanish rice pudding with cinnamon',
+  'torrijas': 'spanish french toast torrijas',
+  'churros': 'spanish churros with hot chocolate',
+};
+
+/**
+ * Obtiene la traducción culinaria al inglés o aplica reglas heurísticas de contexto gastronómico.
+ */
+function getCulinaryEnglishTranslation(query: string): string {
+  const norm = normalizeText(query);
+  if (CULINARY_TRANSLATION_MAP[norm]) {
+    return CULINARY_TRANSLATION_MAP[norm];
+  }
+
+  // Comprobar coincidencia parcial en claves del diccionario
+  for (const [esKey, enVal] of Object.entries(CULINARY_TRANSLATION_MAP)) {
+    if (norm.includes(esKey) || esKey.includes(norm)) {
+      return enVal;
+    }
+  }
+
+  // Heurísticas de prefijo
+  if (norm.startsWith('crema de ')) {
+    const ingredient = norm.replace('crema de ', '').trim();
+    return `${ingredient} cream soup food dish`;
+  }
+  if (norm.startsWith('sopa de ')) {
+    const ingredient = norm.replace('sopa de ', '').trim();
+    return `${ingredient} soup food dish`;
+  }
+  if (norm.startsWith('arroz con ')) {
+    const ingredient = norm.replace('arroz con ', '').trim();
+    return `rice with ${ingredient} dish`;
+  }
+  if (norm.startsWith('ensalada de ')) {
+    const ingredient = norm.replace('ensalada de ', '').trim();
+    return `${ingredient} salad plate`;
+  }
+  if (norm.startsWith('tarta de ') || norm.startsWith('pastel de ')) {
+    const ingredient = norm.replace(/^(tarta|pastel) de /, '').trim();
+    return `${ingredient} pie cake dessert`;
+  }
+
+  return `${query} food recipe meal dish`;
+}
+
+// Palabras estrictamente prohibidas en títulos o URLs (documentos, política, mapas, logos, diagramas)
 const BANNED_TITLE_WORDS = [
+  'decreto',
+  'resolucion',
+  'ordenanza',
+  'boletin',
+  'acta',
+  'ley',
+  'licitacion',
+  'estatuto',
+  'pdf',
+  'documento',
+  'boe',
+  'borme',
+  'ayuntamiento',
+  'tribunal',
   'flag',
   'bandera',
   'map',
   'mapa',
   'logo',
+  'logotipo',
   'escudo',
   'diagram',
   'diagrama',
@@ -58,10 +262,42 @@ const BANNED_TITLE_WORDS = [
   'simbolo',
   'location',
   'ubicacion',
+  'chart',
+  'grafico',
+  'screenshot',
+  'captura',
+  'vector',
+  'esquema',
+  'organigrama',
+  'edificio',
+  'building',
+  'street',
+  'calle',
+  'portrait',
+  'retrato',
+  'person',
+  'people',
+  'politician',
+  'alcalde',
+  'parlamento',
+  'congreso',
 ];
 
 /**
- * Busca fotos en tiempo real consultando fuentes públicas libres y el catálogo local.
+ * Validador estricto para asegurar que una foto candidata sea una fotografía gastronómica legítima
+ * y no un documento, PDF, gráfico, mapa o página no relacionada.
+ */
+function isValidFoodPhotoCandidate(url?: string, title?: string): boolean {
+  if (!url) return false;
+  if (!isPhotoImageUrl(url)) return false;
+
+  const textToCheck = `${url} ${title || ''}`.toLowerCase();
+  return !BANNED_TITLE_WORDS.some((kw) => textToCheck.includes(kw));
+}
+
+/**
+ * Busca fotos en tiempo real consultando fuentes públicas libres y el catálogo local,
+ * acotando estrictamente la búsqueda con palabras clave culinarias y filtros de seguridad.
  */
 async function fetchOnlineFoodPhotos(query: string, signal?: AbortSignal): Promise<PhotoResult[]> {
   const cleanQuery = query.trim();
@@ -74,14 +310,15 @@ async function fetchOnlineFoodPhotos(query: string, signal?: AbortSignal): Promi
 
   const results: PhotoResult[] = [];
   const seenUrls = new Set<string>();
+  const englishQuery = getCulinaryEnglishTranslation(cleanQuery);
 
-  // 1. Si existe clave de Unsplash en variables de entorno, consultar Unsplash API
+  // 1. Unsplash API (si existe clave en variables de entorno, con filtro de contenido alto y términos culinarios)
   const unsplashKey = import.meta.env.VITE_UNSPLASH_ACCESS_KEY;
   const unsplashPromise = unsplashKey
     ? fetch(
         `https://api.unsplash.com/search/photos?query=${encodeURIComponent(
-          cleanQuery
-        )}&per_page=12&client_id=${unsplashKey}`,
+          `${englishQuery} food dish gourmet photography`
+        )}&per_page=12&content_filter=high&orientation=landscape&client_id=${unsplashKey}`,
         { signal }
       )
         .then((r) => (r.ok ? r.json() : null))
@@ -90,11 +327,12 @@ async function fetchOnlineFoodPhotos(query: string, signal?: AbortSignal): Promi
           if (Array.isArray(data?.results)) {
             for (const item of data.results) {
               const url = item.urls?.regular || item.urls?.small;
-              if (url && !seenUrls.has(url)) {
+              const title = item.description || item.alt_description || cleanQuery;
+              if (isValidFoodPhotoCandidate(url, title) && !seenUrls.has(url)) {
                 seenUrls.add(url);
                 list.push({
                   id: `un-${item.id}`,
-                  name: item.description || item.alt_description || cleanQuery,
+                  name: title,
                   url,
                   source: 'unsplash',
                 });
@@ -106,11 +344,12 @@ async function fetchOnlineFoodPhotos(query: string, signal?: AbortSignal): Promi
         .catch(() => [])
     : Promise.resolve([]);
 
-  // 2. Wikipedia en Español (Page Images API - fotos auténticas de platos tradicionales)
+  // 2. Wikipedia en Español (Búsqueda acotada con operadores culinarios para evitar artículos no gastronómicos)
+  const wikiEsQuery = `${cleanQuery} (gastronomía OR plato OR comida OR receta)`;
   const wikiEsPromise = fetch(
     `https://es.wikipedia.org/w/api.php?action=query&generator=search&gsrsearch=${encodeURIComponent(
-      cleanQuery
-    )}&gsrlimit=10&prop=pageimages&pithumbsize=800&format=json&origin=*`,
+      wikiEsQuery
+    )}&gsrlimit=8&prop=pageimages&pithumbsize=800&format=json&origin=*`,
     { signal }
   )
     .then((r) => (r.ok ? r.json() : null))
@@ -120,19 +359,14 @@ async function fetchOnlineFoodPhotos(query: string, signal?: AbortSignal): Promi
         for (const p of Object.values(data.query.pages) as any[]) {
           const src = p.thumbnail?.source;
           const title = (p.title || '').trim();
-          if (src && /\.(jpe?g|png|webp)/i.test(src) && !seenUrls.has(src)) {
-            const isBanned = BANNED_TITLE_WORDS.some((w) =>
-              title.toLowerCase().includes(w)
-            );
-            if (!isBanned) {
-              seenUrls.add(src);
-              list.push({
-                id: `wkes-${p.pageid}`,
-                name: title,
-                url: src,
-                source: 'wikipedia',
-              });
-            }
+          if (isValidFoodPhotoCandidate(src, title) && !seenUrls.has(src)) {
+            seenUrls.add(src);
+            list.push({
+              id: `wkes-${p.pageid}`,
+              name: title,
+              url: src,
+              source: 'wikipedia',
+            });
           }
         }
       }
@@ -140,11 +374,42 @@ async function fetchOnlineFoodPhotos(query: string, signal?: AbortSignal): Promi
     })
     .catch(() => []);
 
-  // 3. Wikimedia Commons (búsqueda directa de fotos de comida)
+  // 3. Wikipedia en Inglés (Excelente fuente para platos internacionales y recetas con traducción culinaria)
+  const wikiEnQuery = `${englishQuery} (dish OR food OR soup OR recipe)`;
+  const wikiEnPromise = fetch(
+    `https://en.wikipedia.org/w/api.php?action=query&generator=search&gsrsearch=${encodeURIComponent(
+      wikiEnQuery
+    )}&gsrlimit=8&prop=pageimages&pithumbsize=800&format=json&origin=*`,
+    { signal }
+  )
+    .then((r) => (r.ok ? r.json() : null))
+    .then((data) => {
+      const list: PhotoResult[] = [];
+      if (data?.query?.pages) {
+        for (const p of Object.values(data.query.pages) as any[]) {
+          const src = p.thumbnail?.source;
+          const title = (p.title || '').trim();
+          if (isValidFoodPhotoCandidate(src, title) && !seenUrls.has(src)) {
+            seenUrls.add(src);
+            list.push({
+              id: `wken-${p.pageid}`,
+              name: title,
+              url: src,
+              source: 'wikipedia',
+            });
+          }
+        }
+      }
+      return list;
+    })
+    .catch(() => []);
+
+  // 4. Wikimedia Commons (búsqueda estricta de fotos de comida bitmap, descartando PDFs o vectores)
+  const commonsQuery = `"${cleanQuery}" (dish OR food OR recipe OR comida) filetype:bitmap -pdf -doc`;
   const commonsPromise = fetch(
     `https://commons.wikimedia.org/w/api.php?action=query&generator=search&gsrnamespace=6&gsrsearch=${encodeURIComponent(
-      cleanQuery
-    )}&gsrlimit=10&prop=imageinfo&iiprop=url&iiurlwidth=800&format=json&origin=*`,
+      commonsQuery
+    )}&gsrlimit=8&prop=imageinfo&iiprop=url&iiurlwidth=800&format=json&origin=*`,
     { signal }
   )
     .then((r) => (r.ok ? r.json() : null))
@@ -158,19 +423,14 @@ async function fetchOnlineFoodPhotos(query: string, signal?: AbortSignal): Promi
             .replace(/^File:/i, '')
             .replace(/\.[^/.]+$/, '')
             .replace(/_/g, ' ');
-          if (src && /\.(jpe?g|png|webp)/i.test(src) && !seenUrls.has(src)) {
-            const isBanned = BANNED_TITLE_WORDS.some((w) =>
-              rawTitle.toLowerCase().includes(w)
-            );
-            if (!isBanned) {
-              seenUrls.add(src);
-              list.push({
-                id: `cm-${p.pageid}`,
-                name: rawTitle,
-                url: src,
-                source: 'commons',
-              });
-            }
+          if (isValidFoodPhotoCandidate(src, rawTitle) && !seenUrls.has(src)) {
+            seenUrls.add(src);
+            list.push({
+              id: `cm-${p.pageid}`,
+              name: rawTitle,
+              url: src,
+              source: 'commons',
+            });
           }
         }
       }
@@ -178,11 +438,10 @@ async function fetchOnlineFoodPhotos(query: string, signal?: AbortSignal): Promi
     })
     .catch(() => []);
 
-  // 4. TheMealDB API (fotos de platos internacionales y cocina casera)
+  // 5. TheMealDB API (fotos de recetas internacionales con término en inglés)
+  const mealDbTerm = englishQuery.split(' ')[0] || cleanQuery;
   const mealDbPromise = fetch(
-    `https://www.themealdb.com/api/json/v1/1/search.php?s=${encodeURIComponent(
-      cleanQuery
-    )}`,
+    `https://www.themealdb.com/api/json/v1/1/search.php?s=${encodeURIComponent(mealDbTerm)}`,
     { signal }
   )
     .then((r) => (r.ok ? r.json() : null))
@@ -191,7 +450,7 @@ async function fetchOnlineFoodPhotos(query: string, signal?: AbortSignal): Promi
       if (Array.isArray(data?.meals)) {
         for (const m of data.meals) {
           const src = m.strMealThumb;
-          if (src && !seenUrls.has(src)) {
+          if (isValidFoodPhotoCandidate(src, m.strMeal) && !seenUrls.has(src)) {
             seenUrls.add(src);
             list.push({
               id: `mdb-${m.idMeal}`,
@@ -207,14 +466,15 @@ async function fetchOnlineFoodPhotos(query: string, signal?: AbortSignal): Promi
     .catch(() => []);
 
   // Ejecución en paralelo de todas las fuentes
-  const [unsplashList, wikiList, commonsList, mealList] = await Promise.all([
+  const [unsplashList, wikiEsList, wikiEnList, commonsList, mealList] = await Promise.all([
     unsplashPromise,
     wikiEsPromise,
+    wikiEnPromise,
     commonsPromise,
     mealDbPromise,
   ]);
 
-  results.push(...unsplashList, ...wikiList, ...commonsList, ...mealList);
+  results.push(...unsplashList, ...wikiEsList, ...wikiEnList, ...commonsList, ...mealList);
 
   // Almacenar en caché para respuestas instantáneas futuras
   if (results.length > 0) {
@@ -246,7 +506,6 @@ export const ImagePicker: React.FC<ImagePickerProps> = ({
 
     if (currentName !== prevName) {
       prevFoodNameRef.current = foodName;
-      // Si el usuario no ha forzado una búsqueda manual o si el campo estaba sincronizado
       if (!hasManuallyEdited || !searchQuery.trim() || searchQuery === prevName) {
         setSearchQuery(currentName);
         setHasManuallyEdited(false);
@@ -258,7 +517,6 @@ export const ImagePicker: React.FC<ImagePickerProps> = ({
   const localCatalogMatches = useMemo<PhotoResult[]>(() => {
     const qNorm = normalizeText(searchQuery);
     if (!qNorm) {
-      // Si no hay búsqueda, devolver las 16 primeras fotos más apetitosas del catálogo
       return FOOD_IMAGES_CATALOG.slice(0, 16).map((item) => ({
         id: `cat-${item.id}`,
         name: item.name,
@@ -340,11 +598,13 @@ export const ImagePicker: React.FC<ImagePickerProps> = ({
     return combined;
   }, [apiPhotos, localCatalogMatches]);
 
-  // Función para abrir Google Imágenes con el término de búsqueda
+  // Función para abrir Google Imágenes con términos culinarios estrictos, SafeSearch y formato fotográfico
   const handleOpenGoogleImages = () => {
     const term = foodName.trim() || searchQuery.trim() || 'comida casera';
-    const query = encodeURIComponent(`${term} receta comida`);
-    const googleImagesUrl = `https://www.google.com/search?tbm=isch&q=${query}`;
+    const refinedQuery = `"${term}" receta plato comida -filetype:pdf -filetype:doc -site:boe.es -site:gob.es`;
+    const query = encodeURIComponent(refinedQuery);
+    // safe=active activa SafeSearch estricto en Google; tbs=itp:photo exige que sean exclusivamente fotografías
+    const googleImagesUrl = `https://www.google.com/search?tbm=isch&q=${query}&safe=active&tbs=itp:photo`;
     window.open(googleImagesUrl, '_blank', 'noopener,noreferrer');
   };
 
@@ -419,7 +679,7 @@ export const ImagePicker: React.FC<ImagePickerProps> = ({
                 placeholder={
                   foodName.trim()
                     ? `Buscando fotos de "${foodName.trim()}"...`
-                    : 'Escribe el plato (rabo de toro, carbonara, fabada...)'
+                    : 'Escribe el plato (crema de calabacín, paella, carbonara...)'
                 }
                 className="w-full h-9 pl-9 pr-8 py-1.5 rounded-xl border border-slate-200 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/40 bg-slate-50/70"
               />
@@ -461,10 +721,10 @@ export const ImagePicker: React.FC<ImagePickerProps> = ({
           {displayedPhotos.length === 0 ? (
             <div className="py-5 px-3 text-center bg-slate-50 rounded-xl border border-dashed border-slate-200 space-y-2">
               <p className="text-xs font-semibold text-slate-700">
-                No encontramos fotos en directo para "{searchQuery}"
+                No encontramos fotos gastronómicas para "{searchQuery}"
               </p>
               <p className="text-[11px] text-slate-500 max-w-sm mx-auto">
-                Prueba con otro término similar, o busca directamente en Google Imágenes y pega el enlace.
+                Prueba con otro término similar o abre Google Imágenes con filtro fotográfico y copia la dirección de la foto.
               </p>
               <button
                 type="button"
@@ -509,7 +769,6 @@ export const ImagePicker: React.FC<ImagePickerProps> = ({
                         loading="lazy"
                         className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105 bg-slate-100"
                         onError={(e) => {
-                          // Si una foto remota falla al cargar, ocultar la tarjeta rota
                           const target = e.currentTarget.parentElement;
                           if (target) target.style.display = 'none';
                         }}
@@ -547,7 +806,7 @@ export const ImagePicker: React.FC<ImagePickerProps> = ({
         </div>
       ) : (
         <div className="space-y-3 animate-fade-in">
-          {/* Botón para buscar en Google Imágenes */}
+          {/* Botón para buscar en Google Imágenes con SafeSearch y filtro fotográfico */}
           <div className="flex items-center justify-between gap-2 p-2.5 bg-gradient-to-r from-orange-50 via-amber-50 to-orange-50/40 border border-orange-200/80 rounded-xl">
             <div className="flex items-center space-x-2 text-xs text-orange-950 font-semibold min-w-0">
               <span className="text-base flex-shrink-0">🔍</span>
@@ -561,7 +820,7 @@ export const ImagePicker: React.FC<ImagePickerProps> = ({
               type="button"
               onClick={handleOpenGoogleImages}
               className="flex-shrink-0 px-3 py-1.5 rounded-lg bg-orange-500 hover:bg-orange-600 active:scale-95 text-white font-bold text-xs flex items-center space-x-1.5 shadow-xs transition-all"
-              title="Abrir Google Imágenes en una pestaña nueva"
+              title="Abrir Google Imágenes filtrado por recetas fotográficas en una pestaña nueva"
             >
               <span>Buscar en Google</span>
               <ExternalLink className="w-3.5 h-3.5" />
@@ -575,13 +834,17 @@ export const ImagePicker: React.FC<ImagePickerProps> = ({
               type="url"
               value={selectedUrl}
               onChange={(e) => {
-                const rawUrl = e.target.value;
+                const rawUrl = e.target.value.trim();
                 setPreviewError(false);
-                if (!rawUrl || isSafeImageUrl(rawUrl)) {
+                if (!rawUrl) {
+                  onSelectUrl('');
+                } else if (isPhotoImageUrl(rawUrl)) {
                   onSelectUrl(rawUrl);
-                } else if (rawUrl.startsWith('https://')) {
-                  onSelectUrl(rawUrl);
-                } else if (rawUrl.length > 0) {
+                } else if (isSafeImageUrl(rawUrl)) {
+                  // Empieza por https pero no parece foto o es documento/página
+                  setPreviewError(true);
+                  onSelectUrl('');
+                } else {
                   setPreviewError(true);
                   onSelectUrl('');
                 }
@@ -595,7 +858,7 @@ export const ImagePicker: React.FC<ImagePickerProps> = ({
             <div className="flex items-center space-x-2 text-xs text-red-600 bg-red-50 border border-red-200 rounded-xl px-3 py-2">
               <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0" />
               <span>
-                Solo se permiten URLs seguras que comiencen por <strong>https://</strong>.
+                Introduce una URL segura de imagen válida (<strong>.jpg, .png o .webp</strong>). No se admiten documentos PDF ni páginas web.
               </span>
             </div>
           )}
@@ -619,7 +882,7 @@ export const ImagePicker: React.FC<ImagePickerProps> = ({
                 <AlertTriangle className="w-4 h-4 mb-0.5 text-red-500" />
                 <p className="text-[11px] font-bold">No pudimos cargar la vista previa</p>
                 <p className="text-[9px] text-red-500/90 mt-0.5 max-w-xs">
-                  Asegúrate de que la dirección sea una imagen accesible (.jpg, .png o .webp).
+                  Asegúrate de que la dirección sea una imagen accesible (.jpg, .png o .webp) y no un documento o enlace protegido.
                 </p>
               </div>
             ) : (

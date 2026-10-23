@@ -101,7 +101,13 @@ que-comemos-hoy/
 ### `AddFoodModal.tsx` y `EditFoodModal.tsx` (Creación y Edición de Platos)
 - **Selección Múltiple de Categorías:** Permite asignar una o varias categorías a cada plato mediante chips interactivos.
 - **Autocompletado con IA para Descripción Corta:** Botón con icono de destellos ✨ (`Sparkles` / `Loader2`) que genera descripciones gastronómicas atractivas y concisas mediante el servicio de cascada en `aiDescription.ts`. El texto es completamente editable por el usuario.
-- **ImagePicker integrado:** Catálogo de fotos y acceso directo a Google Images prefiltrado por el nombre del plato.
+- **ImagePicker integrado:** Catálogo de fotos, buscador en línea y acceso directo a Google Images con filtrado culinario y fotográfico avanzado.
+
+### `ImagePicker.tsx` y Sanitización de Imágenes (`src/lib/sanitize.ts`)
+- **Refinamiento Culinario de Consultas:** Nunca se busca el término gastronómico en bruto. Se añaden automáticamente palabras clave contextuales (`"receta"`, `"plato"`, `"comida"`) y operadores negativos para descartar de raíz documentos legales, normativas institucionales o boletines oficiales (`-filetype:pdf -filetype:doc -site:boe.es -site:gob.es`).
+- **Búsqueda Fotográfica Segura en Google:** La acción "Buscar en Google" incluye parámetros restrictivos estrictos: SafeSearch activado (`safe=active`) y filtro de tipo de imagen fotográfica (`tbs=itp:photo`), forzando al motor a devolver únicamente fotografías reales de comida y nunca documentos o logotipos.
+- **Diccionario Gastronómico y Traducción al Inglés:** Incorpora un diccionario culinario exhaustivo (`CULINARY_TRANSLATION_MAP`) y reglas heurísticas de prefijo (`crema de X` -> `X cream soup`, etc.) para consultar fuentes internacionales de alta calidad en inglés (Wikipedia EN PageImages, TheMealDB, Unsplash con `content_filter=high`), garantizando fotos apetitosas para platos como "crema de calabacín", "lentejas", "albóndigas", etc.
+- **Filtros de Seguridad y Tipos de Archivo Estrictos:** `isPhotoImageUrl` y `isSafeImageUrl` descartan extensiones no fotográficas (`.pdf`, `.docx`, `.txt`, etc.) y dominios gubernamentales/sedes electrónicas, validando exclusivamente formatos raster válidos (`.jpg`, `.jpeg`, `.png`, `.webp`, `.avif`) o CDNs fotográficos de confianza, tanto en resultados automáticos como en la entrada de URL manual.
 
 ### `ManageCategoriesModal.tsx` (Gestor de Categorías y Filtros)
 - Panel accesible para superusuarios para crear nuevas categorías, eliminarlas o **reordenarlas personalmente** (subir/bajar).

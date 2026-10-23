@@ -18,7 +18,7 @@ Alojada en **Vercel** y respaldada por **Supabase (PostgreSQL + Realtime)**.
 - **Múltiples Categorías por Plato:** Un plato puede pertenecer simultáneamente a varias categorías (ej. *Italiana*, *Pasta*, *Cenas Rápidas*).
 - **⭐ Favoritos Sincronizados en la Nube:** Los platos favoritos se guardan en Supabase (`public.user_favorites`) vinculados a tu cuenta, estando disponibles al instante en móvil, tablet y ordenador sin perder sincronización.
 - **✨ Autocompletado de Descripciones con IA:** Al crear o editar un plato, pulsa el botón mágico ✨ para generar una descripción culinaria concisa, apetitosa e irresistible gracias a su arquitectura en cascada con tolerancia a fallos (Gemini Flash, Pollinations AI, Wikipedia REST API y motor heurístico gastronómico).
-- **🖼️ Selector de Fotos y Buscador en Google:** Catálogo integrado de imágenes en alta resolución con acceso directo "🔍 Buscar en Google" que abre Google Images con el nombre del plato prefiltrado.
+- **🖼️ Selector de Fotos Inteligente con Refinamiento Culinario:** Catálogo integrado en alta resolución y buscador multifuente (Wikipedia en español e inglés, TheMealDB, Unsplash) con refinamiento contextual automático (`"receta"`, `"plato"`, `"comida"`), diccionario de traducción gastronómica al inglés y descarte estricto de documentos (`.pdf`, `.doc`, sedes electrónicas). Acceso directo a Google Images configurado con SafeSearch estricto y filtro de fotografía (`tbs=itp:photo`).
 
 ### 3. 🔍 Filtros Horizontales Drag-to-Scroll y Reordenación
 - **Desplazamiento por Arrastre (Drag-to-Scroll):** La barra de filtros permite navegar fluidamente haciendo clic izquierdo y arrastrando el ratón en escritorio o deslizando con el dedo en móviles.
