@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Heart, Sparkles, Trash2, Star, Pencil, ChefHat, Globe } from 'lucide-react';
+import { Heart, Sparkles, Trash2, Star, Pencil, ChefHat, Globe, Lock } from 'lucide-react';
 import { Food, getFoodCategories, getFoodCreatorDisplayName } from '../types';
 import { useUser } from '../context/UserContext';
 import { safeImageUrl } from '../lib/sanitize';
@@ -149,12 +149,30 @@ export const FoodCard: React.FC<FoodCardProps> = ({
               {isSuperUser ? '👑 Admin' : 'Tu receta'}
             </span>
           )}
-          {!isSuperUser && canManage && food.approval_status === 'pending' && (
+          {!isSuperUser && canManage && food.is_global && (
+            <span
+              className="inline-flex items-center space-x-1 px-1.5 py-0.5 rounded-full text-[9px] font-bold backdrop-blur-md shadow-sm bg-emerald-600/90 text-white border border-emerald-400/40"
+              title="Este plato es público y visible para toda la comunidad en la carta general"
+            >
+              <Globe className="w-2.5 h-2.5" />
+              <span>Público</span>
+            </span>
+          )}
+          {!isSuperUser && canManage && !food.is_global && food.approval_status === 'pending' && (
             <span
               className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[9px] font-bold backdrop-blur-md shadow-sm bg-amber-500/95 text-white border border-amber-300/40"
               title="Solicitud enviada a los moderadores para aparecer en el General"
             >
               ⏳ En revisión
+            </span>
+          )}
+          {!isSuperUser && canManage && !food.is_global && food.approval_status !== 'pending' && (
+            <span
+              className="inline-flex items-center space-x-0.5 px-1.5 py-0.5 rounded-full text-[9px] font-bold backdrop-blur-md shadow-sm bg-slate-700/85 text-white border border-slate-500/40"
+              title="Plato privado (solo visible para ti)"
+            >
+              <Lock className="w-2.5 h-2.5" />
+              <span>Privado</span>
             </span>
           )}
           {isSuperUser && (

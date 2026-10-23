@@ -18,6 +18,7 @@ import {
   Send,
   Clock,
   Loader2,
+  Lock,
 } from 'lucide-react';
 import { Food, getFoodCategories, getFoodCreatorDisplayName } from '../types';
 import { useUser } from '../context/UserContext';
@@ -251,6 +252,16 @@ export const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
               </span>
             )}
 
+            {!isSuperUser && isFoodOwner && food.is_global && (
+              <span
+                className="inline-flex items-center space-x-1 px-2.5 py-0.5 sm:px-3 sm:py-1 rounded-full text-[11px] sm:text-xs font-bold backdrop-blur-md shadow-md bg-emerald-600/90 text-white border border-emerald-400/40"
+                title="Plato aprobado y publicado en la carta general para toda la comunidad"
+              >
+                <Globe className="w-3 h-3" />
+                <span>Público en carta</span>
+              </span>
+            )}
+
             {!isSuperUser && isFoodOwner && !food.is_global && (
               isPending ? (
                 <span className="inline-flex items-center space-x-1 px-2.5 py-0.5 sm:px-3 sm:py-1 rounded-full text-[11px] sm:text-xs font-bold backdrop-blur-md shadow-md bg-amber-500/95 text-white border border-amber-300/40">
@@ -258,20 +269,29 @@ export const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
                   <span>⏳ Solicitud en revisión</span>
                 </span>
               ) : (
-                <button
-                  type="button"
-                  onClick={handleRequestGlobal}
-                  disabled={isRequestingGlobal}
-                  className="inline-flex items-center space-x-1 px-2.5 py-0.5 sm:px-3 sm:py-1 rounded-full text-[11px] sm:text-xs font-bold backdrop-blur-md shadow-md bg-orange-600/95 hover:bg-orange-700 text-white border border-orange-400/40 active:scale-95 transition-transform cursor-pointer"
-                  title="Solicitar inclusión en el General"
-                >
-                  {isRequestingGlobal ? (
-                    <Loader2 className="w-3 h-3 animate-spin" />
-                  ) : (
-                    <Send className="w-3 h-3" />
-                  )}
-                  <span>Solicitar inclusión</span>
-                </button>
+                <div className="inline-flex items-center gap-1.5">
+                  <span
+                    className="inline-flex items-center space-x-1 px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-full text-[11px] sm:text-xs font-bold backdrop-blur-md shadow-md bg-slate-700/85 text-white border border-slate-500/40"
+                    title="Plato privado (solo visible para ti)"
+                  >
+                    <Lock className="w-3 h-3" />
+                    <span>Privado</span>
+                  </span>
+                  <button
+                    type="button"
+                    onClick={handleRequestGlobal}
+                    disabled={isRequestingGlobal}
+                    className="inline-flex items-center space-x-1 px-2.5 py-0.5 sm:px-3 sm:py-1 rounded-full text-[11px] sm:text-xs font-bold backdrop-blur-md shadow-md bg-orange-600/95 hover:bg-orange-700 text-white border border-orange-400/40 active:scale-95 transition-transform cursor-pointer"
+                    title="Solicitar inclusión en el General"
+                  >
+                    {isRequestingGlobal ? (
+                      <Loader2 className="w-3 h-3 animate-spin" />
+                    ) : (
+                      <Send className="w-3 h-3" />
+                    )}
+                    <span>Solicitar inclusión</span>
+                  </button>
+                </div>
               )
             )}
 
@@ -534,6 +554,33 @@ export const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
               </div>
             </div>
           )}
+
+          {/* Bloque de confirmación para el creador: Plato publicado en el General */}
+          {!isSuperUser && isFoodOwner && food.is_global && (
+            <div className="p-3.5 sm:p-4 rounded-2xl border bg-gradient-to-r from-emerald-50/90 via-teal-50/60 to-emerald-50/90 border-emerald-200/80 shadow-2xs">
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-start sm:items-center space-x-3 min-w-0">
+                  <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center flex-shrink-0 bg-emerald-500 text-white shadow-md shadow-emerald-500/20">
+                    <Globe className="w-5 h-5" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-xs sm:text-sm font-extrabold text-slate-800">
+                      ¡Tu plato está publicado en la carta general! 🌐🎉
+                    </p>
+                    <p className="text-[11px] sm:text-xs text-slate-500 font-medium leading-relaxed mt-0.5">
+                      Esta receta ya está aprobada y es visible para toda la comunidad en la pantalla principal. Cualquier comensal puede verla, votarla y seleccionarla en la ruleta.
+                    </p>
+                  </div>
+                </div>
+                <div className="flex-shrink-0 hidden sm:block">
+                  <span className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-emerald-100 text-emerald-800 text-xs font-bold border border-emerald-300/60">
+                    <Check className="w-3.5 h-3.5 text-emerald-700 stroke-[2.5]" />
+                    <span>Público</span>
+                  </span>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Pie de acciones */}
@@ -550,6 +597,14 @@ export const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
                 <Pencil className="w-3.5 h-3.5" />
                 <span className="hidden sm:inline">Modificar</span>
               </button>
+            )}
+
+            {!isSuperUser && isFoodOwner && food.is_global && (
+              <span className="inline-flex items-center space-x-1 px-3 py-2 rounded-xl bg-emerald-50 text-emerald-800 text-xs font-bold border border-emerald-200">
+                <Globe className="w-3.5 h-3.5 text-emerald-600" />
+                <span className="hidden sm:inline">Público en carta</span>
+                <span className="sm:hidden">Público</span>
+              </span>
             )}
 
             {!isSuperUser && isFoodOwner && !food.is_global && (

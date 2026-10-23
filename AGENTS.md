@@ -83,6 +83,7 @@ que-comemos-hoy/
 - Soporte para **múltiples categorías por plato**: se visualizan las etiquetas pertinentes en la tarjeta.
 - Contador de votos reactivo gracias a Supabase Realtime y el trigger de base de datos.
 - Botón de favoritos (estrella ⭐) sincronizado en tiempo real con Supabase (`public.user_favorites`).
+- **Insignias de Estado para Creadores:** Muestra de forma transparente el estado del plato para su propietario con insignias específicas: "Público" (verde esmeralda con icono `Globe`), "⏳ En revisión" (ámbar con icono `Clock`), o "Privado" (pizarra con icono `Lock`).
 - **Z-Index y Capas:** El badge flotante superior (`¡Plato Seleccionado!`) y las etiquetas/botones de la tarjeta se posicionan en `z-10`. Cuando la tarjeta está destacada (`isHighlighted`), la categoría y las acciones de voto/favorito se desplazan suavemente hacia abajo (`top-8 sm:top-10`) para prevenir solapamientos visuales. El contenedor sticky superior de filtros/buscador en `App.tsx` usa `z-30` y la barra de navegación `z-40` para garantizar que los elementos de las tarjetas pasen siempre por detrás al hacer scroll.
 - **Sincronización:** Estado `imgSrc` reactivo al cambio de `food.image_url` mediante `useEffect` para reflejar ediciones de forma instantánea.
 
@@ -90,6 +91,7 @@ que-comemos-hoy/
 - Modal centralizado de alta resolución abierto al hacer clic en cualquier tarjeta, al pulsar "Elección Rápida" o tras pulsar "¡A cocinar!" en la Ruleta.
 - Muestra fotografía HD, todas las categorías asignadas, nombre del plato, descripción completa de la receta, popularidad/votos y botón para favoritos/likes.
 - **Identidad del Creador y Atribución Legítima:** Muestra el chef o autor legítimo de la receta formateado con elegancia (`getFoodCreatorDisplayName`, ej. "Chef Belenroll", "Chef Dianrie") a partir del `user_email` y `created_by` del registro en Supabase, indicando el correo electrónico del creador en el modal de detalle para trazabilidad, y reservando "Receta Oficial" exclusivamente para platos del sistema sin autor específico.
+- **Confirmación de Plato Público:** Cuando una receta del usuario ya está aprobada y es global (`is_global = true`), visualiza la insignia "Público en carta" en la cabecera y el pie, junto a un bloque de confirmación visual verde esmeralda destacando su disponibilidad comunitaria.
 - **Acción Destacada de Solicitud de Inclusión en el General:** Para platos privados del creador autenticado (`!food.is_global`), integra un bloque visual destacado con botón interactivo ("Solicitar inclusión en el General" / "Enviar a moderación") y píldora superior. Al pulsarlo, actualiza el estado en Supabase a `approval_status = 'pending'`, despacha Toast confirmatorio y conmuta de forma reactiva a estado deshabilitado ("Solicitud pendiente de aprobación" con icono `Clock`) para prevenir envíos duplicados.
 
 ### `AddFoodModal.tsx` y `EditFoodModal.tsx` (Creación y Edición de Platos)
