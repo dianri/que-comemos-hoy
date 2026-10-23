@@ -617,7 +617,7 @@ export const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
                 className="flex items-center space-x-1.5 px-3 py-2 rounded-xl border border-slate-200 text-slate-600 hover:text-orange-600 hover:bg-white text-xs font-bold transition-all shadow-xs active:scale-95 cursor-pointer"
               >
                 <Pencil className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline">Modificar</span>
+                <span>Modificar</span>
               </button>
             )}
 
