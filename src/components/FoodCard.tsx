@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Heart, Sparkles, Trash2, Star, Pencil, ChefHat, Share2, Check } from 'lucide-react';
+import { Heart, Sparkles, Trash2, Star, Pencil, ChefHat, Share2, Check, Globe } from 'lucide-react';
 import { Food, getFoodCategories } from '../types';
 import { useUser } from '../context/UserContext';
 import { safeImageUrl } from '../lib/sanitize';
@@ -12,6 +12,7 @@ interface FoodCardProps {
   onEdit?: (food: Food) => void;
   onSelect?: (food: Food) => void;
   onOptimisticVote?: (foodId: string, delta: number) => void;
+  onToggleGlobal?: (food: Food) => void;
   isHighlighted?: boolean;
 }
 
@@ -41,6 +42,7 @@ export const FoodCard: React.FC<FoodCardProps> = ({
   onEdit,
   onSelect,
   onOptimisticVote,
+  onToggleGlobal,
   isHighlighted = false,
 }) => {
   const {
@@ -135,6 +137,12 @@ export const FoodCard: React.FC<FoodCardProps> = ({
     }
   };
 
+  const handleToggleGlobal = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!isSuperUser) return;
+    onToggleGlobal?.(food);
+  };
+
   return (
     <div
       onClick={() => onSelect?.(food)}
@@ -198,6 +206,25 @@ export const FoodCard: React.FC<FoodCardProps> = ({
             >
               {isSuperUser ? '👑 Admin' : 'Tu receta'}
             </span>
+          )}
+          {isSuperUser && (
+            <button
+              type="button"
+              onClick={handleToggleGlobal}
+              className={`inline-flex items-center space-x-1 px-1.5 py-0.5 rounded-full text-[9px] font-bold backdrop-blur-md shadow-sm transition-transform active:scale-90 cursor-pointer ${
+                food.is_global
+                  ? 'bg-emerald-600/90 hover:bg-emerald-700 text-white border border-emerald-400/40'
+                  : 'bg-amber-600/90 hover:bg-amber-700 text-white border border-amber-400/40'
+              }`}
+              title={
+                food.is_global
+                  ? 'Público en pantalla principal (clic para ocultar/hacer privado)'
+                  : 'Privado / Oculto (clic para hacer público a todos)'
+              }
+            >
+              <Globe className="w-2.5 h-2.5" />
+              <span>{food.is_global ? 'Público' : 'Privado'}</span>
+            </button>
           )}
         </div>
 
@@ -286,6 +313,27 @@ export const FoodCard: React.FC<FoodCardProps> = ({
           {/* Acciones de gestión protegidas: solo propietario o superusuario */}
           {canManage && (
             <div className="flex items-center space-x-1">
+              {isSuperUser && (
+                <button
+                  onClick={handleToggleGlobal}
+                  className={`p-1 sm:px-2 rounded-lg transition-all flex items-center space-x-1 text-xs font-semibold ${
+                    food.is_global
+                      ? 'text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200'
+                      : 'text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200'
+                  }`}
+                  title={
+                    food.is_global
+                      ? 'Plato público: visible para todos en la carta principal. Haz clic para ocultarlo.'
+                      : 'Plato privado: oculto para el público. Haz clic para mostrarlo a todos.'
+                  }
+                >
+                  <Globe className="w-3.5 h-3.5 flex-shrink-0" />
+                  <span className="text-[10px] font-bold hidden sm:inline">
+                    {food.is_global ? 'Público' : 'Privado'}
+                  </span>
+                </button>
+              )}
+
               {onEdit && (
                 <button
                   onClick={(e) => {

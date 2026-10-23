@@ -31,11 +31,12 @@ Alojada en **Vercel** y respaldada por **Supabase (PostgreSQL + Realtime)**.
 - Fotografía en alta resolución, descripción gastronómica completa, etiquetas de categorías, contador de votos y botón directo para añadir a favoritos o compartir mediante la Web Share API.
 - **Privacidad estricta:** Oculta direcciones de correo electrónico, mostrando nombres de chef amigables.
 
-### 5. 👥 Autenticación sin Contraseña y Moderación
+### 5. 👥 Autenticación sin Contraseña, Moderación y Gestión Global
 - **Enlace Mágico (Magic Link):** Inicio de sesión seguro vía correo sin necesidad de recordar contraseñas, con aviso informativo sobre la carpeta de spam para agilizar el acceso.
 - **Roles y Jerarquía:** Superusuario Raíz (`dianrie@hotmail.com`), Superusuarios Delegados y Usuarios Estándar.
 - **Panel de Administración de Usuarios:** Métricas en tiempo real, gestión de roles y eliminación de cuentas.
-- **Moderación Automática:** Los visitantes ven platos oficiales o de superusuarios; los usuarios ven adicionalmente sus propias creaciones.
+- **Gestión Global de Platos (`is_global`):** Los platos nuevos creados por superusuarios no se publican automáticamente en la pantalla general comunitaria por defecto. Cuentan con un interruptor ("Mostrar en la pantalla principal para todos") en los formularios de creación/edición y un botón de acción rápida con icono de globo terráqueo (`Globe`) en las tarjetas y vista de receta para alternar al instante entre estado público o privado/borrador.
+- **Moderación Comunitaria:** Visitantes y usuarios estándar ven exclusivamente recetas globales oficiales en el feed principal, pudiendo acceder a sus propias creaciones en "Mis Platos".
 
 ### 6. 📱 Experiencia PWA e Instalación Móvil/Escritorio
 - **Web App Progresiva (PWA):** Manifiesto web, iconos adaptativos y Service Worker con estrategia de caché offline.
@@ -57,7 +58,7 @@ Alojada en **Vercel** y respaldada por **Supabase (PostgreSQL + Realtime)**.
 
 ## 🗄️ Esquema de Base de Datos (Supabase)
 
-- **`public.foods`**: Platos de la carta (`name`, `image_url`, `categories` TEXT[], `description`, `votes_count`, `user_id`, `user_email`).
+- **`public.foods`**: Platos de la carta (`name`, `image_url`, `categories` TEXT[], `description`, `votes_count`, `user_id`, `user_email`, `is_global` BOOLEAN).
 - **`public.votes`**: Registro de votos en tiempo real por usuario y plato.
 - **`public.user_favorites`**: Platos favoritos sincronizados en la nube por usuario autenticado.
 - **`public.categories`**: Categorías culinarias con soporte de orden personalizado (`display_order`).

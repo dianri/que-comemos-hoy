@@ -14,6 +14,7 @@ import {
   BookOpen,
   ExternalLink,
   ShoppingBag,
+  Globe,
 } from 'lucide-react';
 import { Food, getFoodCategories } from '../types';
 import { useUser } from '../context/UserContext';
@@ -27,6 +28,7 @@ interface RecipeDetailModalProps {
   onEdit?: (food: Food) => void;
   onSpinAgain?: () => void;
   onOptimisticVote?: (foodId: string, delta: number) => void;
+  onToggleGlobal?: (food: Food) => void;
 }
 
 const CATEGORY_COLORS: Record<string, string> = {
@@ -57,6 +59,7 @@ export const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
   onEdit,
   onSpinAgain,
   onOptimisticVote,
+  onToggleGlobal,
 }) => {
   const {
     user,
@@ -224,6 +227,26 @@ export const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
               >
                 {isSuperUser ? '🛡️ Admin' : 'Tu receta'}
               </span>
+            )}
+
+            {isSuperUser && (
+              <button
+                type="button"
+                onClick={() => onToggleGlobal?.(food)}
+                className={`inline-flex items-center space-x-1 px-2.5 py-0.5 sm:px-3 sm:py-1 rounded-full text-[11px] sm:text-xs font-bold backdrop-blur-md shadow-md transition-transform active:scale-95 cursor-pointer ${
+                  food.is_global
+                    ? 'bg-emerald-600/90 hover:bg-emerald-700 text-white border border-emerald-400/40'
+                    : 'bg-amber-600/90 hover:bg-amber-700 text-white border border-amber-400/40'
+                }`}
+                title={
+                  food.is_global
+                    ? 'Plato público en pantalla principal (clic para ocultar)'
+                    : 'Plato privado (clic para hacer público a todos)'
+                }
+              >
+                <Globe className="w-3 h-3" />
+                <span>{food.is_global ? 'Público en carta' : 'Privado'}</span>
+              </button>
             )}
           </div>
 

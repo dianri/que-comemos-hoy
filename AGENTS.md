@@ -121,7 +121,7 @@ que-comemos-hoy/
 ## 5. Base de Datos, Triggers y Realtime
 
 ### Tablas Principales
-- **`public.foods`**: `id`, `name`, `image_url`, `category`, `categories` (TEXT[]), `description`, `votes_count`, `created_by`, `user_id` (UUID), `user_email` (TEXT), `created_at`.
+- **`public.foods`**: `id`, `name`, `image_url`, `category`, `categories` (TEXT[]), `description`, `votes_count`, `created_by`, `user_id` (UUID), `user_email` (TEXT), `is_global` (BOOLEAN DEFAULT false), `created_at`.
 - **`public.votes`**: `id`, `food_id` (FK cascade), `user_name`, `user_id` (UUID), `created_at`.
   - Restricción única: `CONSTRAINT unique_user_food_vote UNIQUE (food_id, user_name)`.
 - **`public.user_favorites`**: `id`, `user_id` (UUID FK cascade), `user_email` (TEXT), `food_id` (UUID FK cascade), `created_at`.
@@ -130,15 +130,16 @@ que-comemos-hoy/
 - **`public.user_roles`**: `id`, `user_id` (UUID), `user_email` (TEXT UNIQUE), `role` ('root_admin' | 'superadmin' | 'user'), `created_at`, `updated_at`.
 - **`public.game_scores`**: `id`, `user_name`, `score`, `created_at`.
 
-### Sistema de Visibilidad, Moderación y Favoritos
-- **Visibilidad del Feed:** El feed principal muestra exclusivamente recetas oficiales del sistema y recetas creadas por superusuarios. Las recetas añadidas por usuarios normales son visibles para su propio creador y para los superusuarios (para moderación), manteniéndose ocultas ante terceros y visitantes no registrados para prevenir spam.
+### Sistema de Visibilidad, Moderación y Gestión Global
+- **Visibilidad del Feed y Control Global (`is_global`):** La pantalla principal comunitaria muestra exclusivamente recetas marcadas como públicas globales (`is_global = true`). Los platos subidos por superusuarios ya no aparecen automáticamente en la carta principal por defecto; requieren ser activados explícitamente como globales. Las recetas privadas o en borrador son visibles únicamente para su propio creador y para superusuarios (para moderación y revisión).
+- **Control en Formularios y Acción Rápida en Tarjetas:** Superusuarios cuentan con un interruptor ("Mostrar en la pantalla principal para todos") en `AddFoodModal` y `EditFoodModal`, además de un botón de acción rápida con icono de globo terráqueo (`Globe`) en las tarjetas `FoodCard` y en `RecipeDetailModal` para alternar al instante el estado público/privado con feedback visual y notificación Toast inmediata.
 - **Favoritos Sincronizados en Supabase:** Los favoritos se guardan directamente en `public.user_favorites` asociados a la cuenta del usuario autenticado, asegurando disponibilidad multi-dispositivo inmediata (móvil, tablet, ordenador) con sincronización bidireccional Realtime y caché local optimista en `localStorage` (`que_comemos_favs_<email>`).
 - En la interfaz principal existen las pestañas estándar: **Todos los platos**, **Mis Platos** (los creados por el usuario activo) y **⭐ Favoritos**, junto a la pestaña exclusiva **Platos de otros** (👥) visible únicamente para superusuarios para moderar y explorar las recetas aportadas por el resto de la comunidad.
-- La Ruleta y la Elección Rápida respetan el filtro activo y las reglas de visibilidad, girando únicamente entre los platos visibles.
+- La Ruleta y la Elección Rápida respetan el filtro activo y las reglas de visibilidad, girando únicamente entre los platos visibles y públicos de la selección actual.
 
 ### Políticas RLS y Control de Acceso
 - **`public.foods`**:
-  - **Lectura protegida por moderación:** Permite leer si `user_email IS NULL`, si `is_superadmin(user_email)`, si el usuario es el propietario (`user_id = auth.uid()` o `user_email = email`), o si el usuario consultante es superusuario (`is_superadmin()`).
+  - **Lectura protegida por moderación y visibilidad global:** Permite leer si `is_global = true`, si el usuario consultante es superusuario (`is_superadmin()`), o si el usuario es el propietario (`user_id = auth.uid()` o `user_email = auth.jwt() ->> 'email'`).
   - **Inserción:** Requiere usuario autenticado (`auth.uid() IS NOT NULL`).
   - **Modificación (`UPDATE`) y Eliminación (`DELETE`):**
     - **Superusuarios:** Permisos para editar y borrar cualquier plato.

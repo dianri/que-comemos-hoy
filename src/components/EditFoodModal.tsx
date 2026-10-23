@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { X, Sparkles, AlertCircle, Save, Check, Loader2 } from 'lucide-react';
+import { X, Sparkles, AlertCircle, Save, Check, Loader2, Globe } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import { useUser } from '../context/UserContext';
 import { useCategories } from '../context/CategoryContext';
 import { Food, getFoodCategories } from '../types';
 import { ImagePicker } from './ImagePicker';
@@ -21,11 +22,13 @@ export const EditFoodModal: React.FC<EditFoodModalProps> = ({
   food,
   onFoodUpdated,
 }) => {
+  const { isSuperUser } = useUser();
   const { categories } = useCategories();
   const [name, setName] = useState('');
   const [imageUrl, setImageUrl] = useState('');
   const [selectedCategories, setSelectedCategories] = useState<string[]>(['General']);
   const [description, setDescription] = useState('');
+  const [isGlobal, setIsGlobal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isGeneratingAi, setIsGeneratingAi] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -62,6 +65,7 @@ export const EditFoodModal: React.FC<EditFoodModalProps> = ({
       setImageUrl(food.image_url || '');
       setSelectedCategories(getFoodCategories(food));
       setDescription(food.description || '');
+      setIsGlobal(Boolean(food.is_global));
       setErrorMsg(null);
     }
   }, [food]);
@@ -104,15 +108,21 @@ export const EditFoodModal: React.FC<EditFoodModalProps> = ({
       const finalCategories = selectedCategories.length > 0 ? selectedCategories : ['General'];
       const primaryCategory = finalCategories[0] || 'General';
 
+      const updatePayload: Record<string, unknown> = {
+        name: safeName,
+        image_url: finalImage,
+        category: primaryCategory,
+        categories: finalCategories,
+        description: safeDescription,
+      };
+
+      if (isSuperUser) {
+        updatePayload.is_global = isGlobal;
+      }
+
       const { data, error } = await supabase
         .from('foods')
-        .update({
-          name: safeName,
-          image_url: finalImage,
-          category: primaryCategory,
-          categories: finalCategories,
-          description: safeDescription,
-        })
+        .update(updatePayload)
         .eq('id', food.id)
         .select()
         .single();
@@ -127,6 +137,7 @@ export const EditFoodModal: React.FC<EditFoodModalProps> = ({
         category: primaryCategory,
         categories: finalCategories,
         description: safeDescription,
+        ...(isSuperUser ? { is_global: isGlobal } : {}),
       };
 
       onFoodUpdated(updatedFoodRecord);
@@ -264,6 +275,47 @@ export const EditFoodModal: React.FC<EditFoodModalProps> = ({
               className="w-full px-3 py-1.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-orange-500/40 text-xs sm:text-sm resize-none"
             />
           </div>
+
+          {/* Opción de Visibilidad Global (Exclusiva para Superusuarios) */}
+          {isSuperUser && (
+            <div className="p-2.5 sm:p-3 bg-amber-50/70 border border-amber-200/80 rounded-xl flex items-center justify-between gap-3">
+              <div className="flex items-center space-x-2.5 min-w-0">
+                <div
+                  className={`p-1.5 rounded-lg flex-shrink-0 transition-colors ${
+                    isGlobal ? 'bg-emerald-500 text-white' : 'bg-slate-200 text-slate-500'
+                  }`}
+                >
+                  <Globe className="w-4 h-4" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-xs font-bold text-slate-800 leading-tight">
+                    Mostrar en la pantalla principal para todos
+                  </p>
+                  <p className="text-[10px] text-slate-500 leading-tight mt-0.5">
+                    {isGlobal
+                      ? 'Público: visible en la carta general para todos los usuarios.'
+                      : 'Privado: solo visible para ti y administradores hasta que lo publiques.'}
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                role="switch"
+                aria-checked={isGlobal}
+                onClick={() => setIsGlobal(!isGlobal)}
+                className={`relative inline-flex h-5 sm:h-6 w-9 sm:w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                  isGlobal ? 'bg-emerald-500' : 'bg-slate-300'
+                }`}
+              >
+                <span
+                  aria-hidden="true"
+                  className={`pointer-events-none inline-block h-4 sm:h-5 w-4 sm:w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                    isGlobal ? 'translate-x-4 sm:translate-x-5' : 'translate-x-0'
+                  }`}
+                />
+              </button>
+            </div>
+          )}
 
           {/* Botones de acción */}
           <div className="pt-1 flex items-center justify-end space-x-2">

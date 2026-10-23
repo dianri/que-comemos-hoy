@@ -307,7 +307,6 @@ function MainApp() {
     user,
     isAuthenticated,
     isSuperUser,
-    superadminEmails,
     favorites,
     isAuthModalOpen,
     closeAuthModal,
@@ -544,21 +543,15 @@ function MainApp() {
   };
 
   // Regla de Visibilidad y Moderación:
-  // - Feed Principal: Solo recetas oficiales o creadas por superusuarios.
-  // - Superusuarios: Pueden ver todo para moderar.
-  // - Usuario autenticado: Ve las oficiales/superadmin + sus propias recetas creadas.
+  // - Feed Principal: Solo recetas globales (is_global = true).
+  // - Superusuarios: Pueden ver todo para moderar y gestionar la carta.
+  // - Usuario autenticado: Ve las recetas globales + sus propias recetas creadas.
   const isFoodVisible = useCallback(
     (f: Food) => {
-      // 1. Receta oficial o de superusuario
-      const isSuperadminRecipe =
-        !f.user_email ||
-        f.created_by === 'Anónimo' ||
-        superadminEmails.has(f.user_email.toLowerCase()) ||
-        f.user_email.toLowerCase() === 'dianrie@hotmail.com';
+      // 1. Receta global (pública para toda la comunidad)
+      if (f.is_global) return true;
 
-      if (isSuperadminRecipe) return true;
-
-      // 2. Si el usuario actual es superadmin, ve todas para moderar
+      // 2. Si el usuario actual es superadmin, ve todas para moderar y gestionar
       if (isSuperUser) return true;
 
       // 3. Si el usuario está autenticado, ve sus propias recetas creadas (estrictamente por ID o email)
@@ -570,10 +563,10 @@ function MainApp() {
         }
       }
 
-      // Ocultar recetas no oficiales de terceros a visitantes o usuarios no propietarios
+      // Ocultar recetas privadas de terceros a visitantes o usuarios no propietarios
       return false;
     },
-    [user, isSuperUser, superadminEmails]
+    [user, isSuperUser]
   );
 
   // Platos visibles según moderación y permisos
@@ -621,6 +614,9 @@ function MainApp() {
           if (isFoodMine(f)) return false;
         } else if (mainTab === 'favorites') {
           if (!favorites.has(f.id)) return false;
+        } else if (mainTab === 'all') {
+          // Para usuarios regulares o visitantes, la pantalla principal muestra solo platos globales
+          if (!isSuperUser && !f.is_global) return false;
         }
 
         // 2. Filtro por categoría (soporta múltiples categorías: coincide si al menos una está activa)
@@ -650,12 +646,49 @@ function MainApp() {
   const roulettePool = useMemo(() => {
     const uniqueMap = new Map<string, Food>();
     for (const food of filteredFoods) {
+      // En la pestaña 'all', la ruleta gira únicamente entre platos públicos
+      if (mainTab === 'all' && !food.is_global) continue;
       if (!uniqueMap.has(food.id)) {
         uniqueMap.set(food.id, food);
       }
     }
     return Array.from(uniqueMap.values());
-  }, [filteredFoods]);
+  }, [filteredFoods, mainTab]);
+
+  // Conmutador rápido de visibilidad global en pantalla principal (exclusivo para superusuarios)
+  const handleToggleFoodGlobal = async (food: Food) => {
+    if (!isSuperUser) return;
+
+    const newIsGlobal = !food.is_global;
+
+    // Actualización optimista inmediata en memoria
+    setFoods((prev) =>
+      prev.map((f) => (f.id === food.id ? { ...f, is_global: newIsGlobal } : f))
+    );
+
+    try {
+      const { error } = await supabase
+        .from('foods')
+        .update({ is_global: newIsGlobal })
+        .eq('id', food.id);
+
+      if (error) throw error;
+
+      showToast(
+        newIsGlobal
+          ? `"${food.name}" ahora es público en la pantalla principal 🌐`
+          : `"${food.name}" ahora es privado (oculto en pantalla principal) 🔒`,
+        'success'
+      );
+    } catch (err) {
+      console.error('Error al actualizar visibilidad global del plato:', err);
+      // Revertir estado si falla
+      setFoods((prev) =>
+        prev.map((f) => (f.id === food.id ? { ...f, is_global: food.is_global } : f))
+      );
+      showToast('Error al actualizar la visibilidad en Supabase.', 'error');
+    }
+  };
 
   // Elección rápida aleatoria directa (abre el Modal de Detalle de Receta)
   const handleQuickPick = () => {
@@ -891,7 +924,7 @@ function MainApp() {
                     : 'bg-slate-300/80 text-slate-700'
                 }`}
               >
-                {visibleFoods.length}
+                {isSuperUser ? visibleFoods.length : visibleFoods.filter((f) => f.is_global).length}
               </span>
             </button>
 
@@ -1176,6 +1209,7 @@ function MainApp() {
                   onEdit={setEditingFood}
                   onSelect={(f) => setSelectedRecipe(f)}
                   onOptimisticVote={handleOptimisticVote}
+                  onToggleGlobal={handleToggleFoodGlobal}
                   isHighlighted={highlightedFoodId === food.id}
                 />
               ))}
@@ -1235,6 +1269,12 @@ function MainApp() {
           setIsRouletteOpen(true);
         }}
         onOptimisticVote={handleOptimisticVote}
+        onToggleGlobal={(food) => {
+          handleToggleFoodGlobal(food);
+          setSelectedRecipe((prev) =>
+            prev && prev.id === food.id ? { ...prev, is_global: !prev.is_global } : prev
+          );
+        }}
       />
 
       <ArcadeModal

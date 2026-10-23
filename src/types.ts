@@ -10,6 +10,7 @@ export interface Food {
   user_id?: string;
   user_email?: string;
   created_at?: string;
+  is_global?: boolean;
 }
 
 /**
@@ -32,6 +33,7 @@ export interface Vote {
   food_id: string;
   user_name: string;
   created_at?: string;
+  is_global?: boolean;
 }
 
 export type Category = string;
