@@ -100,6 +100,7 @@ que-comemos-hoy/
 - El orden establecido se persiste en la base de datos de Supabase (`public.categories.display_order`) y se refleja en tiempo real en todos los clientes.
 
 ### Barra de Filtros y Categorías (`App.tsx`)
+- **Barra de Pestañas Principales Adaptativa:** Contenedor fluido con desplazamiento horizontal táctil (`overflow-x-auto scrollbar-none touch-pan-x overscroll-x-contain`). Garantiza que las pestañas ("Todos", "Mis Platos", "Platos de otros", "Favoritos") y sus contadores numéricos mantengan dimensiones uniformes (`whitespace-nowrap flex-shrink-0`) sin cortes ni solapamientos en pantallas móviles estrechas.
 - **Drag-to-Scroll Horizontal:** Desplazamiento fluido con clic y arrastre en escritorio o swipe táctil en móvil.
 - **Aislamiento Exclusivo con Pulsación Prolongada (Long Press):** Mantener pulsado (~500ms) cualquier filtro de categoría en PC o móvil aísla exclusivamente dicho filtro (desmarcando todas las demás) de forma silenciosa e inmediata, con feedback háptico (`navigator.vibrate`) y micro-animación visual, distinguiendo arrastres o scroll táctil para evitar falsos positivos.
 

@@ -905,107 +905,113 @@ function MainApp() {
 
         {/* Zona sticky: pestañas + búsqueda + categorías */}
         <div className="sticky top-14 sm:top-16 z-30 bg-slate-50/95 backdrop-blur-md pt-1 pb-3 -mx-3 sm:-mx-6 px-3 sm:px-6 space-y-3 border-b border-slate-200/60 shadow-sm">
-          {/* Pestañas Principales: Todos / Mis Platos / Favoritos */}
-          <div className="flex items-center space-x-1.5 p-1 bg-slate-200/70 backdrop-blur-md rounded-2xl w-fit shadow-inner">
-            <button
-              onClick={() => handleTabChange('all')}
-              className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
-                mainTab === 'all'
-                  ? 'bg-white text-orange-600 shadow-md scale-102'
-                  : 'text-slate-600 hover:text-slate-900'
-              }`}
-            >
-              <LayoutGrid className="w-3.5 h-3.5" />
-              <span>Todos</span>
-              <span
-                className={`px-1.5 py-0.5 rounded-full text-[11px] font-extrabold ${
+          {/* Pestañas Principales: Todos / Mis Platos / Platos de otros / Favoritos con soporte de scroll horizontal en móviles */}
+          <div className="w-full overflow-x-auto scrollbar-none py-1 -my-1 px-0.5 touch-pan-x overscroll-x-contain flex items-center">
+            <div className="inline-flex items-center space-x-1 sm:space-x-1.5 p-1 bg-slate-200/70 backdrop-blur-md rounded-2xl shadow-inner min-w-max flex-shrink-0">
+              <button
+                type="button"
+                onClick={() => handleTabChange('all')}
+                className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex-shrink-0 whitespace-nowrap select-none cursor-pointer touch-manipulation ${
                   mainTab === 'all'
-                    ? 'bg-orange-100 text-orange-700'
-                    : 'bg-slate-300/80 text-slate-700'
+                    ? 'bg-white text-orange-600 shadow-md scale-102'
+                    : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
-                {isSuperUser ? visibleFoods.length : visibleFoods.filter((f) => f.is_global).length}
-              </span>
-            </button>
-
-            <button
-              onClick={() => handleTabChange('my-foods')}
-              className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
-                mainTab === 'my-foods'
-                  ? 'bg-white text-orange-600 shadow-md scale-102'
-                  : 'text-slate-600 hover:text-slate-900'
-              }`}
-            >
-              <ChefHat className="w-3.5 h-3.5" />
-              <span>Mis Platos</span>
-              {isAuthenticated ? (
+                <LayoutGrid className="w-3.5 h-3.5 flex-shrink-0" />
+                <span className="whitespace-nowrap">Todos</span>
                 <span
-                  className={`px-1.5 py-0.5 rounded-full text-[11px] font-extrabold ${
-                    mainTab === 'my-foods'
+                  className={`px-1.5 py-0.5 rounded-full text-[11px] font-extrabold flex-shrink-0 min-w-[20px] text-center inline-flex items-center justify-center leading-none tabular-nums ${
+                    mainTab === 'all'
                       ? 'bg-orange-100 text-orange-700'
                       : 'bg-slate-300/80 text-slate-700'
                   }`}
                 >
-                  {myFoodsCount}
+                  {isSuperUser ? visibleFoods.length : visibleFoods.filter((f) => f.is_global).length}
                 </span>
-              ) : (
-                <Lock className="w-3 h-3 text-slate-400" />
-              )}
-            </button>
+              </button>
 
-            {/* Pestaña exclusiva para Superusuarios: Platos aportados por otros usuarios */}
-            {isSuperUser && (
               <button
-                onClick={() => handleTabChange('others')}
-                className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                  mainTab === 'others'
-                    ? 'bg-white text-purple-600 shadow-md scale-102'
+                type="button"
+                onClick={() => handleTabChange('my-foods')}
+                className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex-shrink-0 whitespace-nowrap select-none cursor-pointer touch-manipulation ${
+                  mainTab === 'my-foods'
+                    ? 'bg-white text-orange-600 shadow-md scale-102'
                     : 'text-slate-600 hover:text-slate-900'
                 }`}
-                title="Platos creados por otros usuarios (exclusivo para superusuarios)"
               >
-                <Users className="w-3.5 h-3.5" />
-                <span>Platos de otros</span>
-                <span
-                  className={`px-1.5 py-0.5 rounded-full text-[11px] font-extrabold ${
+                <ChefHat className="w-3.5 h-3.5 flex-shrink-0" />
+                <span className="whitespace-nowrap">Mis Platos</span>
+                {isAuthenticated ? (
+                  <span
+                    className={`px-1.5 py-0.5 rounded-full text-[11px] font-extrabold flex-shrink-0 min-w-[20px] text-center inline-flex items-center justify-center leading-none tabular-nums ${
+                      mainTab === 'my-foods'
+                        ? 'bg-orange-100 text-orange-700'
+                        : 'bg-slate-300/80 text-slate-700'
+                    }`}
+                  >
+                    {myFoodsCount}
+                  </span>
+                ) : (
+                  <Lock className="w-3 h-3 text-slate-400 flex-shrink-0" />
+                )}
+              </button>
+
+              {/* Pestaña exclusiva para Superusuarios: Platos aportados por otros usuarios */}
+              {isSuperUser && (
+                <button
+                  type="button"
+                  onClick={() => handleTabChange('others')}
+                  className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex-shrink-0 whitespace-nowrap select-none cursor-pointer touch-manipulation ${
                     mainTab === 'others'
-                      ? 'bg-purple-100 text-purple-700'
-                      : 'bg-slate-300/80 text-slate-700'
+                      ? 'bg-white text-purple-600 shadow-md scale-102'
+                      : 'text-slate-600 hover:text-slate-900'
                   }`}
+                  title="Platos creados por otros usuarios (exclusivo para superusuarios)"
                 >
-                  {othersFoodsCount}
-                </span>
-              </button>
-            )}
+                  <Users className="w-3.5 h-3.5 flex-shrink-0" />
+                  <span className="whitespace-nowrap">Platos de otros</span>
+                  <span
+                    className={`px-1.5 py-0.5 rounded-full text-[11px] font-extrabold flex-shrink-0 min-w-[20px] text-center inline-flex items-center justify-center leading-none tabular-nums ${
+                      mainTab === 'others'
+                        ? 'bg-purple-100 text-purple-700'
+                        : 'bg-slate-300/80 text-slate-700'
+                    }`}
+                  >
+                    {othersFoodsCount}
+                  </span>
+                </button>
+              )}
 
-            {isAuthenticated && (
-              <button
-                onClick={() => handleTabChange('favorites')}
-                className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
-                  mainTab === 'favorites'
-                    ? 'bg-white text-amber-600 shadow-md scale-102'
-                    : 'text-slate-600 hover:text-slate-900'
-                }`}
-              >
-                <Star
-                  className={`w-3.5 h-3.5 ${
+              {isAuthenticated && (
+                <button
+                  type="button"
+                  onClick={() => handleTabChange('favorites')}
+                  className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex-shrink-0 whitespace-nowrap select-none cursor-pointer touch-manipulation ${
                     mainTab === 'favorites'
-                      ? 'fill-amber-400 text-amber-500'
-                      : 'text-amber-500'
-                  }`}
-                />
-                <span>Favoritos</span>
-                <span
-                  className={`px-1.5 py-0.5 rounded-full text-[11px] font-extrabold ${
-                    mainTab === 'favorites'
-                      ? 'bg-amber-100 text-amber-800'
-                      : 'bg-slate-300/80 text-slate-700'
+                      ? 'bg-white text-amber-600 shadow-md scale-102'
+                      : 'text-slate-600 hover:text-slate-900'
                   }`}
                 >
-                  {favoritesCount}
-                </span>
-              </button>
-            )}
+                  <Star
+                    className={`w-3.5 h-3.5 flex-shrink-0 ${
+                      mainTab === 'favorites'
+                        ? 'fill-amber-400 text-amber-500'
+                        : 'text-amber-500'
+                    }`}
+                  />
+                  <span className="whitespace-nowrap">Favoritos</span>
+                  <span
+                    className={`px-1.5 py-0.5 rounded-full text-[11px] font-extrabold flex-shrink-0 min-w-[20px] text-center inline-flex items-center justify-center leading-none tabular-nums ${
+                      mainTab === 'favorites'
+                        ? 'bg-amber-100 text-amber-800'
+                        : 'bg-slate-300/80 text-slate-700'
+                    }`}
+                  >
+                    {favoritesCount}
+                  </span>
+                </button>
+              )}
+            </div>
           </div>
 
           {/* Barra de Filtros, Búsqueda y Ordenación */}
