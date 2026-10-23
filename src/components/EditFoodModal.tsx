@@ -8,7 +8,7 @@ import { ImagePicker } from './ImagePicker';
 import { sanitizeText, safeImageUrl, SAFE_FALLBACK_IMAGE } from '../lib/sanitize';
 import { generateDishDescription } from '../lib/aiDescription';
 import { showToast } from '../lib/toast';
-import { triggerPushNotification } from '../lib/pushNotifications';
+import { triggerPushNotification, ensureUserPushSubscribed } from '../lib/pushNotifications';
 
 interface EditFoodModalProps {
   isOpen: boolean;
@@ -23,7 +23,7 @@ export const EditFoodModal: React.FC<EditFoodModalProps> = ({
   food,
   onFoodUpdated,
 }) => {
-  const { isSuperUser } = useUser();
+  const { user, isSuperUser } = useUser();
   const { categories } = useCategories();
   const [name, setName] = useState('');
   const [imageUrl, setImageUrl] = useState('');
@@ -130,6 +130,15 @@ export const EditFoodModal: React.FC<EditFoodModalProps> = ({
       } else if (!food.is_global) {
         newApprovalStatus = requestGlobal ? 'pending' : 'approved';
         updatePayload.approval_status = newApprovalStatus;
+      }
+
+      // Si es un usuario normal que solicita el General, asegurar permisos y suscripción push para avisarle al ser aprobado
+      if (!isSuperUser && requestGlobal && user) {
+        try {
+          await ensureUserPushSubscribed(user.id, user.email || '');
+        } catch (pushErr) {
+          console.warn('Aviso al solicitar permisos de notificación:', pushErr);
+        }
       }
 
       const { data, error } = await supabase
@@ -374,7 +383,17 @@ export const EditFoodModal: React.FC<EditFoodModalProps> = ({
                 type="button"
                 role="switch"
                 aria-checked={requestGlobal}
-                onClick={() => setRequestGlobal(!requestGlobal)}
+                onClick={async () => {
+                  const nextVal = !requestGlobal;
+                  setRequestGlobal(nextVal);
+                  if (nextVal && user) {
+                    try {
+                      await ensureUserPushSubscribed(user.id, user.email || '');
+                    } catch {
+                      // Silencioso
+                    }
+                  }
+                }}
                 className={`relative inline-flex h-5 sm:h-6 w-9 sm:w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
                   requestGlobal ? 'bg-orange-500' : 'bg-slate-300'
                 }`}

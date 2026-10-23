@@ -139,6 +139,32 @@ export async function subscribeUserToPush(
 }
 
 /**
+ * Comprueba si el usuario tiene activadas las notificaciones push.
+ * Si no las tiene activas y el navegador lo soporta con permiso no denegado,
+ * solicita permisos de forma fluida y registra la suscripción en Supabase.
+ * Devuelve true si el usuario queda suscrito; nunca propaga errores bloqueantes.
+ */
+export async function ensureUserPushSubscribed(
+  userId: string,
+  userEmail: string
+): Promise<boolean> {
+  if (!isPushSupported()) return false;
+  try {
+    const isSubscribed = await isSubscribedToPush();
+    if (isSubscribed) return true;
+
+    if (Notification.permission !== 'denied') {
+      const res = await subscribeUserToPush(userId, userEmail);
+      return res.success;
+    }
+    return false;
+  } catch (err) {
+    console.warn('Aviso al asegurar suscripción push del usuario:', err);
+    return false;
+  }
+}
+
+/**
  * Cancela la suscripción Push en el navegador y la elimina de Supabase.
  */
 export async function unsubscribeUserFromPush(
@@ -210,5 +236,44 @@ export async function triggerPushNotification(payload: {
   } catch (err) {
     // Es un disparo asíncrono secundario (el trigger de la BD ya asegura el despacho)
     console.warn('Aviso al disparar notificación push manual:', err);
+  }
+}
+
+/**
+ * Invoca la Edge Function de Supabase para despachar una notificación push
+ * al usuario creador cuando su plato ha sido aprobado por un administrador.
+ */
+export async function triggerApprovalPushNotification(payload: {
+  foodId: string;
+  foodName: string;
+  userId?: string;
+  userEmail?: string;
+  createdBy?: string;
+}): Promise<void> {
+  try {
+    const supabaseUrl =
+      import.meta.env.VITE_SUPABASE_URL || 'https://okieuqjwrxcmfnsmtjwn.supabase.co';
+    const edgeFunctionUrl = `${supabaseUrl}/functions/v1/send-push-notification`;
+
+    await fetch(edgeFunctionUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        type: 'dish_approved',
+        food_id: payload.foodId,
+        food_name: payload.foodName,
+        target_user_id: payload.userId,
+        target_user_email: payload.userEmail || payload.createdBy,
+        title: '¡Plato aprobado! 🎉',
+        body: `Tu receta «${payload.foodName}» ya forma parte de la carta general.`,
+        icon: '/icon-192.png',
+        badge: '/badge-96.png',
+        url: `/?food=${payload.foodId}`,
+      }),
+    });
+  } catch (err) {
+    console.warn('Aviso al disparar notificación push de aprobación:', err);
   }
 }

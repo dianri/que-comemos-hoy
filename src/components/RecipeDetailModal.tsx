@@ -25,7 +25,7 @@ import { useUser } from '../context/UserContext';
 import { shareFood } from '../lib/share';
 import { showToast } from '../lib/toast';
 import { supabase } from '../lib/supabase';
-import { triggerPushNotification } from '../lib/pushNotifications';
+import { triggerPushNotification, ensureUserPushSubscribed } from '../lib/pushNotifications';
 
 interface RecipeDetailModalProps {
   isOpen: boolean;
@@ -122,6 +122,11 @@ export const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
 
     setIsRequestingGlobal(true);
     try {
+      // 1. Solicitar permisos de notificación push al usuario de forma fluida si aún no están activos
+      if (user) {
+        await ensureUserPushSubscribed(user.id, user.email || '');
+      }
+
       if (onRequestGlobal) {
         await onRequestGlobal(food);
       } else {
@@ -140,7 +145,7 @@ export const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
       }
 
       setLocalApprovalStatus('pending');
-      showToast('¡Solicitud enviada a los administradores para el General! ⏳', 'info');
+      showToast('¡Solicitud enviada a los administradores para el General! ⏳ Te notificaremos cuando sea aprobado.', 'info');
     } catch (err: unknown) {
       console.error('Error al solicitar inclusión en el General:', err);
       showToast('Error al enviar la solicitud. Inténtalo de nuevo.', 'error');

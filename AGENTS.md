@@ -174,11 +174,11 @@ que-comemos-hoy/
 ### Triggers y Funciones en PostgreSQL
 - `update_food_votes_count()`: Recalcula automáticamente `foods.votes_count` ante operaciones `INSERT` o `DELETE` en la tabla `votes`.
 - `is_superadmin(check_email)`: Determina de forma segura y centralizada los privilegios administrativos en funciones y políticas RLS.
-- `notify_pending_dish_push()`: Disparador en `foods` ante `INSERT` o `UPDATE` hacia `approval_status = 'pending'`, despachando petición asíncrona mediante `pg_net` hacia la Edge Function `send-push-notification`.
+- `notify_pending_dish_push()`: Disparador en `foods` ante `INSERT` o `UPDATE` hacia `approval_status = 'pending'` (alerta a moderadores) o hacia `approval_status = 'approved'` (alerta personalizada al usuario creador), despachando peticiones asíncronas mediante `pg_net` hacia la Edge Function `send-push-notification`.
 
 ### Edge Functions y Notificaciones Web Push
-- **`send-push-notification`**: Edge Function en Supabase ejecutada en Deno con biblioteca `web-push` y firmas VAPID (RFC 8292). Filtra los suscriptores activos que son superusuarios (`root_admin` / `superadmin`), despacha notificaciones nativas push al dispositivo, y purga automáticamente suscripciones inválidas o dadas de baja (HTTP 404 / 410).
-- **Service Worker (`public/sw.js`)**: Gestiona eventos nativos `push` y `notificationclick`, despertando la aplicación e interactuando con la ruta `/?openModeration=true` para desplegar directamente el panel de aprobación. Configura `badge: '/badge-96.png'` (PNG monocromo con canal alfa transparente para la barra de estado y cabecera de agrupación en Android) e `icon: '/icon-192.png'` (raster PNG de alta definición) para garantizar la presencia de la identidad corporativa en las notificaciones del sistema.
+- **`send-push-notification`**: Edge Function en Supabase ejecutada en Deno con biblioteca `web-push` y firmas VAPID (RFC 8292). Soporta dos modalidades: alertas de revisión pendientes dirigidas a administradores (`/?openModeration=true`), y avisos personalizados de plato aprobado al usuario creador (`/?food=<id>`). Purga automáticamente suscripciones inválidas o dadas de baja (HTTP 404 / 410).
+- **Service Worker (`public/sw.js`)**: Gestiona eventos nativos `push` y `notificationclick`, despertando la aplicación e interactuando con las rutas de moderación (`/?openModeration=true`) o apertura directa de plato aprobado (`/?food=<id>`). Configura `badge: '/badge-96.png'` (PNG monocromo con canal alfa transparente para la barra de estado y cabecera de agrupación en Android) e `icon: '/icon-192.png'` (raster PNG de alta definición) para garantizar la presencia de la identidad corporativa en las notificaciones del sistema.
 
 ### Suscripciones Realtime Activas
 - `public:foods_changes`: En `App.tsx` para reflejar adiciones, modificaciones y borrados de platos al instante.

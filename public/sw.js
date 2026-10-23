@@ -2,7 +2,7 @@
  * Service Worker para "¿Qué comemos hoy?" PWA
  */
 
-const CACHE_NAME = 'que-comemos-hoy-v2';
+const CACHE_NAME = 'que-comemos-hoy-v3';
 const ASSETS_TO_CACHE = [
   '/',
   '/index.html',
@@ -74,16 +74,16 @@ self.addEventListener('fetch', (event) => {
   );
 });
 
-// Gestión de Notificaciones Push Web para Moderación y Administradores
+// Gestión de Notificaciones Push Web para Moderación, Aprobación y Administradores
 self.addEventListener('push', (event) => {
   let data = {
-    title: '🛎️ Nuevo plato para moderar',
-    body: 'Hay una nueva propuesta de plato pendiente de revisión en ¿Qué comemos hoy?.',
+    title: '🛎️ Aviso en ¿Qué comemos hoy?',
+    body: 'Hay una novedad en la carta.',
     icon: '/icon-192.png',
     badge: '/badge-96.png',
-    url: '/?openModeration=true',
+    url: '/',
     data: {
-      url: '/?openModeration=true',
+      url: '/',
     },
   };
 
@@ -96,24 +96,33 @@ self.addEventListener('push', (event) => {
     }
   }
 
+  const targetUrl = (data.data && data.data.url) || data.url || '/';
+  const notificationType =
+    (data.data && data.data.type) ||
+    (targetUrl.includes('openModeration') ? 'dish_pending_review' : 'dish_approved');
+
   const options = {
     body: data.body,
     icon: data.icon || '/icon-192.png',
     badge: data.badge || '/badge-96.png',
-    data: data.data || { url: data.url || '/?openModeration=true' },
+    data: {
+      ...(data.data || {}),
+      url: targetUrl,
+      type: notificationType,
+    },
     vibrate: [200, 100, 200],
-    tag: 'dish-moderation-' + Date.now(),
+    tag: `${notificationType}-${Date.now()}`,
     renotify: true,
   };
 
   event.waitUntil(self.registration.showNotification(data.title, options));
 });
 
-// Evento de clic en la notificación nativa: enfocar la app y abrir el panel de moderación
+// Evento de clic en la notificación nativa: enfocar la app y navegar a la ruta destino (receta o moderación)
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
 
-  const targetUrl = (event.notification.data && event.notification.data.url) || '/?openModeration=true';
+  const targetUrl = (event.notification.data && event.notification.data.url) || '/';
 
   event.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {

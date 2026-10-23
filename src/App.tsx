@@ -35,7 +35,11 @@ import { showToast } from './lib/toast';
 import { UserProvider, useUser } from './context/UserContext';
 import { CategoryProvider, useCategories } from './context/CategoryContext';
 import { playConfettiPop } from './lib/sound';
-import { triggerPushNotification } from './lib/pushNotifications';
+import {
+  triggerPushNotification,
+  triggerApprovalPushNotification,
+  ensureUserPushSubscribed,
+} from './lib/pushNotifications';
 
 const CATEGORY_FILTER_STORAGE_KEY = 'que_comemos_selected_categories';
 
@@ -522,23 +526,46 @@ function MainApp() {
     );
   }, []);
 
-  // Apertura automática de receta compartida por enlace directo (?food=<id>)
+  // Apertura automática de receta compartida o abierta por notificación push (?food=<id>)
   useEffect(() => {
-    if (foods.length === 0) return;
-    try {
-      const params = new URLSearchParams(window.location.search);
-      const sharedFoodId = params.get('food');
-      if (sharedFoodId) {
-        const found = foods.find((f) => f.id === sharedFoodId);
-        if (found) {
-          setSelectedRecipe(found);
-          setHighlightedFoodId(found.id);
-          window.history.replaceState({}, '', window.location.pathname);
+    const checkDirectDishLink = () => {
+      try {
+        const params = new URLSearchParams(window.location.search);
+        const sharedFoodId = params.get('food');
+        if (sharedFoodId) {
+          const found = foods.find((f) => f.id === sharedFoodId);
+          if (found) {
+            setSelectedRecipe(found);
+            setHighlightedFoodId(found.id);
+            window.history.replaceState({}, '', window.location.pathname);
+          } else {
+            // Si el plato aún no está cargado en memoria, buscarlo directamente en Supabase
+            supabase
+              .from('foods')
+              .select('*')
+              .eq('id', sharedFoodId)
+              .maybeSingle()
+              .then(({ data }) => {
+                if (data) {
+                  setSelectedRecipe(data as Food);
+                  setHighlightedFoodId(data.id);
+                  window.history.replaceState({}, '', window.location.pathname);
+                }
+              });
+          }
         }
+      } catch {
+        // Ignorar restricciones en entornos sin manipulación de historial
       }
-    } catch {
-      // Ignorar restricciones en entornos sin manipulación de historial
-    }
+    };
+
+    checkDirectDishLink();
+    window.addEventListener('focus', checkDirectDishLink);
+    window.addEventListener('popstate', checkDirectDishLink);
+    return () => {
+      window.removeEventListener('focus', checkDirectDishLink);
+      window.removeEventListener('popstate', checkDirectDishLink);
+    };
   }, [foods]);
 
   // Actualizar comida tras edición (actualización local inmediata + refresco de referencias)
@@ -731,6 +758,15 @@ function MainApp() {
       if (error) throw error;
 
       showToast(`¡"${food.name}" aprobado y publicado en el General! 🌐🎉`, 'success');
+
+      // Disparar notificación push de aprobación al usuario creador
+      triggerApprovalPushNotification({
+        foodId: food.id,
+        foodName: food.name,
+        userId: food.user_id,
+        userEmail: food.user_email,
+        createdBy: food.created_by,
+      });
     } catch (err) {
       console.error('Error al aprobar plato:', err);
       setFoods((prev) =>
@@ -772,6 +808,15 @@ function MainApp() {
 
   // Solicitud de inclusión en la carta general (para creadores de platos privados)
   const handleRequestGlobal = async (food: Food) => {
+    // 1. Asegurar permisos y suscripción push de forma fluida para el usuario creador
+    if (user) {
+      try {
+        await ensureUserPushSubscribed(user.id, user.email || '');
+      } catch (pushErr) {
+        console.warn('Aviso al solicitar permisos de notificación:', pushErr);
+      }
+    }
+
     // Actualización optimista inmediata en memoria
     setFoods((prev) =>
       prev.map((f) => (f.id === food.id ? { ...f, approval_status: 'pending' } : f))
