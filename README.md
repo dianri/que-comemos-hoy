@@ -39,7 +39,7 @@ Alojada en **Vercel** y respaldada por **Supabase (PostgreSQL + Realtime)**.
 - **Roles y Jerarquía:** Superusuario Raíz (`dianrie@hotmail.com`), Superusuarios Delegados y Usuarios Estándar.
 - **Panel de Administración de Usuarios:** Métricas en tiempo real, gestión de roles y eliminación de cuentas.
 - **Campana de Moderación y Flujo de Aprobación:** Campana con badge en tiempo real para superusuarios que abre el panel `DishModerationModal` para aprobar o rechazar solicitudes de platos comunitarios (`approval_status`).
-- **🔔 Arquitectura de Notificaciones Push Centralizada en Backend:** Integración de Web Push API 100% desacoplada del frontend. La base de datos es la única fuente de verdad: triggers en PostgreSQL con validación estricta de cambios de estado (`IS DISTINCT FROM`) despachan asíncronamente eventos (`dish_pending`, `dish_approved`) a la Edge Function `send-push-notification`. Esta cuenta con un motor extensible (`switch (type)`), claves VAPID y URLs absolutas (`https://quecomemoshoy.dianrie.com/...`) con icono corporativo HD e insignia monocroma transparente para Android. El cliente solo muta los datos en Supabase y gestiona permisos de forma fluida.
+- **🔔 Arquitectura de Notificaciones Push Centralizada en Backend:** Integración de Web Push API 100% desacoplada del frontend. La base de datos es la única fuente de verdad: triggers en PostgreSQL con validación estricta de cambios de estado (`IS DISTINCT FROM`) despachan asíncronamente eventos (`dish_pending`, `dish_approved`) a la Edge Function `send-push-notification`. Los administradores reciben alertas de nuevos platos pendientes y los creadores son notificados al instante cuando su receta es aprobada para la carta comunitaria. Cuenta con un motor extensible (`switch (type)`), claves VAPID y URLs absolutas (`https://quecomemoshoy.dianrie.com/...`) con icono corporativo HD e insignia monocroma transparente para Android. El cliente solo muta los datos en Supabase y solicita permisos de forma fluida al interactuar.
 - **Gestión Global de Platos (`is_global`):** Los platos nuevos creados por superusuarios no se publican automáticamente en la pantalla general comunitaria por defecto. Cuentan con un interruptor ("Mostrar en la pantalla principal para todos") en los formularios de creación/edición y un botón de acción rápida con icono de globo terráqueo (`Globe`) en las tarjetas y vista de receta para alternar al instante entre estado público o privado/borrador.
 - **Moderación Comunitaria:** Visitantes y usuarios estándar ven exclusivamente recetas globales oficiales en el feed principal, pudiendo solicitar la inclusión de sus platos mediante el interruptor *"Solicitar inclusión en el General"*.
 
@@ -69,7 +69,7 @@ Alojada en **Vercel** y respaldada por **Supabase (PostgreSQL + Realtime)**.
 - **`public.categories`**: Categorías culinarias con soporte de orden personalizado (`display_order`).
 - **`public.user_roles`**: Asignación de roles de seguridad (`root_admin`, `superadmin`, `user`).
 - **`public.game_scores`**: Registro de puntuaciones del minijuego arcade.
-- **`public.push_subscriptions`**: Suscripciones Web Push de administradores para alertas en segundo plano.
+- **`public.push_subscriptions`**: Suscripciones Web Push de administradores y usuarios para alertas y avisos de moderación/aprobación en segundo plano.
 
 ---
 

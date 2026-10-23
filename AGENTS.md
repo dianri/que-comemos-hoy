@@ -229,9 +229,13 @@ Este protocolo es de **cumplimiento estricto e inquebrantable** para cualquier d
 - Una vez que la tarea esté completamente terminada, validada y aprobada por el usuario:
   1. Realizar el `commit` con un mensaje semántico y descriptivo de los cambios realizados.
   2. Hacer `push` de la rama de características al repositorio remoto (`origin`).
-  3. Cambiar a la rama principal `main` y asegurarse de que esté actualizada (`git pull`).
+  3. Cambiar a la rama principal `main` y asegurarse de que esté actualizada (`git pull origin main`).
   4. Realizar la **fusión automática (merge)** de la rama de características hacia la rama principal `main`.
   5. Hacer el `push` de `main` a `origin`, dejando la rama principal lista, estable y sincronizada.
+
+### 4. Actualización Post-Feature Obligatoria (`AGENTS.md` y `README.md`)
+- **Actualización Post-Feature:** Después de completar, verificar y fusionar cada nueva feature a `main`, es obligatorio revisar y actualizar el archivo `AGENTS.md` (si hay nuevas pautas o flujos) y el `README.md` (si se han introducido cambios funcionales, de dependencias o de configuración relevantes que deban conocerse).
+- Toda modificación en la arquitectura, componentes, esquemas de datos o experiencia de usuario debe quedar reflejada fielmente en ambos documentos vivos para asegurar la coherencia técnica del proyecto en futuras iteraciones.
 
 ---
 
