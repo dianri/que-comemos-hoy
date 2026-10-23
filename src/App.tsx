@@ -13,6 +13,7 @@ import {
   Check,
   ChevronDown,
   SlidersHorizontal,
+  Users,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { supabase } from './lib/supabase';
@@ -336,7 +337,7 @@ function MainApp() {
     }
   };
 
-  // Cambio de pestaña con protección si no está autenticado
+  // Cambio de pestaña con protección según permisos
   const handleTabChange = (tab: MainTabFilter) => {
     if (tab === 'my-foods' && !isAuthenticated) {
       openAuthModal('Inicia sesión con tu correo para ver y gestionar los platos que has creado.');
@@ -346,8 +347,18 @@ function MainApp() {
       openAuthModal('Inicia sesión con tu correo para guardar y consultar tus platos favoritos.');
       return;
     }
+    if (tab === 'others' && !isSuperUser) {
+      return;
+    }
     setMainTab(tab);
   };
+
+  // Si deja de ser superusuario y estaba en la pestaña 'others', volver a 'all'
+  useEffect(() => {
+    if (mainTab === 'others' && !isSuperUser) {
+      setMainTab('all');
+    }
+  }, [isSuperUser, mainTab]);
 
   // Cargar lista de comidas desde Supabase
   const fetchFoods = async () => {
@@ -570,16 +581,30 @@ function MainApp() {
     return foods.filter(isFoodVisible);
   }, [foods, isFoodVisible]);
 
-  // Conteo de platos por pestaña (evaluado estrictamente por auth.uid y email)
-  const myFoodsCount = useMemo(() => {
-    if (!user) return 0;
-    return visibleFoods.filter(
-      (f) =>
+  // Determina de forma unificada si un plato pertenece al usuario activo
+  const isFoodMine = useCallback(
+    (f: Food) => {
+      if (!user) return false;
+      return (
         (f.user_id && f.user_id === user.id) ||
         (f.user_email && f.user_email.toLowerCase() === user.email?.toLowerCase()) ||
         (f.created_by && (f.created_by === user.id || (user.email && f.created_by.toLowerCase() === user.email.toLowerCase())))
-    ).length;
-  }, [visibleFoods, user]);
+      );
+    },
+    [user]
+  );
+
+  // Conteo de platos por pestaña (evaluado estrictamente por auth.uid y email)
+  const myFoodsCount = useMemo(() => {
+    if (!user) return 0;
+    return visibleFoods.filter(isFoodMine).length;
+  }, [visibleFoods, isFoodMine, user]);
+
+  // Conteo exclusivo de platos aportados por otros usuarios (disponible para superusuarios)
+  const othersFoodsCount = useMemo(() => {
+    if (!isSuperUser) return 0;
+    return visibleFoods.filter((f) => !isFoodMine(f)).length;
+  }, [visibleFoods, isFoodMine, isSuperUser]);
 
   const favoritesCount = useMemo(() => {
     return visibleFoods.filter((f) => favorites.has(f.id)).length;
@@ -591,11 +616,9 @@ function MainApp() {
       .filter((f) => {
         // 1. Filtro por pestaña principal
         if (mainTab === 'my-foods') {
-          const isMine =
-            (f.user_id && f.user_id === user?.id) ||
-            (f.user_email && f.user_email.toLowerCase() === user?.email?.toLowerCase()) ||
-            (f.created_by && (f.created_by === user?.id || (user?.email && f.created_by.toLowerCase() === user.email.toLowerCase())));
-          if (!isMine) return false;
+          if (!isFoodMine(f)) return false;
+        } else if (mainTab === 'others') {
+          if (isFoodMine(f)) return false;
         } else if (mainTab === 'favorites') {
           if (!favorites.has(f.id)) return false;
         }
@@ -678,6 +701,9 @@ function MainApp() {
     }
     if (mainTab === 'my-foods') {
       return `Girando entre tus ${roulettePool.length} platos creados 👨‍🍳`;
+    }
+    if (mainTab === 'others') {
+      return `Girando entre ${roulettePool.length} platos aportados por otros usuarios 👥`;
     }
     if (!isAllSelected && selectedCategories.length > 0) {
       if (selectedCategories.length === 1) {
@@ -766,6 +792,8 @@ function MainApp() {
                     ? '¡Girar Favoritos!'
                     : mainTab === 'my-foods'
                     ? '¡Girar Mis Platos!'
+                    : mainTab === 'others'
+                    ? '¡Girar Platos de Otros!'
                     : '¡Girar la Ruleta!'}
                 </span>
                 <span
@@ -891,6 +919,31 @@ function MainApp() {
                 <Lock className="w-3 h-3 text-slate-400" />
               )}
             </button>
+
+            {/* Pestaña exclusiva para Superusuarios: Platos aportados por otros usuarios */}
+            {isSuperUser && (
+              <button
+                onClick={() => handleTabChange('others')}
+                className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                  mainTab === 'others'
+                    ? 'bg-white text-purple-600 shadow-md scale-102'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+                title="Platos creados por otros usuarios (exclusivo para superusuarios)"
+              >
+                <Users className="w-3.5 h-3.5" />
+                <span>Platos de otros</span>
+                <span
+                  className={`px-1.5 py-0.5 rounded-full text-[11px] font-extrabold ${
+                    mainTab === 'others'
+                      ? 'bg-purple-100 text-purple-700'
+                      : 'bg-slate-300/80 text-slate-700'
+                  }`}
+                >
+                  {othersFoodsCount}
+                </span>
+              </button>
+            )}
 
             {isAuthenticated && (
               <button
@@ -1062,13 +1115,15 @@ function MainApp() {
           ) : filteredFoods.length === 0 ? (
             <div className="bg-white rounded-2xl sm:rounded-3xl border border-slate-200/80 p-6 sm:p-10 text-center space-y-3">
               <div className="text-4xl sm:text-5xl">
-                {mainTab === 'favorites' ? '⭐' : mainTab === 'my-foods' ? '👨‍🍳' : '🍲'}
+                {mainTab === 'favorites' ? '⭐' : mainTab === 'my-foods' ? '👨‍🍳' : mainTab === 'others' ? '👥' : '🍲'}
               </div>
               <h3 className="text-base sm:text-lg font-bold text-slate-800">
                 {mainTab === 'favorites'
                   ? 'Aún no tienes platos favoritos'
                   : mainTab === 'my-foods'
                   ? 'Aún no has añadido platos a la carta'
+                  : mainTab === 'others'
+                  ? 'No hay platos aportados por otros usuarios'
                   : 'No se encontraron comidas'}
               </h3>
               <p className="text-xs sm:text-sm text-slate-500 max-w-md mx-auto">
@@ -1076,6 +1131,8 @@ function MainApp() {
                   ? 'Pulsa en el icono de la estrella ⭐ de cualquier tarjeta para guardarla en tus favoritos y poder elegir rápidamente entre ellos.'
                   : mainTab === 'my-foods'
                   ? 'Crea tus platos favoritos con foto e ingredientes para que entren en la ruleta del grupo.'
+                  : mainTab === 'others'
+                  ? 'Cuando otros usuarios o comensales aporten recetas a la plataforma, podrás revisarlas, moderarlas y votarlas desde aquí.'
                   : selectedCategories.length === 0
                   ? 'No tienes ninguna categoría activa. Pulsa en "Todas" o activa alguna para ver platos.'
                   : 'No hay ningún plato que coincida con tus filtros actuales.'}
@@ -1090,10 +1147,10 @@ function MainApp() {
                   <Check className="w-4 h-4" />
                   <span>Activar todas las categorías</span>
                 </button>
-              ) : mainTab === 'favorites' ? (
+              ) : mainTab === 'favorites' || mainTab === 'others' ? (
                 <button
                   onClick={() => setMainTab('all')}
-                  className="mt-2 inline-flex items-center space-x-1.5 px-4 py-2 rounded-xl bg-orange-500 text-white text-xs font-bold hover:bg-orange-600 shadow-md transition-all"
+                  className="mt-2 inline-flex items-center space-x-1.5 px-4 py-2 rounded-xl bg-orange-500 text-white text-xs font-bold hover:bg-orange-600 shadow-md transition-all cursor-pointer"
                 >
                   <LayoutGrid className="w-4 h-4" />
                   <span>Explorar todos los platos</span>

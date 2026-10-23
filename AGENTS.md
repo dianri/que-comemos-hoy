@@ -133,7 +133,7 @@ que-comemos-hoy/
 ### Sistema de Visibilidad, Moderación y Favoritos
 - **Visibilidad del Feed:** El feed principal muestra exclusivamente recetas oficiales del sistema y recetas creadas por superusuarios. Las recetas añadidas por usuarios normales son visibles para su propio creador y para los superusuarios (para moderación), manteniéndose ocultas ante terceros y visitantes no registrados para prevenir spam.
 - **Favoritos Sincronizados en Supabase:** Los favoritos se guardan directamente en `public.user_favorites` asociados a la cuenta del usuario autenticado, asegurando disponibilidad multi-dispositivo inmediata (móvil, tablet, ordenador) con sincronización bidireccional Realtime y caché local optimista en `localStorage` (`que_comemos_favs_<email>`).
-- En la interfaz principal existen tres pestañas: **Todos los platos**, **Mis Platos** (solo los creados por el usuario activo) y **⭐ Favoritos**.
+- En la interfaz principal existen las pestañas estándar: **Todos los platos**, **Mis Platos** (los creados por el usuario activo) y **⭐ Favoritos**, junto a la pestaña exclusiva **Platos de otros** (👥) visible únicamente para superusuarios para moderar y explorar las recetas aportadas por el resto de la comunidad.
 - La Ruleta y la Elección Rápida respetan el filtro activo y las reglas de visibilidad, girando únicamente entre los platos visibles.
 
 ### Políticas RLS y Control de Acceso

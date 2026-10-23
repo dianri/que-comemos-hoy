@@ -24,7 +24,7 @@ Alojada en **Vercel** y respaldada por **Supabase (PostgreSQL + Realtime)**.
 - **Desplazamiento por Arrastre (Drag-to-Scroll):** La barra de filtros permite navegar fluidamente haciendo clic izquierdo y arrastrando el ratón en escritorio o deslizando con el dedo en móviles.
 - **Botón "Todas" Diferenciado:** Botón de selección global estilizado y separado adecuadamente para facilitar la alternancia rápida de categorías.
 - **Reordenación Personalizada de Categorías:** Panel de administración donde los superusuarios pueden crear, eliminar y cambiar el orden visual de los filtros con persistencia en Supabase.
-- **Pestañas Principales:** Acceso rápido a **Todos los platos**, **Mis Platos** (los creados por el usuario) y **⭐ Favoritos**.
+- **Pestañas Principales:** Acceso rápido a **Todos los platos**, **Mis Platos**, **⭐ Favoritos** y la pestaña exclusiva **Platos de otros** (👥) para superusuarios.
 
 ### 4. 📖 Modal de Detalle de Receta HD
 - Vista centralizada a pantalla completa accesible desde cualquier tarjeta, ruleta o elección rápida.

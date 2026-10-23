@@ -36,7 +36,7 @@ export interface Vote {
 
 export type Category = string;
 
-export type MainTabFilter = 'all' | 'my-foods' | 'favorites';
+export type MainTabFilter = 'all' | 'my-foods' | 'others' | 'favorites';
 
 export type UserRole = 'root_admin' | 'superadmin' | 'user';
 
