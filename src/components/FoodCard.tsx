@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Heart, Sparkles, Trash2, Star, Pencil, ChefHat, Share2, Check, Globe } from 'lucide-react';
-import { Food, getFoodCategories } from '../types';
+import { Food, getFoodCategories, getFoodCreatorDisplayName } from '../types';
 import { useUser } from '../context/UserContext';
 import { safeImageUrl } from '../lib/sanitize';
 import { shareFood } from '../lib/share';
@@ -71,43 +71,7 @@ export const FoodCard: React.FC<FoodCardProps> = ({
   const isFav = isFavorite(food.id);
   const canManage = canManageFood(food);
   const foodCategories = getFoodCategories(food);
-
-  // Privacidad estricta: nunca mostrar emails en las tarjetas
-  const getCreatorDisplayName = (): string => {
-    // 1. Si la receta pertenece al usuario actual (evaluado estrictamente por UID o email)
-    const isMine =
-      (user && food.user_id && food.user_id === user.id) ||
-      (user && food.user_email && food.user_email.toLowerCase() === user.email?.toLowerCase()) ||
-      (food.created_by && user && (food.created_by === user.id || (user.email && food.created_by.toLowerCase() === user.email.toLowerCase())));
-
-    if (isMine) {
-      return userName;
-    }
-
-    if (!food.created_by || food.created_by.toLowerCase() === 'anónimo') {
-      return 'Receta Oficial';
-    }
-
-    // 2. Si created_by es un UUID (auth.uid), atribuir a Receta Oficial o Autor de la Comunidad
-    const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(food.created_by);
-    if (isUUID) {
-      if (food.user_email && food.user_email.toLowerCase() === 'dianrie@hotmail.com') {
-        return 'Chef Dianrie';
-      }
-      return 'Chef de la Comunidad';
-    }
-
-    let clean = food.created_by;
-    if (clean.includes('@')) {
-      clean = clean.split('@')[0];
-    }
-
-    if (clean.toLowerCase() === 'dianrie') {
-      return 'Chef Dianrie';
-    }
-
-    return clean.charAt(0).toUpperCase() + clean.slice(1);
-  };
+  const creatorDisplayName = getFoodCreatorDisplayName(food, user, userName);
 
   const handleVote = async (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -124,7 +88,7 @@ export const FoodCard: React.FC<FoodCardProps> = ({
     if (isSharing) return;
     setIsSharing(true);
     try {
-      const result = await shareFood(food, getCreatorDisplayName());
+      const result = await shareFood(food, creatorDisplayName);
       if (result.success) {
         setIsShared(true);
         if (result.message) {
@@ -305,9 +269,12 @@ export const FoodCard: React.FC<FoodCardProps> = ({
 
         {/* Footer de la Tarjeta */}
         <div className="mt-2.5 pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-400">
-          <span className="flex items-center space-x-1 text-slate-500 font-medium truncate max-w-[150px] sm:max-w-[200px]">
+          <span
+            className="flex items-center space-x-1 text-slate-500 font-medium truncate max-w-[150px] sm:max-w-[200px]"
+            title={food.user_email ? `Creado por ${creatorDisplayName} (${food.user_email})` : `Creado por ${creatorDisplayName}`}
+          >
             <ChefHat className="w-3.5 h-3.5 text-orange-500 flex-shrink-0" />
-            <span className="truncate">{getCreatorDisplayName()}</span>
+            <span className="truncate">{creatorDisplayName}</span>
           </span>
 
           {/* Acciones de gestión protegidas: solo propietario o superusuario */}

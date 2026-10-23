@@ -16,7 +16,7 @@ import {
   ShoppingBag,
   Globe,
 } from 'lucide-react';
-import { Food, getFoodCategories } from '../types';
+import { Food, getFoodCategories, getFoodCreatorDisplayName } from '../types';
 import { useUser } from '../context/UserContext';
 import { shareFood } from '../lib/share';
 import { showToast } from '../lib/toast';
@@ -82,41 +82,7 @@ export const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
   const isFav = favorites.has(food.id);
   const canManage = canManageFood(food);
   const foodCategories = getFoodCategories(food);
-
-  // Lógica de privacidad estricta: nunca mostrar emails
-  const getCreatorDisplayName = (): string => {
-    const isMine =
-      (user && food.user_id && food.user_id === user.id) ||
-      (user && food.user_email && food.user_email.toLowerCase() === user.email?.toLowerCase()) ||
-      (food.created_by && user && (food.created_by === user.id || (user.email && food.created_by.toLowerCase() === user.email.toLowerCase())));
-
-    if (isMine) {
-      return userName;
-    }
-
-    if (!food.created_by || food.created_by.toLowerCase() === 'anónimo') {
-      return 'Receta Oficial';
-    }
-
-    const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(food.created_by);
-    if (isUUID) {
-      if (food.user_email && food.user_email.toLowerCase() === 'dianrie@hotmail.com') {
-        return 'Chef Dianrie';
-      }
-      return 'Chef de la Comunidad';
-    }
-
-    let clean = food.created_by;
-    if (clean.includes('@')) {
-      clean = clean.split('@')[0];
-    }
-
-    if (clean.toLowerCase() === 'dianrie') {
-      return 'Chef Dianrie';
-    }
-
-    return clean.charAt(0).toUpperCase() + clean.slice(1);
-  };
+  const creatorDisplayName = getFoodCreatorDisplayName(food, user, userName);
 
   const handleVote = async (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -133,7 +99,7 @@ export const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
     if (isSharing || !food) return;
     setIsSharing(true);
     try {
-      const result = await shareFood(food, getCreatorDisplayName());
+      const result = await shareFood(food, creatorDisplayName);
       if (result.success) {
         setIsShared(true);
         if (result.message) {
@@ -256,9 +222,12 @@ export const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
               {food.name}
             </h2>
             <div className="flex items-center space-x-2 text-[11px] sm:text-sm text-slate-200">
-              <span className="flex items-center space-x-1 font-medium bg-black/40 px-2 sm:px-2.5 py-0.5 rounded-full backdrop-blur-sm">
+              <span
+                className="flex items-center space-x-1 font-medium bg-black/40 px-2 sm:px-2.5 py-0.5 rounded-full backdrop-blur-sm"
+                title={food.user_email ? `Creado por ${creatorDisplayName} (${food.user_email})` : `Creado por ${creatorDisplayName}`}
+              >
                 <ChefHat className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-orange-400" />
-                <span>Creado por {getCreatorDisplayName()}</span>
+                <span>Creado por {creatorDisplayName}</span>
               </span>
             </div>
           </div>
@@ -400,8 +369,13 @@ export const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
                 Creador
               </span>
               <p className="text-xs sm:text-sm font-extrabold text-slate-800 truncate">
-                {getCreatorDisplayName()}
+                {creatorDisplayName}
               </p>
+              {food.user_email && (
+                <p className="text-[11px] text-slate-500 font-medium truncate">
+                  {food.user_email}
+                </p>
+              )}
             </div>
           </div>
         </div>

@@ -88,7 +88,7 @@ que-comemos-hoy/
 ### `RecipeDetailModal.tsx` (Detalle de Receta)
 - Modal centralizado de alta resolución abierto al hacer clic en cualquier tarjeta, al pulsar "Elección Rápida" o tras pulsar "¡A cocinar!" en la Ruleta.
 - Muestra fotografía HD, todas las categorías asignadas, nombre del plato, descripción completa de la receta, popularidad/votos y botón para favoritos/likes.
-- **Privacidad estricta:** Oculta cualquier dirección de correo electrónico, mostrando nombres de usuario o perfiles locales dinámicos.
+- **Identidad del Creador y Atribución Legítima:** Muestra el chef o autor legítimo de la receta formateado con elegancia (`getFoodCreatorDisplayName`, ej. "Chef Belenroll", "Chef Dianrie") a partir del `user_email` y `created_by` del registro en Supabase, indicando el correo electrónico del creador en el modal de detalle para trazabilidad, y reservando "Receta Oficial" exclusivamente para platos del sistema sin autor específico.
 
 ### `AddFoodModal.tsx` y `EditFoodModal.tsx` (Creación y Edición de Platos)
 - **Selección Múltiple de Categorías:** Permite asignar una o varias categorías a cada plato mediante chips interactivos.

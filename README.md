@@ -29,7 +29,7 @@ Alojada en **Vercel** y respaldada por **Supabase (PostgreSQL + Realtime)**.
 ### 4. 📖 Modal de Detalle de Receta HD
 - Vista centralizada a pantalla completa accesible desde cualquier tarjeta, ruleta o elección rápida.
 - Fotografía en alta resolución, descripción gastronómica completa, etiquetas de categorías, contador de votos y botón directo para añadir a favoritos o compartir mediante la Web Share API.
-- **Privacidad estricta:** Oculta direcciones de correo electrónico, mostrando nombres de chef amigables.
+- **Identidad del Creador:** Muestra el chef autor legítimo de la receta ("Chef Belenroll", "Chef Dianrie") con el correo electrónico del creador en el modal de detalle para trazabilidad.
 
 ### 5. 👥 Autenticación sin Contraseña, Moderación y Gestión Global
 - **Enlace Mágico (Magic Link):** Inicio de sesión seguro vía correo sin necesidad de recordar contraseñas, con aviso informativo sobre la carpeta de spam para agilizar el acceso.
