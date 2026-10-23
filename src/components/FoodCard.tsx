@@ -1,10 +1,8 @@
 import React, { useState } from 'react';
-import { Heart, Sparkles, Trash2, Star, Pencil, ChefHat, Share2, Check, Globe } from 'lucide-react';
+import { Heart, Sparkles, Trash2, Star, Pencil, ChefHat, Globe } from 'lucide-react';
 import { Food, getFoodCategories, getFoodCreatorDisplayName } from '../types';
 import { useUser } from '../context/UserContext';
 import { safeImageUrl } from '../lib/sanitize';
-import { shareFood } from '../lib/share';
-import { showToast } from '../lib/toast';
 
 interface FoodCardProps {
   food: Food;
@@ -58,8 +56,6 @@ export const FoodCard: React.FC<FoodCardProps> = ({
 
   const [imgSrc, setImgSrc] = useState(safeImageUrl(food.image_url));
   const [isLiking, setIsLiking] = useState(false);
-  const [isSharing, setIsSharing] = useState(false);
-  const [isShared, setIsShared] = useState(false);
 
   // Sincronizar imgSrc si food.image_url cambia externamente por edición o realtime
   // Siempre pasar por safeImageUrl para bloquear esquemas peligrosos (javascript:, data:, etc.)
@@ -81,24 +77,6 @@ export const FoodCard: React.FC<FoodCardProps> = ({
       onOptimisticVote?.(food.id, delta);
     });
     setTimeout(() => setIsLiking(false), 300);
-  };
-
-  const handleShare = async (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (isSharing) return;
-    setIsSharing(true);
-    try {
-      const result = await shareFood(food, creatorDisplayName);
-      if (result.success) {
-        setIsShared(true);
-        if (result.message) {
-          showToast(result.message);
-        }
-        setTimeout(() => setIsShared(false), 2400);
-      }
-    } finally {
-      setIsSharing(false);
-    }
   };
 
   const handleToggleGlobal = (e: React.MouseEvent) => {
@@ -200,28 +178,10 @@ export const FoodCard: React.FC<FoodCardProps> = ({
           )}
         </div>
 
-        {/* Botones de Acción: Compartir, Favorito y Votar */}
-        <div className={`absolute right-2.5 z-10 flex items-center space-x-1 transition-all ${
+        {/* Botones de Acción: Favorito y Votar */}
+        <div className={`absolute right-2.5 z-10 flex items-center space-x-1.5 transition-all ${
           isHighlighted ? 'top-8 sm:top-10' : 'top-2.5'
         }`}>
-          {/* Botón Compartir */}
-          <button
-            onClick={handleShare}
-            disabled={isSharing}
-            className={`p-1.5 rounded-full backdrop-blur-md transition-all shadow-md active:scale-90 ${
-              isShared
-                ? 'bg-emerald-500 text-white shadow-emerald-500/40 ring-2 ring-emerald-300'
-                : 'bg-white/80 hover:bg-white text-slate-500 hover:text-orange-600'
-            }`}
-            title="Compartir plato"
-          >
-            {isShared ? (
-              <Check className="w-3.5 h-3.5 text-white stroke-[2.5]" />
-            ) : (
-              <Share2 className="w-3.5 h-3.5" />
-            )}
-          </button>
-
           {/* Botón Favorito */}
           <button
             onClick={(e) => {
