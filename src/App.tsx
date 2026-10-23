@@ -35,11 +35,7 @@ import { showToast } from './lib/toast';
 import { UserProvider, useUser } from './context/UserContext';
 import { CategoryProvider, useCategories } from './context/CategoryContext';
 import { playConfettiPop } from './lib/sound';
-import {
-  triggerPushNotification,
-  triggerApprovalPushNotification,
-  ensureUserPushSubscribed,
-} from './lib/pushNotifications';
+import { ensureUserPushSubscribed } from './lib/pushNotifications';
 
 const CATEGORY_FILTER_STORAGE_KEY = 'que_comemos_selected_categories';
 
@@ -758,15 +754,6 @@ function MainApp() {
       if (error) throw error;
 
       showToast(`¡"${food.name}" aprobado y publicado en el General! 🌐🎉`, 'success');
-
-      // Disparar notificación push de aprobación al usuario creador
-      triggerApprovalPushNotification({
-        foodId: food.id,
-        foodName: food.name,
-        userId: food.user_id,
-        userEmail: food.user_email,
-        createdBy: food.created_by,
-      });
     } catch (err) {
       console.error('Error al aprobar plato:', err);
       setFoods((prev) =>
@@ -832,14 +819,6 @@ function MainApp() {
         .eq('id', food.id);
 
       if (error) throw error;
-
-      // Disparar push notification complementaria a los superadministradores
-      triggerPushNotification({
-        foodId: food.id,
-        foodName: food.name,
-        userEmail: food.user_email,
-        creatorName: food.user_email || 'Un usuario',
-      });
     } catch (err) {
       console.error('Error al solicitar inclusión en el General:', err);
       // Revertir

@@ -25,7 +25,7 @@ import { useUser } from '../context/UserContext';
 import { shareFood } from '../lib/share';
 import { showToast } from '../lib/toast';
 import { supabase } from '../lib/supabase';
-import { triggerPushNotification, ensureUserPushSubscribed } from '../lib/pushNotifications';
+import { ensureUserPushSubscribed } from '../lib/pushNotifications';
 
 interface RecipeDetailModalProps {
   isOpen: boolean;
@@ -143,13 +143,6 @@ export const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
           .update({ approval_status: 'pending' })
           .eq('id', food.id);
         if (error) throw error;
-
-        triggerPushNotification({
-          foodId: food.id,
-          foodName: food.name,
-          userEmail: food.user_email,
-          creatorName: food.user_email,
-        });
       }
 
       setLocalApprovalStatus('pending');
