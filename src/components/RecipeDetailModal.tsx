@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   X,
   Heart,
@@ -15,11 +15,15 @@ import {
   ExternalLink,
   ShoppingBag,
   Globe,
+  Send,
+  Clock,
+  Loader2,
 } from 'lucide-react';
 import { Food, getFoodCategories, getFoodCreatorDisplayName } from '../types';
 import { useUser } from '../context/UserContext';
 import { shareFood } from '../lib/share';
 import { showToast } from '../lib/toast';
+import { supabase } from '../lib/supabase';
 
 interface RecipeDetailModalProps {
   isOpen: boolean;
@@ -29,6 +33,7 @@ interface RecipeDetailModalProps {
   onSpinAgain?: () => void;
   onOptimisticVote?: (foodId: string, delta: number) => void;
   onToggleGlobal?: (food: Food) => void;
+  onRequestGlobal?: (food: Food) => Promise<void> | void;
 }
 
 const CATEGORY_COLORS: Record<string, string> = {
@@ -60,6 +65,7 @@ export const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
   onSpinAgain,
   onOptimisticVote,
   onToggleGlobal,
+  onRequestGlobal,
 }) => {
   const {
     user,
@@ -75,6 +81,15 @@ export const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
   const [isLiking, setIsLiking] = useState(false);
   const [isSharing, setIsSharing] = useState(false);
   const [isShared, setIsShared] = useState(false);
+  const [isRequestingGlobal, setIsRequestingGlobal] = useState(false);
+  const [localApprovalStatus, setLocalApprovalStatus] = useState<string | undefined>(undefined);
+
+  // Sincronizar estado local de aprobación cuando cambia el plato o se abre el modal
+  useEffect(() => {
+    if (food) {
+      setLocalApprovalStatus(food.approval_status);
+    }
+  }, [food?.id, food?.approval_status, isOpen]);
 
   if (!isOpen || !food) return null;
 
@@ -83,6 +98,47 @@ export const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
   const canManage = canManageFood(food);
   const foodCategories = getFoodCategories(food);
   const creatorDisplayName = getFoodCreatorDisplayName(food, user, userName);
+
+  // Comprobar si el usuario actual es el propietario/creador del plato
+  const isFoodOwner = Boolean(
+    user &&
+      ((food.user_id && food.user_id === user.id) ||
+        (food.user_email &&
+          user.email &&
+          food.user_email.toLowerCase() === user.email.toLowerCase()) ||
+        (food.created_by &&
+          (food.created_by === user.id ||
+            (user.email && food.created_by.toLowerCase() === user.email.toLowerCase()))))
+  );
+
+  const currentApprovalStatus = localApprovalStatus ?? food.approval_status;
+  const isPending = currentApprovalStatus === 'pending';
+
+  const handleRequestGlobal = async (e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    if (isRequestingGlobal || !food || isPending) return;
+
+    setIsRequestingGlobal(true);
+    try {
+      if (onRequestGlobal) {
+        await onRequestGlobal(food);
+      } else {
+        const { error } = await supabase
+          .from('foods')
+          .update({ approval_status: 'pending' })
+          .eq('id', food.id);
+        if (error) throw error;
+      }
+
+      setLocalApprovalStatus('pending');
+      showToast('¡Solicitud enviada a los administradores para el General! ⏳', 'info');
+    } catch (err: unknown) {
+      console.error('Error al solicitar inclusión en el General:', err);
+      showToast('Error al enviar la solicitud. Inténtalo de nuevo.', 'error');
+    } finally {
+      setIsRequestingGlobal(false);
+    }
+  };
 
   const handleVote = async (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -195,10 +251,28 @@ export const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
               </span>
             )}
 
-            {!isSuperUser && canManage && food.approval_status === 'pending' && (
-              <span className="inline-flex items-center px-2.5 py-0.5 sm:px-3 sm:py-1 rounded-full text-[11px] sm:text-xs font-bold backdrop-blur-md shadow-md bg-amber-500/95 text-white border border-amber-300/40">
-                ⏳ Solicitud en revisión
-              </span>
+            {!isSuperUser && isFoodOwner && !food.is_global && (
+              isPending ? (
+                <span className="inline-flex items-center space-x-1 px-2.5 py-0.5 sm:px-3 sm:py-1 rounded-full text-[11px] sm:text-xs font-bold backdrop-blur-md shadow-md bg-amber-500/95 text-white border border-amber-300/40">
+                  <Clock className="w-3 h-3" />
+                  <span>⏳ Solicitud en revisión</span>
+                </span>
+              ) : (
+                <button
+                  type="button"
+                  onClick={handleRequestGlobal}
+                  disabled={isRequestingGlobal}
+                  className="inline-flex items-center space-x-1 px-2.5 py-0.5 sm:px-3 sm:py-1 rounded-full text-[11px] sm:text-xs font-bold backdrop-blur-md shadow-md bg-orange-600/95 hover:bg-orange-700 text-white border border-orange-400/40 active:scale-95 transition-transform cursor-pointer"
+                  title="Solicitar inclusión en el General"
+                >
+                  {isRequestingGlobal ? (
+                    <Loader2 className="w-3 h-3 animate-spin" />
+                  ) : (
+                    <Send className="w-3 h-3" />
+                  )}
+                  <span>Solicitar inclusión</span>
+                </button>
+              )
             )}
 
             {isSuperUser && (
@@ -384,11 +458,87 @@ export const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
               )}
             </div>
           </div>
+
+          {/* Bloque destacado para el creador: Solicitud de inclusión en el General */}
+          {!isSuperUser && isFoodOwner && !food.is_global && (
+            <div
+              className={`p-3.5 sm:p-4 rounded-2xl border transition-all ${
+                isPending
+                  ? 'bg-amber-50/80 border-amber-200/90'
+                  : 'bg-gradient-to-r from-orange-50/90 via-amber-50/60 to-orange-50/90 border-orange-200/80 shadow-2xs'
+              }`}
+            >
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="flex items-start sm:items-center space-x-3 min-w-0">
+                  <div
+                    className={`w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${
+                      isPending
+                        ? 'bg-amber-100 text-amber-700'
+                        : 'bg-orange-500 text-white shadow-md shadow-orange-500/20'
+                    }`}
+                  >
+                    {isPending ? (
+                      <Clock className="w-5 h-5 animate-pulse" />
+                    ) : (
+                      <Globe className="w-5 h-5" />
+                    )}
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-xs sm:text-sm font-extrabold text-slate-800">
+                      {isPending
+                        ? 'Solicitud pendiente de aprobación'
+                        : '¿Quieres compartir este plato en el General?'}
+                    </p>
+                    <p className="text-[11px] sm:text-xs text-slate-500 font-medium leading-relaxed mt-0.5">
+                      {isPending
+                        ? 'Tu plato está actualmente en revisión por los administradores para ser publicado en la carta pública.'
+                        : 'Envía tu receta a moderación para que los administradores la incluyan en la pantalla principal para toda la comunidad.'}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex-shrink-0 w-full sm:w-auto">
+                  <button
+                    type="button"
+                    onClick={handleRequestGlobal}
+                    disabled={isPending || isRequestingGlobal}
+                    className={`w-full sm:w-auto flex items-center justify-center space-x-2 px-3.5 py-2.5 sm:px-4 sm:py-2.5 rounded-xl font-bold text-xs transition-all shadow-xs ${
+                      isPending
+                        ? 'bg-amber-100/90 text-amber-800 border border-amber-300/70 cursor-default opacity-90'
+                        : 'bg-orange-500 hover:bg-orange-600 active:scale-95 text-white shadow-md shadow-orange-500/25 cursor-pointer'
+                    }`}
+                    title={
+                      isPending
+                        ? 'La solicitud ya ha sido enviada y está a la espera de revisión'
+                        : 'Enviar solicitud de moderación a los administradores'
+                    }
+                  >
+                    {isRequestingGlobal ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin flex-shrink-0" />
+                        <span>Enviando solicitud...</span>
+                      </>
+                    ) : isPending ? (
+                      <>
+                        <Clock className="w-4 h-4 text-amber-700 flex-shrink-0" />
+                        <span>Solicitud pendiente de aprobación</span>
+                      </>
+                    ) : (
+                      <>
+                        <Send className="w-4 h-4 flex-shrink-0" />
+                        <span>Solicitar inclusión en el General</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Pie de acciones */}
         <div className="p-3.5 sm:p-4 sm:px-6 bg-slate-50 border-t border-slate-100 flex items-center justify-between gap-2 flex-shrink-0">
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-2 flex-wrap gap-1.5">
             {canManage && onEdit && (
               <button
                 onClick={() => {
@@ -399,6 +549,41 @@ export const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
               >
                 <Pencil className="w-3.5 h-3.5" />
                 <span className="hidden sm:inline">Modificar</span>
+              </button>
+            )}
+
+            {!isSuperUser && isFoodOwner && !food.is_global && (
+              <button
+                type="button"
+                onClick={handleRequestGlobal}
+                disabled={isPending || isRequestingGlobal}
+                className={`flex items-center space-x-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-all shadow-xs ${
+                  isPending
+                    ? 'bg-amber-100 text-amber-800 border border-amber-300/60 cursor-default opacity-85'
+                    : 'bg-orange-50 hover:bg-orange-100 text-orange-700 border border-orange-200 active:scale-95 cursor-pointer'
+                }`}
+                title={
+                  isPending
+                    ? 'Solicitud pendiente de aprobación'
+                    : 'Solicitar inclusión en el General'
+                }
+              >
+                {isRequestingGlobal ? (
+                  <>
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    <span>Enviando...</span>
+                  </>
+                ) : isPending ? (
+                  <>
+                    <Clock className="w-3.5 h-3.5 text-amber-700" />
+                    <span>En revisión</span>
+                  </>
+                ) : (
+                  <>
+                    <Send className="w-3.5 h-3.5" />
+                    <span>Enviar a moderación</span>
+                  </>
+                )}
               </button>
             )}
 

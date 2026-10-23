@@ -30,6 +30,7 @@ Alojada en **Vercel** y respaldada por **Supabase (PostgreSQL + Realtime)**.
 - Vista centralizada a pantalla completa accesible desde cualquier tarjeta, ruleta o elección rápida.
 - Fotografía en alta resolución, descripción gastronómica completa, etiquetas de categorías, contador de votos y botón directo para añadir a favoritos o compartir mediante la Web Share API.
 - **Identidad del Creador:** Muestra el chef autor legítimo de la receta ("Chef Belenroll", "Chef Dianrie") con el correo electrónico del creador en el modal de detalle para trazabilidad.
+- **Solicitud Directa de Inclusión en el General:** Los creadores pueden enviar a moderación sus recetas privadas directamente desde el modal de detalle con un clic en *"Solicitar inclusión en el General"*, con actualización visual instantánea a estado pendiente de aprobación evitando duplicados.
 
 ### 5. 👥 Autenticación sin Contraseña, Moderación y Gestión Global
 - **Enlace Mágico (Magic Link):** Inicio de sesión seguro vía correo sin necesidad de recordar contraseñas, con aviso informativo sobre la carpeta de spam para agilizar el acceso.

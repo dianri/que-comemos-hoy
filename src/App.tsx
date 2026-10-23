@@ -757,6 +757,36 @@ function MainApp() {
     }
   };
 
+  // Solicitud de inclusión en la carta general (para creadores de platos privados)
+  const handleRequestGlobal = async (food: Food) => {
+    // Actualización optimista inmediata en memoria
+    setFoods((prev) =>
+      prev.map((f) => (f.id === food.id ? { ...f, approval_status: 'pending' } : f))
+    );
+    setSelectedRecipe((prev) =>
+      prev && prev.id === food.id ? { ...prev, approval_status: 'pending' } : prev
+    );
+
+    try {
+      const { error } = await supabase
+        .from('foods')
+        .update({ approval_status: 'pending' })
+        .eq('id', food.id);
+
+      if (error) throw error;
+    } catch (err) {
+      console.error('Error al solicitar inclusión en el General:', err);
+      // Revertir
+      setFoods((prev) =>
+        prev.map((f) => (f.id === food.id ? { ...f, approval_status: food.approval_status } : f))
+      );
+      setSelectedRecipe((prev) =>
+        prev && prev.id === food.id ? { ...prev, approval_status: food.approval_status } : prev
+      );
+      throw err;
+    }
+  };
+
   // Elección rápida aleatoria directa (abre el Modal de Detalle de Receta)
   const handleQuickPick = () => {
     if (roulettePool.length === 0) {
@@ -1352,6 +1382,7 @@ function MainApp() {
             prev && prev.id === food.id ? { ...prev, is_global: !prev.is_global } : prev
           );
         }}
+        onRequestGlobal={handleRequestGlobal}
       />
 
       <ArcadeModal
