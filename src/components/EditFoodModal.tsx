@@ -5,6 +5,7 @@ import { useUser } from '../context/UserContext';
 import { useCategories } from '../context/CategoryContext';
 import { Food, getFoodCategories } from '../types';
 import { ImagePicker } from './ImagePicker';
+import { AutoResizeTextarea } from './AutoResizeTextarea';
 import { sanitizeText, safeImageUrl, SAFE_FALLBACK_IMAGE } from '../lib/sanitize';
 import { generateDishDescription } from '../lib/aiDescription';
 import { showToast } from '../lib/toast';
@@ -295,12 +296,11 @@ export const EditFoodModal: React.FC<EditFoodModalProps> = ({
                 )}
               </button>
             </div>
-            <textarea
+            <AutoResizeTextarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Ingredientes, detalles de preparación..."
-              rows={2}
-              className="w-full px-3 py-1.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-orange-500/40 text-xs sm:text-sm resize-none"
+              minHeight={54}
             />
           </div>
 

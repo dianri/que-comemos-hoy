@@ -38,6 +38,7 @@ que-comemos-hoy/
 │   │   ├── ManageCategoriesModal.tsx # Gestión y reordenación personalizada de filtros
 │   │   ├── ArcadeModal.tsx     # Minijuego arcade integrado con puntuaciones
 │   │   ├── ImagePicker.tsx     # Selector de fotos y buscador directo en Google Images
+│   │   ├── AutoResizeTextarea.tsx # Textarea dinámico auto-redimensionable sin scrollbars internas
 │   │   ├── PwaInstallBanner.tsx # Banner flotante de instalación PWA con soporte iOS
 │   │   └── Toast.tsx           # Notificaciones emergentes ligeras y reactivas
 │   ├── context/
@@ -101,6 +102,7 @@ que-comemos-hoy/
 ### `AddFoodModal.tsx` y `EditFoodModal.tsx` (Creación y Edición de Platos)
 - **Selección Múltiple de Categorías:** Permite asignar una o varias categorías a cada plato mediante chips interactivos.
 - **Autocompletado con IA para Descripción Corta:** Botón con icono de destellos ✨ (`Sparkles` / `Loader2`) que genera descripciones gastronómicas atractivas y concisas mediante el servicio de cascada en `aiDescription.ts`. El texto es completamente editable por el usuario.
+- **Textarea Dinámico con Auto-Resize (`AutoResizeTextarea.tsx`):** El campo de descripción corta e ingredientes se expande y contrae automáticamente en altura (`scrollHeight`, `minHeight` cómoda de 54px y `ResizeObserver`) sin scrollbars internas ni saltos bruscos, respondiendo fluidamente al tecleo, al pegado de listas extensas y al autocompletado con IA.
 - **ImagePicker integrado:** Catálogo de fotos, buscador en línea y acceso directo a Google Images con filtrado culinario y fotográfico avanzado.
 
 ### `ImagePicker.tsx` y Sanitización de Imágenes (`src/lib/sanitize.ts`)
