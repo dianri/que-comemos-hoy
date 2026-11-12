@@ -293,11 +293,26 @@ function MainApp() {
     }
   };
 
-  // Manejador para conmutar un filtro individual
+  // Manejador para conmutar un filtro individual con aislamiento intuitivo
   const handleToggleCategory = (cat: string) => {
     setSelectedCategories((prev) => {
+      // 1. Si todas las categorías están seleccionadas actualmente (estado inicial o tras pulsar "Todas"):
+      // al tocar una categoría concreta, deselecciona el resto y deja seleccionada únicamente esa categoría.
+      const allActive =
+        categories.length > 0 && categories.every((c) => prev.includes(c));
+
+      if (allActive) {
+        return [cat];
+      }
+
+      // 2. En cualquier otro estado (cuando ya hay una o varias categorías específicas seleccionadas, pero no todas):
+      // comportamiento de selección múltiple (añadir o quitar la categoría tocada; y si se desmarca la última activa, volver al estado de "Todas").
       if (prev.includes(cat)) {
-        return prev.filter((c) => c !== cat);
+        const next = prev.filter((c) => c !== cat);
+        if (next.length === 0) {
+          return [...categories];
+        }
+        return next;
       } else {
         return [...prev, cat];
       }
@@ -1265,7 +1280,11 @@ function MainApp() {
                       ? 'bg-orange-500 text-white shadow-orange-500/20 scale-[1.02]'
                       : 'bg-slate-100/90 hover:bg-slate-200 text-slate-400 border border-slate-200/70 hover:text-slate-600'
                   }`}
-                  title={`${isSelected ? 'Desactivar' : 'Activar'} "${cat}" · Mantén pulsado para aislar`}
+                  title={
+                    isAllSelected
+                      ? `Filtrar solo por "${cat}" · Mantén pulsado para aislar`
+                      : `${isSelected ? 'Desactivar' : 'Activar'} "${cat}" · Mantén pulsado para aislar`
+                  }
                 >
                   {cat}
                 </button>

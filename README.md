@@ -22,6 +22,8 @@ Alojada en **Vercel** y respaldada por **Supabase (PostgreSQL + Realtime)**.
 - **🖼️ Selector de Fotos Inteligente con Refinamiento Culinario:** Catálogo integrado en alta resolución y buscador multifuente (Wikipedia en español e inglés, TheMealDB, Unsplash) con refinamiento contextual automático (`"receta"`, `"plato"`, `"comida"`), diccionario de traducción gastronómica al inglés y descarte estricto de documentos (`.pdf`, `.doc`, sedes electrónicas). Acceso directo a Google Images configurado con SafeSearch estricto y filtro de fotografía (`tbs=itp:photo`).
 
 ### 3. 🔍 Filtros Horizontales Drag-to-Scroll y Reordenación
+- **Aislamiento Intuitivo de Categorías:** Si todas las categorías están seleccionadas, un solo toque en cualquier categoría deselecciona el resto y la deja aislada al instante. En selección parcial, tocar una categoría añade o quita ese filtro; y si se desmarca la última activa, se restaura automáticamente la selección global de "Todas".
+- **Aislamiento por Pulsación Prolongada (Long Press):** Mantén pulsado cualquier chip de categoría para aislarlo en cualquier momento sin importar la combinación activa previa, con respuesta háptica en dispositivos móviles.
 - **Desplazamiento por Arrastre (Drag-to-Scroll):** La barra de filtros permite navegar fluidamente haciendo clic izquierdo y arrastrando el ratón en escritorio o deslizando con el dedo en móviles.
 - **Botón "Todas" Diferenciado:** Botón de selección global estilizado y separado adecuadamente para facilitar la alternancia rápida de categorías.
 - **Reordenación Personalizada de Categorías:** Panel de administración donde los superusuarios pueden crear, eliminar y cambiar el orden visual de los filtros con persistencia en Supabase.
